@@ -429,6 +429,10 @@ If the parent session is already running Opus, the subagent still runs as a sepa
 
 ## Invocation — Codex CLI (codex exec)
 
+**Default: invoke via the host runtime's Bash tool.** The command below is POSIX-shell syntax — the `<` redirection and line continuations only parse in Bash, not PowerShell. On Windows hosts where Bash is unavailable, fall back to PowerShell calling `cmd /c "<full command on one line>"` so cmd.exe handles the redirection. Do **not** use PowerShell's pipe (`Get-Content prompt.txt | codex exec ...`): on Windows PowerShell 5.1, the codex banner (which is normal stderr) gets wrapped in `NativeCommandError` records that look like exceptions even when codex exits 0. Do **not** use `< file` directly in PowerShell — it's a parser error (`Operador '<' reservado para uso futuro`).
+
+**Validate success by `exit code == 0` AND `--output-last-message` file is non-empty.** Never by stderr. Codex writes its session banner to stderr by design; on Windows machines with PowerShell `ConstrainedLanguage` mode (corporate Group Policy), codex.exe's internal PowerShell calls can also throw `[Console]::OutputEncoding` errors to stderr. Both can coexist with a clean exit 0 and a valid review output file — the agent should not abort the run on stderr noise alone.
+
 ```
 codex exec --ephemeral \
   --sandbox read-only \
@@ -440,11 +444,9 @@ codex exec --ephemeral \
 Notes:
 - `--ephemeral` — codex doesn't persist this run as a session.
 - `--sandbox read-only` — reviewer runs read-only; the CLI still writes the final message to `--output-last-message`. Do not switch to writable sandbox just to let Codex rerun cache-writing tests; the implementer should run those checks and report evidence before review.
-- `--output-last-message <FILE>` — captures only the final agent message in the output file. Skips intermediate stdout noise (e.g., PowerShell profile errors on Windows machines that have script execution disabled).
+- `--output-last-message <FILE>` — captures only the final agent message in the output file. Skips intermediate stdout noise.
 - `-C [REPO_ROOT]` — sets codex's working directory.
 - `- < <prompt-file>` — passes the prompt via stdin (cleaner than escaping inline arguments).
-
-Windows note: if PowerShell resolves `codex` to an npm `codex.ps1` shim and script execution is disabled, invoke from a real Bash shell as shown above, or call the `codex.exe` binary directly in the tool-specific command wrapper.
 
 The run typically takes 3–10 minutes with xhigh reasoning on a meaningful round diff. Run as a background command (your tool's mechanism for long-running shell commands), record start time, and apply the 20-minute reviewer timeout above.
 
@@ -478,8 +480,11 @@ After the round closes (PASS or escalation), append final auto-review history to
 - **Treating PASS as "skip the round report".** PASS still requires the report. The user reads the report to track progress; the auto-review history is an addendum, not a replacement.
 - **Looping on cosmetic issues.** If attempt 2 fixed the substantive gate failure but attempt 3 fails on a tiny new issue, the loop cap is your friend — escalate, don't go for attempt 4.
 - **Ignoring escalation triggers.** An always-escalate trigger means stop, period. Don't try to pre-resolve it and skip to auto-review; the user must see it.
+- **Skipping the pre-review checklist.** Walk the 8 always-escalate triggers (see SKILL.md §Step 4.5) at the end of every round, before invoking reviewers. Catching a trigger after the reviewers fired wastes a review cycle and produces an ESCALATE the implementer should have surfaced themselves.
+- **Treating ESCALATE as FAIL.** ESCALATE means user judgment is required — stop, surface the findings, wait. Do **not** apply fixes and retry on ESCALATE; that path is only for FAIL. The most common ESCALATE is a class-5 finding (DECISIONS-worthy choice without flag), and writing the DECISIONS entry silently before retrying defeats the purpose of escalation.
+- **Aborting Codex on stderr noise.** Codex writes its session banner to stderr by design. PowerShell may wrap codex stderr in `NativeCommandError` records; corporate ConstrainedLanguage mode may add `[Console]::OutputEncoding` errors. None of those are failures — validate by exit code + `--output-last-message` file presence, not by inspecting stderr text. See §"Invocation — Codex CLI" for the invocation rules.
 - **Letting reviewers edit code.** The review prompt instructs read-only. If a gate failure requires a fix, the implementer makes the fix between attempts.
-- **Codex CLI assumptions.** The framework assumes `codex` is on PATH and the user has `~/.codex/config.toml` (or `$CODEX_HOME/config.toml`) selecting an appropriate reviewer model. The framework does not configure this. If `codex --version` fails, surface the gap to the user — attempt 1 falls back to Opus-only per §"Reviewer fallback" (note in the round report). On Windows, PowerShell may resolve `codex` to a blocked npm `.ps1` shim; use Bash or call `codex.exe` directly.
+- **Codex CLI assumptions.** The framework assumes `codex` is on PATH and the user has `~/.codex/config.toml` (or `$CODEX_HOME/config.toml`) selecting an appropriate reviewer model. The framework does not configure this. If `codex --version` fails, surface the gap to the user — attempt 1 falls back to Opus-only per §"Reviewer fallback" (note in the round report). For Windows-specific invocation rules (Bash default, PowerShell `cmd /c` fallback, exit-code-not-stderr validation), see §"Invocation — Codex CLI" above.
 - **Opus subagent assumptions.** Full ensemble mode assumes the host runtime supports the Anthropic Agent tool with model selection. On runtimes without that, Opus-as-subagent is unavailable: attempt 1 may run Codex-only in degraded mode, and retries may use Codex as the retry reviewer only if Codex produced the surviving attempt-1 review. If no independent reviewer can run, escalate or opt out of auto-review.
 - **`codex review --base/--commit` parser quirk.** The CLI rejects custom `[PROMPT]` when `--base` or `--commit` is set. This protocol uses `codex exec` (not `codex review`) precisely to bypass that limitation. Do not switch to `codex review`.
 - **Sequencing the reviewers serially.** On attempt 1, run both in parallel, not one after the other. Serial costs ~2x the wall-clock latency for no benefit. The runtime supports parallel Agent + Bash background invocations.

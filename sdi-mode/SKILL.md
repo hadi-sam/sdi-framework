@@ -145,9 +145,37 @@ At user-gated checkpoints, stop and wait for explicit user go. At auto-reviewed 
 - **Attempt 1**: an Opus subagent (Anthropic Agent tool, `model: opus`) AND `codex exec` (typically gpt-5.5 with reasoning effort `xhigh` per the user's `~/.codex/config.toml`) run in parallel on the same self-contained packet. Different models find partially-disjoint bugs; empirically the union catches more than either alone.
 - **Attempts 2 and 3** (after a FAIL): the retry reviewer runs. Opus is the default retry reviewer; if the runtime cannot provide Opus but Codex was the surviving attempt-1 reviewer, Codex may run retries in degraded mode. The bug surface has shrunk to verifying the fix, so a single retry reviewer is enough as long as prior findings are included in the retry packet.
 
-Foundation (Checkpoint 1), Housekeeping (Checkpoint 5), and any round that hits an always-escalate trigger (DECISIONS-worthy choice, blocker, schema migration with data-loss risk, new external dependency, security-relevant change, plan revision, PRD/ARCHITECTURE deviation) stay user-gated regardless.
+Foundation (Checkpoint 1) and Housekeeping (Checkpoint 5) stay user-gated regardless. Within an auto-eligible checkpoint, the round still escalates immediately when any of the always-escalate triggers below fires.
 
-Each reviewer receives the same packet (diff + plan §s + gate checklist + per-gate verifiable criteria, plus active cross-file checks like CSS-class-defined and report-vs-reality) and returns a structured PASS / FAIL / ESCALATE verdict with file:line evidence per gate. Reviewers audit the implementer's verification evidence; they may run targeted read-only-compatible checks, but the implementer owns tests/checks that require writing caches, build output, snapshots, local DB state, or generated files. **Verdict merging on attempt 1**: PASS only if both PASS; FAIL if either FAIL; ESCALATE if either ESCALATE. **Reviewer fallback**: if one reviewer fails to run or times out, continue with the other in degraded mode; if both fail or time out, escalate to the user. Default reviewer timeout is 20 minutes; unusually large reviews can declare a longer timeout up front, but expected reviews over 45 minutes should be split or escalated. Loop cap: 3 attempts. Auto-review history is appended to the round report verbatim (both reviewers on attempt 1; one retry reviewer on attempts 2-3) so the user can spot-check.
+**Pre-review checklist — run before invoking reviewers.** If any item is ✓, STOP and escalate to the user; do **not** build the packet, do **not** invoke reviewers. Catching an escalation trigger after the reviewers fired wastes a review cycle and produces an ESCALATE you should have surfaced yourself.
+
+- [ ] Round produced (or should produce) a `DECISIONS.md` entry — non-obvious trade-off, deviation from convention, deferred feature, resolved plan-vs-repo divergence
+- [ ] Blocker hit during implementation (missing dep, contradictory plan content, broken external service)
+- [ ] Emergency deviation (security bug, data-loss risk, regression of working functionality)
+- [ ] Schema migration with data-loss risk (drop column, NOT NULL on existing column without backfill, lossy type change)
+- [ ] New external dependency added beyond what the plan listed
+- [ ] Security-relevant change beyond plan scope (auth helper, RLS policy, secret handling, CORS/CSP)
+- [ ] Plan revision (`rN`) added during the round
+- [ ] PRD or ARCHITECTURE deviation required to deliver this round
+
+If every item is ✗, run the clean-state preflight (see `references/auto-review-mode.md`) and proceed.
+
+Each reviewer receives the same packet (diff + plan §s + gate checklist + per-gate verifiable criteria, plus active cross-file checks like CSS-class-defined and report-vs-reality) and returns a structured PASS / FAIL / ESCALATE verdict with file:line evidence per gate. Reviewers audit the implementer's verification evidence; they may run targeted read-only-compatible checks, but the implementer owns tests/checks that require writing caches, build output, snapshots, local DB state, or generated files.
+
+**Verdict merge — attempt 1 (both reviewers ran):**
+
+| Opus | Codex | Merged |
+|---|---|---|
+| PASS | PASS | **PASS** |
+| PASS | FAIL | FAIL |
+| FAIL | PASS | FAIL |
+| FAIL | FAIL | FAIL |
+| any | ESCALATE | **ESCALATE** |
+| ESCALATE | any | **ESCALATE** |
+
+**ESCALATE is not FAIL.** FAIL means the failure is mechanically fixable — apply the fix, commit, retry up to the loop cap. ESCALATE means the user must judge — stop, surface the findings, do **not** apply fixes and retry. The most common ESCALATE trigger is a class-5 finding (DECISIONS-worthy choice without flag), and the right response is to write the DECISIONS entry *with the user*, not silently before retrying.
+
+**Reviewer fallback**: if one reviewer fails to run or times out, continue with the other in degraded mode; if both fail or time out, escalate to the user. Default reviewer timeout is 20 minutes; unusually large reviews can declare a longer timeout up front, but expected reviews over 45 minutes should be split or escalated. Loop cap: 3 attempts. Auto-review history is appended to the round report verbatim (both reviewers on attempt 1; one retry reviewer on attempts 2-3) so the user can spot-check.
 
 **Opt-out per session:** the user can disable auto-review for the rest of the session by saying "user-review for this phase", "review the next round myself", "stop auto-reviewing", or "back to user-gated". Re-enable with "auto-review again". Session-scoped — every new session starts default-on.
 
