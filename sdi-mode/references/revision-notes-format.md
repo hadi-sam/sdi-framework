@@ -8,7 +8,7 @@ Plans evolve during implementation. Revision notes are how that evolution is mar
 - Mid-phase discovery shows a plan section is wrong or incomplete. Add a revision note.
 - Scope changes mid-phase (customer requirement, tech decision, trade-off reversal). Add a revision note.
 - Small typos or clarifications: no revision note needed — just fix.
-- New DECISIONS.md entry that doesn't change the plan: no revision note needed.
+- New DECISIONS.md or KNOWN_ISSUES.md entry that doesn't change the plan: no revision note needed.
 
 Rule of thumb: if someone reading the plan in 6 months would be confused by the diff between what's written and what was built, add a revision note.
 

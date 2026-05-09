@@ -14,10 +14,13 @@ Implementing [Phase 1 / <slug>] of this project per docs/IMPLEMENTATION_PLAN_[PH
 
 Read in this order before writing any code:
 1. README.md to get context.
-2. AGENTS.md (project facts — stack, doc map, conventions, work tracker).
-3. docs/IMPLEMENTATION_PLAN_[PHASE_1 | <slug>].md fully.
-4. docs/PROJECT_STRUCTURE.md for conventions.
-5. docs/ARCHITECTURE.md — at minimum the type-specific section and the critical flows.
+2. AGENTS.md or CLAUDE.md (project facts — stack, doc map, conventions, work tracker).
+3. docs/MEMORY.md + the latest docs/memory/YYYY-MM-DD.md entry to see handoff state.
+4. docs/IMPLEMENTATION_PLAN_[PHASE_1 | <slug>].md fully.
+5. docs/PROJECT_STRUCTURE.md for conventions.
+6. docs/ARCHITECTURE.md — at minimum the type-specific section and the critical flows.
+7. docs/KNOWN_ISSUES.md — confirm whether any known issue is in scope or must stay deferred.
+8. docs/DECISIONS.md — skim existing decisions before making new ones.
 
 Then audit the plan against the actual repo state. Produce an audit report covering:
 - Blockers (things preventing start)
@@ -45,7 +48,7 @@ The Phase C output to the user includes the kickoff prompt with the right line p
 ### Starting Phase N (where N > 1)
 
 ```
-Phase N-1 is shipped (see DECISIONS.md and PROJECT_STRUCTURE.md for what was delivered).
+Phase N-1 is shipped (see DECISIONS.md, KNOWN_ISSUES.md, and PROJECT_STRUCTURE.md for what was delivered, deferred, or fixed).
 
 Now implementing Phase N per docs/IMPLEMENTATION_PLAN_PHASE_N.md.
 
@@ -58,7 +61,7 @@ Follow the same SDI discipline as Phase 1:
 3. Produce an audit report before writing code.
 4. Stop at natural checkpoints for review.
 5. Write tests alongside code.
-6. DECISIONS.md for non-obvious choices.
+6. DECISIONS.md for non-obvious choices; KNOWN_ISSUES.md for pre-existing bugs/tech debt/security gaps that stay out of scope.
 
 Start with the audit.
 ```
@@ -85,7 +88,7 @@ Propose the first deliverable of this round and stop for review.
 - **Prime the audit discipline.** The audit is the highest-leverage step; make it explicit.
 - **Establish repo-wins rule.** Prevents the agent from being hostage to a stale plan.
 - **Pre-announce stop-and-review.** The user isn't surprised when the agent stops; it's expected.
-- **Normalize DECISIONS.md.** Makes the paper trail a default, not an afterthought.
+- **Normalize DECISIONS.md, KNOWN_ISSUES.md, and MEMORY.md.** Makes the decision trail, known-issue catalog, and handoff memory defaults, not afterthoughts.
 - **Set tone for revision notes.** Plans evolve; the agent knows how to mark that.
 
 The skill / custom-mode mechanism differs per tool, but the behaviors expected from the agent are identical.

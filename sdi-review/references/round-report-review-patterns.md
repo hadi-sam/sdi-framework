@@ -11,6 +11,7 @@ Round report on your desk. Check:
 - **Does the delivery match the scope the round was supposed to cover?** Sometimes agents over-deliver (scope creep) or under-deliver (silently deferred work). Both are worth flagging.
 - **Are the decisions in the report defensible?** Go through each one. "Chose X because Y" — is Y accurate? Is X the right choice given Y?
 - **Did the agent catch risks that the implementation introduces?** If the round added a new external dependency, did it discuss security/failure modes? If it introduced a feature flag, did it say when to flip it?
+- **Did the agent update KNOWN_ISSUES when needed?** New out-of-scope bugs/debt/security gaps need `KI-NNN` entries; fixed KIs need `Resolved (commit, date)`.
 - **Test coverage — real or performative?** 20 tests green sounds good, but if they're all shallow, coverage is weak. Ask about specific edge cases that matter.
 - **Anything not said that should be?** Important patterns include: newly introduced side effects, breaking changes to contracts, perf regressions.
 
@@ -42,7 +43,7 @@ Usually during audit or mid-round. The agent discovered something you might have
 
 - **Acknowledge fairly.** If the plan was wrong, own it. Don't blame the agent for surfacing it.
 - **Decide the fix direction.** Plan updates? DECISIONS.md entry? Revision note?
-- **Ensure the paper trail.** The user should be able to trace, in 6 months, why a thing is the way it is.
+- **Ensure the paper trail.** The user should be able to trace, in 6 months, why a thing is the way it is. If the bug/debt is real but out of current scope, add or propose a `KNOWN_ISSUES.md` entry rather than burying it in the review conversation.
 
 ## User isn't sure
 

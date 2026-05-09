@@ -38,6 +38,7 @@ Four fields, each one short. An entry fits on a screen.
 - Obvious decisions that match the plan. No entry.
 - Pure implementation details (naming a variable, choosing a helper structure). No entry.
 - Things any competent dev would decide the same way. No entry.
+- Pre-existing bugs, security gaps, or tech debt items by themselves. Those go in `KNOWN_ISSUES.md`. A DECISIONS entry is needed only if the team makes a non-obvious choice about accepting, deferring, or fixing that issue.
 
 Rule of thumb: if you had to explain *why* this choice to a peer, and the explanation wasn't obvious, it's an entry.
 
@@ -123,6 +124,7 @@ Decisions get referenced from:
 - **Plan revisions**: "rN applied the audit findings; see DECISIONS.md #X, #Y."
 - **Other DECISIONS entries**: "Supersedes #17."
 - **Round reports**: "Chose X — see DECISIONS.md #Z."
+- **KNOWN_ISSUES.md**: a decision may reference `KI-NNN` when it explains why a known issue is accepted or deferred; the issue entry remains the durable catalog of what is wrong.
 
 This creates a web of traceability that helps future work.
 

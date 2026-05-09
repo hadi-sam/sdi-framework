@@ -20,9 +20,9 @@ These are typical — adapt to the specific phase.
 
 ### Auto-review eligibility
 
-**Auto-review is the default for Checkpoints 2, 3, and 4** — verification is delegated to a different-model reviewer ensemble: an Opus subagent + `codex exec` (typically gpt-5.5 with reasoning effort `xhigh`) running in parallel on attempt 1; one retry reviewer runs on attempts 2-3 (Opus by default, degraded Codex-only only when Opus is unavailable and Codex was the surviving attempt-1 reviewer). Different models find partially-disjoint bugs; the union catches more than either alone. The checkpoint gate at those checkpoints is closed by a structured merged verdict (PASS / FAIL / ESCALATE with file:line evidence per gate). The user can opt out per session — see `auto-review-mode.md`.
+**Auto-review is the default for Checkpoints 2, 3, and 4** — verification is delegated to a different-model reviewer ensemble unless the user asks for a different schedule: attempt 1 runs Opus subagent + Sonnet subagent + `codex exec` (typically gpt-5.5 with reasoning effort `xhigh`) in parallel; attempt 2 runs Opus subagent + `codex exec` in parallel after a FAIL; attempt 3 runs Opus subagent only after a second FAIL. Different models find partially-disjoint bugs; the union catches more than any one reviewer alone. The checkpoint gate at those checkpoints is closed by a structured merged verdict (PASS / FAIL / ESCALATE with file:line evidence per gate). The user can opt out per session — see `auto-review-mode.md`.
 
-**Checkpoint 1 (Foundation) and Checkpoint 5 (Housekeeping) stay user-gated regardless** — the cost of an auto-pass at those points is too high. Any round that produces a `DECISIONS.md` entry, any blocker, any emergency deviation, any plan revision, and any always-escalate trigger from `auto-review-mode.md` also stays user-gated even within an eligible checkpoint.
+**Checkpoint 1 (Foundation) and Checkpoint 5 (Housekeeping) stay user-gated regardless** — the cost of an auto-pass at those points is too high. Any round that produces a `DECISIONS.md` entry, adds/updates a `KNOWN_ISSUES.md` entry, hits any blocker, any emergency deviation, any plan revision, and any always-escalate trigger from `auto-review-mode.md` also stays user-gated even within an eligible checkpoint.
 
 Each checkpoint header below carries an eligibility tag. Auto-eligible checkpoints have a single gate that accommodates both default auto-review and opt-out user-gated modes.
 
@@ -32,6 +32,7 @@ Each checkpoint header below carries an eligibility tag. Auto-eligible checkpoin
 - Audit report of plan vs repo (see `audit-first-protocol.md`).
 - Proposed schema / migration / dependencies (or scaffolding for fresh repos; provider wrappers + initial prompts for AI agents; trigger handlers + first integration wrapper for workflows).
 - Any revision notes to the plan based on audit findings.
+- Any `KNOWN_ISSUES.md` entries discovered during the audit that are outside current scope.
 
 **Do not:**
 - Write any endpoint, route, business logic, or UI code.
@@ -42,6 +43,7 @@ Each checkpoint header below carries an eligibility tag. Auto-eligible checkpoin
 - [ ] All Blockers from the audit are either resolved or explicitly waived by the user
 - [ ] All Open Questions from the audit are answered
 - [ ] Each **material** plan-vs-repo Divergence has a corresponding `DECISIONS.md` entry; mechanical divergences are noted in the round report only (see `decisions-log-format.md` for the material vs mechanical distinction)
+- [ ] Each concrete out-of-scope bug/security gap/tech debt finding has a `KNOWN_ISSUES.md` entry, or the audit states no new known issues were found
 - [ ] Plan has a revision note (`rN`) summarizing audit changes (if any landed)
 - [ ] User has given explicit go ("yes", "go", "proceed") — silence is **not** consent
 - [ ] Today's `docs/memory/YYYY-MM-DD.md` entry mentions this checkpoint passing
@@ -65,7 +67,7 @@ Each checkpoint header below carries an eligibility tag. Auto-eligible checkpoin
 - [ ] All pure functions in scope for this checkpoint are implemented
 - [ ] Unit tests cover the edge cases called out in the plan (count vs plan list)
 - [ ] All unit tests pass (real count from the runner, not approximation)
-- [ ] No TODO/FIXME left in the code without a corresponding `DECISIONS.md` or memory entry
+- [ ] No TODO/FIXME left in the code without a corresponding `DECISIONS.md`, `KNOWN_ISSUES.md`, or memory entry
 - [ ] Round report posted in canonical format
 - [ ] Auto-review (default) — reviewer ensemble returned merged PASS with all gates ✓ **OR** user opted out of auto-review and gave explicit go to move into integrations (see `auto-review-mode.md`)
 - [ ] Today's `docs/memory/YYYY-MM-DD.md` entry summarizes the round
@@ -120,23 +122,25 @@ Each checkpoint header below carries an eligibility tag. Auto-eligible checkpoin
 - Acceptance criteria mapped to evidence (test file + line, or smoke step).
 - Updated `PROJECT_STRUCTURE.md` if layout changed.
 - Updated `DESIGN_SYSTEM.md` if tokens or components drifted (UI types only).
-- Updated `AGENTS.md` with newly discovered project conventions.
+- Updated `AGENTS.md` / `CLAUDE.md` with newly discovered project conventions; if both exist, kept them in sync.
 - `DECISIONS.md` entries complete (all decisions taken during the phase recorded).
+- `KNOWN_ISSUES.md` sweep complete (new issues cataloged; fixed issues marked resolved with commit/date; scheduled issues linked to work item).
 - Manual smoke test run and results documented.
 - Lint + typecheck + test suites green.
 
 **Gates:**
 - [ ] Every acceptance criterion in the current `IMPLEMENTATION_PLAN_*.md` §Acceptance Criteria has linked evidence
 - [ ] `PROJECT_STRUCTURE.md` reflects the actual repo (no documented paths missing in code, no code paths missing in doc)
-- [ ] `AGENTS.md` updates proposed and approved by user
+- [ ] `AGENTS.md` / `CLAUDE.md` updates proposed and approved by user; if both exist, kept in sync
 - [ ] `DESIGN_SYSTEM.md` audit complete (UI types only) — tokens documented match tokens in code
 - [ ] `DECISIONS.md` end-of-phase sweep done — no orphan/contradictory entries
+- [ ] `KNOWN_ISSUES.md` end-of-phase sweep done — no uncataloged out-of-scope bugs/debt, no stale status for issues fixed or scheduled this phase
 - [ ] All revision notes on the plan reference resolved changes
 - [ ] Lint passes
 - [ ] Typecheck passes
 - [ ] All unit + integration test suites pass
 - [ ] Manual smoke test of the main acceptance criterion completed live and documented
-- [ ] Phase tracker in `AGENTS.md` updated to ✓ with date
+- [ ] Phase tracker in `AGENTS.md` / `CLAUDE.md` updated to ✓ with date
 - [ ] Today's `docs/memory/YYYY-MM-DD.md` entry marks the phase as closed
 
 ---
@@ -200,6 +204,6 @@ Occasionally something urgent needs to override the normal checkpoint pattern �
 1. Flag it loudly at the top of the response.
 2. Propose the fix.
 3. Recommend whether to pause the current phase to apply it, or to roll into the next round.
-4. Even in emergency, log the deviation in today's `docs/memory/YYYY-MM-DD.md` so it isn't lost.
+4. Even in emergency, log the deviation in today's `docs/memory/YYYY-MM-DD.md` so it isn't lost. If the emergency risk is deferred or only partially mitigated, add/update `KNOWN_ISSUES.md` too.
 
 Don't silently do security or correctness work without surfacing it.

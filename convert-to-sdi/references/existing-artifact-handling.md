@@ -1,6 +1,6 @@
 # Existing artifact handling
 
-When `convert-to-sdi` runs against a project that already has artifacts (`PRD.md`, `ARCHITECTURE.md`, `ROADMAP.md`, ADRs, etc.) — possibly in formats different from the framework's canonical structure — the skill must NOT silently overwrite them. This reference defines:
+When `convert-to-sdi` runs against a project that already has artifacts (`PRD.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `KNOWN_ISSUES.md`, ADRs, etc.) — possibly in formats different from the framework's canonical structure — the skill must NOT silently overwrite them. This reference defines:
 
 1. The four canonical **strategies** for handling existing artifacts
 2. The **default strategy per artifact** (a matrix the skill applies)
@@ -30,13 +30,13 @@ The existing file already does its job. Don't touch the content. Add a small hea
 
 **Pattern:**
 ```markdown
-> **Framework:** This project uses the sdi-framework workflow. See `AGENTS.md` (root) for project facts and invoke/activate `sdi-mode` for the operating discipline. This document predates the framework adoption and is preserved as-is.
+> **Framework:** This project uses the sdi-framework workflow. See `AGENTS.md` / `CLAUDE.md` (root) for project facts and invoke/activate `sdi-mode` for the operating discipline. This document predates the framework adoption and is preserved as-is.
 
 [existing content unchanged]
 ```
 
 **When:**
-- Existing file already covers the canonical role (README with stack + summary + doc links; AGENTS.md already in SDI format)
+- Existing file already covers the canonical role (README with stack + summary + doc links; AGENTS.md / CLAUDE.md already in current fact-sheet format)
 - Format compatibility is high (matches framework structure or close enough)
 - User chose to keep current format (e.g. team has muscle memory for it)
 
@@ -79,9 +79,9 @@ Rename the existing file to `<name>.legacy.md` (or `<name>.original.md`). Genera
 
 ### Strategy D — Skip generation entirely
 
-Don't generate the canonical artifact at all. Add a note in `AGENTS.md` (and optionally `README.md`) explaining where the source of truth lives.
+Don't generate the canonical artifact at all. Add a note in `AGENTS.md` / `CLAUDE.md` (and optionally `README.md`) explaining where the source of truth lives.
 
-**Pattern in AGENTS.md:**
+**Pattern in AGENTS.md / CLAUDE.md:**
 ```markdown
 ## External artifact references
 
@@ -90,8 +90,9 @@ Some framework artifacts live outside this repo:
 - **PRD:** Notion page [link]. The framework-canonical PRD.md is intentionally not generated; treat the Notion page as authoritative.
 - **Roadmap:** Linear cycles + project view [link]. ROADMAP.md is not generated; Linear is the source of truth.
 - **Design system:** Figma file [link] + the implemented tokens in `src/styles/tokens.css`. DESIGN_SYSTEM.md is not generated.
+- **Known issues:** Jira project [link]. KNOWN_ISSUES.md is intentionally not generated; treat Jira as the canonical issue/debt catalog.
 
-When sdi-mode references PRD.md / ROADMAP.md / DESIGN_SYSTEM.md, substitute the external source above.
+When sdi-mode references PRD.md / ROADMAP.md / DESIGN_SYSTEM.md / KNOWN_ISSUES.md, substitute the external source above.
 ```
 
 **When:**
@@ -108,12 +109,13 @@ Skill applies these defaults; user can override per-file in Phase 1.5.
 | Artifact | If exists, default strategy | Conditions for override |
 |---|---|---|
 | `README.md` | **A** (preserve + framework header) | B if it lacks stack table + doc links AND user wants alignment |
-| `AGENTS.md` | **B** (merge in place — preserve project facts, drop any embedded discipline) — see "AGENTS.md merge handling" below | A if already matches the current `agents-template.md` exactly; C only if the existing file is unrecoverable |
+| `AGENTS.md` / `CLAUDE.md` | **B** (merge in place — preserve project facts, drop any embedded discipline, write the approved fact sheet to both files) — see "AGENTS.md / CLAUDE.md merge handling" below | A if both already match the current `agents-template.md` content exactly; C only if an existing file is unrecoverable |
 | `PROJECT_STRUCTURE.md` | **B** (existing as basis, add canonical sections) | A if already canonical |
 | `ARCHITECTURE.md` | **B** (merge with type appendix sections) | C if outdated >1 year or wiki-style |
 | `PRD.md` | **B** (preserve content, fit into canonical sections) | D if PRD lives in Notion/Confluence |
 | `ROADMAP.md` | **B** if has phase/quarter structure; **C** if pure export | D if in Linear/Jira |
 | `DESIGN_SYSTEM.md` | **B** (extract tokens, structure into canonical) | D if living in Figma |
+| `KNOWN_ISSUES.md` | **A** if already an append-only issue catalog; **B** if format needs lifecycle/status scaffold added | D only if the team intentionally keeps the canonical issue catalog in an external tracker |
 | `DECISIONS.md` (single file) | **B** (merge into framework format if needed) | A if format already matches |
 | `docs/decisions/` or `docs/adr/` (ADR folder) | **Special — see ADR handling below** | |
 | `CHANGELOG.md` | **A** (preserve; signals are channeled to AGENTS production-indicators section) | never overwrite |
@@ -121,20 +123,20 @@ Skill applies these defaults; user can override per-file in Phase 1.5.
 
 **Default safety bias:** when in doubt, prefer A or B over C. C is destructive of organization (renames file). D is conservative but creates external dependency.
 
-## AGENTS.md merge handling (specific Strategy B procedure)
+## AGENTS.md / CLAUDE.md merge handling (specific Strategy B procedure)
 
-`AGENTS.md` always defaults to Strategy B because the canonical template is a strict **fact sheet** — it contains stack, doc map, conventions, and a work tracker, and **never** carries discipline (audit steps, checkpoint behavior, tone, document precedence). The discipline lives in the `sdi-mode` skill (Claude Code / Codex) or the configured custom mode (Roo / Kilo / OpenCode) and propagates from there.
+`AGENTS.md` and `CLAUDE.md` always default to Strategy B when either exists because the canonical template is a strict **fact sheet** — it contains stack, doc map, conventions, and a work tracker, and **never** carries discipline (audit steps, checkpoint behavior, tone, document precedence). The discipline lives in the `sdi-mode` skill (Claude Code / Codex) or the configured custom mode (Roo / Kilo / OpenCode) and propagates from there.
 
-Any existing `AGENTS.md` is therefore either: (a) already a fact sheet and mostly compatible, (b) framework-aware but contains discipline-style instructions that should be removed, or (c) ad-hoc but with valuable project facts that should be preserved. Strategy B handles all three.
+Any existing `AGENTS.md` or `CLAUDE.md` is therefore either: (a) already a fact sheet and mostly compatible, (b) framework-aware but contains discipline-style instructions that should be removed, (c) a one-line pointer such as `@AGENTS.md`, or (d) ad-hoc but with valuable project facts that should be preserved. Strategy B handles all four and normalizes both output files to the same fact-sheet content.
 
 **Procedure:**
 
-1. **Read** the existing `AGENTS.md`.
+1. **Read** the existing `AGENTS.md` and/or `CLAUDE.md`, if present.
 2. **Classify each section/paragraph** into one of three buckets:
    - **Project fact** (stack details, file/directory conventions, helper names, schema directory paths, test runners, deployment target, doc map entries, work tracker rows, AI/LLM modifier flag, type identifier) → **preserve verbatim into the matching section of the canonical template**.
    - **Discipline rule** (anything imperative about the agent's behavior: "always audit before coding", "stop at checkpoints", "the agent should…", "tone: concise", "document precedence: X > Y", lists of "what this mode is not", "when in doubt: stop and ask") → **drop**. The canonical template has the rubric "Edit only project facts; never inject discipline rules" at the top, with examples; the discipline these instructions are trying to encode lives in the `sdi-mode` skill/mode.
    - **Ambiguous** (mixes a fact and an instruction, or a project-specific exception phrased as an instruction) → flag for the user. Examples: "Tests: use vitest. Always run lint before commit." → split into a fact ("Test runner: vitest") and a discipline instruction (drop or surface as a question to the user about whether it belongs in their lint hooks rather than `AGENTS.md`).
-3. **Construct the new `AGENTS.md`** from the canonical template (loaded from `references/agents-template.md`), filling in:
+3. **Construct the new fact sheet** from the canonical template (loaded from `references/agents-template.md`), filling in:
    - The `Project context` block with values detected by Phase 0 + confirmed by Phase 1 + values pulled from buckets above.
    - The `Document map` reflecting actual `docs/` content (including any custom files preserved per the matrix).
    - `Project-specific conventions > Stack details / File / directory conventions / Convention exceptions` populated with everything bucket-classified as "fact".
@@ -145,12 +147,13 @@ Any existing `AGENTS.md` is therefore either: (a) already a fact sheet and mostl
    - **Dropped** — discipline-style instructions removed, with a one-line reason each (e.g., "removed 'always audit before coding' — the discipline now lives in the `sdi-mode` skill/mode").
    - **Added** — new sections from the canonical template that the existing file didn't have (e.g., the rubric at the top, the work tracker, the operating-context block).
 5. **Wait for user approval.** They can: accept, edit specific sections, or veto a drop (if a "discipline" line was actually a project-specific exception they want preserved as a fact — in which case rephrase as a fact).
-6. **Write the new `AGENTS.md`** only after explicit approval. The original is not preserved as a `.legacy.md` (Strategy C territory) unless the user requests it; the diff shown in step 4 is the audit trail.
+6. **Write the approved fact sheet to both `AGENTS.md` and `CLAUDE.md`** only after explicit approval. If the user wants only one file, honor that explicit override. The original is not preserved as a `.legacy.md` (Strategy C territory) unless the user requests it; the diff shown in step 4 is the audit trail.
 
 **When this procedure does NOT apply:**
 
-- The existing `AGENTS.md` is already byte-identical to the current canonical template (no changes since framework v0). → Strategy A.
-- The existing file is unintelligible (binary, machine-generated noise, broken markdown). → Strategy C (rename to `AGENTS.legacy.md`, generate fresh).
+- Existing `AGENTS.md` and `CLAUDE.md` already carry the same current canonical fact sheet. → Strategy A.
+- One file is current and the other is missing or a one-line pointer. → Strategy B, with the current fact sheet copied to both files after approval.
+- An existing file is unintelligible (binary, machine-generated noise, broken markdown). → Strategy C for that file (rename to `<name>.legacy.md`, generate fresh fact sheet).
 
 ## ADR handling (special case)
 
@@ -203,15 +206,16 @@ The skill **always defaults to Option 1**. Option 2 only if the user explicitly 
 
 ## In-tool / external docs (Notion, Linear, Figma, Confluence)
 
-When existing source-of-truth lives outside the repo, **do not import or migrate**. Apply Strategy D and document the external pointer in AGENTS.md.
+When existing source-of-truth lives outside the repo, **do not import or migrate**. Apply Strategy D and document the external pointer in AGENTS.md / CLAUDE.md.
 
 Common patterns:
 
 | Artifact | Common external tool | Treatment |
 |---|---|---|
-| PRD | Notion, Confluence, Coda | D + link in AGENTS.md "External artifact references" |
+| PRD | Notion, Confluence, Coda | D + link in AGENTS.md / CLAUDE.md "External artifact references" |
 | Roadmap | Linear cycles, Jira epics, ClickUp | D + link |
 | Design system | Figma, Storybook deployed | D + link; tokens may still be extractable from code |
+| Known issues | Linear, Jira, GitHub Issues | Prefer generating `KNOWN_ISSUES.md` as repo-local index with external links; D only if user explicitly wants the external tracker as the source of truth |
 | Runbooks | Notion, internal wiki | A (if in repo) or D (if external) |
 | Customer docs | Help Center, Intercom | D |
 
@@ -224,7 +228,7 @@ Many projects accumulate `docs/`-folder content that's neither canonical framewo
 Default: **Strategy A — preserve all**. The skill scans `docs/` and:
 
 1. Lists all non-canonical files in the discovery report
-2. Asks user (in Phase 1.5) if any should be linked from AGENTS.md "Document map" → "Other docs" section
+2. Asks user (in Phase 1.5) if any should be linked from AGENTS.md / CLAUDE.md "Document map" → "Other docs" section
 3. Default-links all of them under a flat list
 
 Don't reorganize the `docs/` folder unless the user asks. Don't delete anything.
@@ -263,7 +267,12 @@ To decide between A (preserve) and B (convert in place), the skill checks **form
 **Partially compatible**: tokens only.
 **Incompatible**: aesthetic intent prose without tokens.
 
-### `AGENTS.md`
+### `KNOWN_ISSUES.md`
+**Compatible** if it has `KI-NNN` entries (or an empty scaffold) plus status/severity/lifecycle guidance.
+**Partially compatible**: concrete issue entries exist but format varies or lacks lifecycle/status legend.
+**Incompatible**: unstructured prose bug list with no evidence/status fields.
+
+### `AGENTS.md` / `CLAUDE.md`
 **Compatible** if it matches the current facts-only shape: project context + document map + project-specific conventions + work tracker, with no embedded discipline rules.
 **Partially compatible**: framework-aware (mentions SDI or has tracker) but missing pieces, or contains residual discipline that must be stripped during Strategy B.
 **Incompatible**: not framework-aware, different agent-rules style, or mostly behavioral instructions with few recoverable project facts.
@@ -283,7 +292,7 @@ To decide between A (preserve) and B (convert in place), the skill checks **form
 
 ## Phase 1.5 decision flow
 
-The skill runs Phase 1.5 **only if** Phase 0 detected one or more existing canonical artifacts. If the project has no existing canonical artifacts, skip Phase 1.5 entirely and go straight to Phase 2.
+The skill runs Phase 1.5 **whenever** Phase 0 detected one or more existing canonical artifacts. If all detected artifacts are compatible, still show the matrix and recommend Strategy A where appropriate. If the project has no existing canonical artifacts, skip Phase 1.5 entirely and go straight to Phase 2.
 
 ### Step 1 — Present the matrix
 
@@ -297,11 +306,32 @@ Show the user a table of detected existing artifacts with the proposed default s
 | `README.md` | compatible | **A — preserve + header** | already has stack/summary/doc links |
 | `docs/ARCHITECTURE.md` | partially compatible | **B — convert in place** | has stack + flows but no §Trade-offs |
 | `docs/ROADMAP.md` | incompatible | **C — rename + generate** | pure Trello export; no phase structure |
+| `docs/KNOWN_ISSUES.md` | compatible | **A — preserve + header** | already uses append-only issue entries |
 | `docs/decisions/` (ADR folder, 12 records) | n/a (special case) | **ADR Option 1** — keep + DECISIONS.md as index | preserves ADR investment |
 | `CHANGELOG.md` | n/a | **A — preserve always** | release log |
 | `docs/runbooks/` (3 files) | n/a (custom docs) | **A — preserve, link from AGENTS doc map** | |
 
 Confirm or override per file? (per-file response, e.g. "ARCHITECTURE: B, ROADMAP: keep as is = A")
+```
+
+Immediately below the table, always include this legend so the user is not forced to know what "A" or "B" means:
+
+```markdown
+## Strategy legend
+
+- **A — Preserve as-is + framework header:** keep existing content; add only the SDI marker/header.
+- **B — Convert in place:** merge existing content into the framework structure; show diff and wait for approval before writing.
+- **C — Rename existing + generate new:** preserve the old file as `<name>.legacy.md`; generate a fresh framework file that links to it.
+- **D — Skip generation / external source:** do not create the repo-local artifact; record the external source of truth in `AGENTS.md` / `CLAUDE.md`.
+```
+
+If the table includes an ADR folder, immediately add:
+
+```markdown
+## ADR options
+
+- **ADR Option 1 — Keep ADR folder + create DECISIONS.md index:** preserve every ADR file; generate `docs/DECISIONS.md` as the current decision index that links to the ADR history.
+- **ADR Option 2 — Convert ADRs into DECISIONS.md:** only if the user explicitly asks; preserve originals as legacy/history and migrate summaries into the single decision log.
 ```
 
 ### Step 2 — User responds
@@ -338,6 +368,8 @@ When generating in Phase 2, apply the chosen strategy:
 6. **Show the diff to the user before writing.**
 7. After approval, write the new version.
 
+For `KNOWN_ISSUES.md`, Strategy B has an extra safety rule: preserve every concrete issue entry verbatim unless the user explicitly approves rewriting that entry into the canonical `KI-NNN` format. Never drop resolved issues, never renumber existing IDs, and never collapse multiple issues into one without user approval.
+
 ### For Strategy C (rename + generate)
 
 1. Rename existing: `git mv docs/ROADMAP.md docs/ROADMAP.legacy.md` (or filesystem rename if not git).
@@ -348,8 +380,8 @@ When generating in Phase 2, apply the chosen strategy:
 ### For Strategy D (skip)
 
 1. Do NOT generate the artifact.
-2. In AGENTS.md, ensure the "External artifact references" section exists and includes this artifact with the user-provided link.
-3. In README.md doc map, replace the artifact link with: *"[Artifact name] — external (see AGENTS.md §External artifact references)"*
+2. In AGENTS.md / CLAUDE.md, ensure the "External artifact references" section exists and includes this artifact with the user-provided link.
+3. In README.md doc map, replace the artifact link with: *"[Artifact name] — external (see AGENTS.md / CLAUDE.md §External artifact references)"*
 
 ## Don't-do list
 

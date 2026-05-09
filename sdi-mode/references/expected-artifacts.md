@@ -11,18 +11,18 @@ At minimum, you should find under `docs/` (or equivalent):
 - `ARCHITECTURE.md` — stack, type-specific structural model, flows, trade-offs.
 - `ROADMAP.md` — phases with goals and acceptance criteria.
 - `PROJECT_STRUCTURE.md` — repo layout and conventions.
+- `DECISIONS.md` — append-only paper trail of non-obvious choices. New bundles create it even when empty.
+- `KNOWN_ISSUES.md` — append-only catalog of known bugs, security gaps, technical debt, and deferred fixes. New bundles create it even when empty.
+- `docs/MEMORY.md` + `docs/memory/YYYY-MM-DD.md` — datable session memory. New bundles create an index and initial handoff entry.
 - `IMPLEMENTATION_PLAN_*.md` — detailed spec for the current work item. The framework treats `IMPLEMENTATION_PLAN_*.md` uniformly: `PHASE_N` for discrete phases (greenfield, structured migrations) or `<slug>` for free-form work (features, maintenance batches in ongoing projects).
 
 At repo root:
 
-- `AGENTS.md` — project-specific fact sheet: stack, document map, conventions, work tracker. Required for every SDI project; it does **not** carry the SDI discipline.
-- `CLAUDE.md` — present when using Claude Code; should import AGENTS.md with `@AGENTS.md` so Claude Code sees the same project facts Codex reads natively.
+- `AGENTS.md` and/or `CLAUDE.md` — project-specific fact sheet: stack, document map, conventions, work tracker. New bundles generate both with the same content; the user may keep whichever file(s) their coding agents read. These files do **not** carry the SDI discipline.
 
 Optionally:
 
 - `DESIGN_SYSTEM.md` — only if the project has a UI.
-- `DECISIONS.md` — atemporal paper trail. May or may not be populated at Phase 1 start; you'll be writing to it throughout.
-- `docs/MEMORY.md` + `docs/memory/YYYY-MM-DD.md` — datable session memory. May not exist at Phase 1 start; you create on first working session. See `memory-discipline.md`.
 
 ## Mode discipline carrier
 
@@ -30,11 +30,11 @@ Different tools carry the SDI discipline differently:
 
 | Tool | Discipline carrier |
 |---|---|
-| Claude Code | `sdi-mode` skill; `CLAUDE.md` imports `AGENTS.md` for project facts |
-| Codex | `sdi-mode` skill; Codex reads `AGENTS.md` natively for project facts |
+| Claude Code | `sdi-mode` skill; `CLAUDE.md` at repo root carries project facts |
+| Codex | `sdi-mode` skill; `AGENTS.md` at repo root carries project facts |
 | Roo Code / Kilo Code / OpenCode | Custom mode/agent `sdi-mode` configured per `installation-guides/{tool}.md`; Kilo/OpenCode may also read `AGENTS.md` directly for project facts |
 
-If the `sdi-mode` skill or configured custom mode is not active, the SDI discipline isn't loaded. Ask the user to invoke/activate it before proceeding. If `AGENTS.md` is missing, the project fact sheet is missing; route the user to `convert-to-sdi` for an existing repo or `mvp-architect` for a greenfield bundle.
+If the `sdi-mode` skill or configured custom mode is not active, the SDI discipline isn't loaded. Ask the user to invoke/activate it before proceeding. If both `AGENTS.md` and `CLAUDE.md` are missing, the project fact sheet is missing; route the user to `convert-to-sdi` for an existing repo or `mvp-architect` for a greenfield bundle.
 
 ## How to recognize a complete handoff
 
@@ -48,7 +48,7 @@ Before starting a phase, verify:
 
 4. **PRD.md out-of-scope section is explicit.** If the PRD doesn't say what's *not* in the MVP, you'll likely over-build.
 
-5. **`sdi-mode` is active and `AGENTS.md` exists.** The skill/mode carries the discipline; `AGENTS.md` carries project facts. If either is missing, surface this to the user before coding.
+5. **`sdi-mode` is active and at least one project fact file exists (`AGENTS.md` or `CLAUDE.md`).** The skill/mode carries the discipline; the project fact file carries stack/conventions. If either is missing, surface this to the user before coding.
 
 ## What to do when artifacts are missing or thin
 
@@ -76,24 +76,33 @@ Flag it. Offer to update it as part of the phase's housekeeping round. Don't let
 
 ### DECISIONS.md doesn't exist
 
-Create it at the start of the phase. The first entry is your revision note or your first audit finding.
+New bundles should include an empty `DECISIONS.md`. If it is missing, the project may be an older SDI bundle. Create the empty scaffold from `decisions-log-format.md` before the first decision entry; do not invent a decision just to populate the file.
 
-### AGENTS.md missing or sparse
+### KNOWN_ISSUES.md doesn't exist
 
-If the file exists but only has the bare template (placeholders unfilled), expect to fill in stack and conventions during the audit and propose updates for user approval. If the file is missing entirely, surface it: "There's no AGENTS.md at the repo root. Modern SDI expects AGENTS.md to be a project fact sheet. For an existing repo, run `convert-to-sdi`; for a greenfield project, generate it from `mvp-architect` Phase C before implementation."
+Create it from `known-issues-discipline.md` before the first round report. Older SDI bundles may predate this artifact; don't route the user back through planning just for this scaffold. If you discover a concrete out-of-scope bug/security gap/tech debt item during the audit, add the first `KI-001` entry.
 
-If `AGENTS.md` exists but contains discipline rules (8-step list, "audit before coding", checkpoint behavior, tone, precedence sections), treat it as an older format. Stop and suggest `convert-to-sdi` Phase 1.5 Strategy B to merge project facts into the current facts-only template and drop embedded discipline.
+### MEMORY.md or docs/memory/ doesn't exist
+
+New bundles should include `docs/MEMORY.md` and an initial dated handoff entry. If either is missing in an older bundle, create the index and today's entry from `memory-discipline.md` at the end of the first working session. Do not fabricate past daily entries.
+
+### AGENTS.md / CLAUDE.md missing, sparse, or divergent
+
+If one fact file exists but only has the bare template (placeholders unfilled), expect to fill in stack and conventions during the audit and propose updates for user approval. If both files are missing entirely, surface it: "There's no AGENTS.md or CLAUDE.md at the repo root. Modern SDI expects at least one project fact sheet. For an existing repo, run `convert-to-sdi`; for a greenfield project, generate it from `mvp-architect` Phase C before implementation."
+
+If `AGENTS.md` or `CLAUDE.md` exists but contains discipline rules (8-step list, "audit before coding", checkpoint behavior, tone, precedence sections), treat it as an older format. Stop and suggest `convert-to-sdi` Phase 1.5 Strategy B to merge project facts into the current facts-only template and drop embedded discipline. If both files exist but differ, flag the drift and propose syncing them during housekeeping.
 
 ## Reading order for a new phase
 
-1. **AGENTS.md** (if present) — 2 minutes. Stack and project-specific conventions.
-2. **docs/MEMORY.md** (if present) + last 2–3 daily entries from `docs/memory/` — 3 minutes. Tells you where the work actually is right now, what's blocked, what's pending. Faster than re-reading the plan to figure out current state.
+1. **AGENTS.md / CLAUDE.md** (whichever exists; if both, compare for drift) — 2 minutes. Stack and project-specific conventions.
+2. **docs/MEMORY.md** + last 2–3 daily entries from `docs/memory/` (if available) — 3 minutes. Tells you where the work actually is right now, what's blocked, what's pending. Faster than re-reading the plan to figure out current state.
 3. **README.md** — 2 minutes. Gives you product and stack context.
 4. **The current `IMPLEMENTATION_PLAN_*.md`** (`PHASE_N` or `<slug>`) — top to bottom. This is your primary spec.
 5. **Relevant sections of ARCHITECTURE.md** — type-specific section + critical flows for this phase.
 6. **PROJECT_STRUCTURE.md** — skim for conventions; bookmark the coding conventions section.
-7. **DECISIONS.md** — skim headers; read any decisions that apply to the phase.
-8. **Relevant repo files** — the schemas, helpers, and modules the phase will touch.
+7. **KNOWN_ISSUES.md** — skim index and open entries; note anything the current work item fixes, worsens, or must avoid duplicating.
+8. **DECISIONS.md** — skim headers; read any decisions that apply to the phase.
+9. **Relevant repo files** — the schemas, helpers, and modules the phase will touch.
 
 This is ~15–30 minutes of reading before you start coding. Don't skip it.
 
@@ -104,6 +113,8 @@ Because the planner skill (`mvp-architect`) and this implementation mode are des
 - **`§ Decisions Log (for DECISIONS.md)` in the plan** — these are decisions *the plan anticipates making or memorializing* once implementation is done. Treat them as a checklist; each becomes a real DECISIONS.md entry at end of phase (or earlier if clarified).
 
 - **`§ Known divergences` in the plan** — places where the plan itself acknowledges it disagrees with the repo or with other docs. At end of phase, mark each as ✓ resolved or ⏸ intentionally deferred.
+
+- **`KNOWN_ISSUES.md` entries (`KI-NNN`)** — known bugs/debt/security gaps that are not necessarily in the current plan. If a plan fixes one, it should reference the KI and update its status during housekeeping. If a plan discovers one but defers it, add it to `KNOWN_ISSUES.md` instead of burying it in `§Known divergences`.
 
 - **"Revision note (r2, r3...)"** — the plan has been updated during implementation. The note summarizes what changed. Always read these; they're context you'd otherwise miss.
 
@@ -129,6 +140,7 @@ The hierarchy below is from highest authority (top) to lowest (bottom). When two
 | 8 | **DESIGN_SYSTEM.md** | Visual language (UI types only). Lower than the higher docs because design must serve product, not vice versa. |
 | 9 | **README.md** | Index. Never source of truth — if README disagrees with anything, README is wrong. |
 | – | **DECISIONS.md** | *Patches and exceptions*, not authority. See note below. |
+| – | **KNOWN_ISSUES.md** | *Known wrongness catalog*, not authority. See note below. |
 | – | **docs/memory/YYYY-MM-DD.md** | *Breadcrumb trail*, not authority. See note below. |
 
 ### DECISIONS.md is overlay, not override
@@ -139,6 +151,14 @@ A `DECISIONS.md` entry doesn't override a higher-level doc — it documents an e
 - **Pattern B — doc needs update** (decision contradicts the doc): "DECISIONS #42 — switching from Postgres to MongoDB." This is not a local exception. It's a contradiction; ARCHITECTURE.md is now wrong. Either revert the decision or update ARCHITECTURE.md to align (with a revision note in the plan if mid-phase).
 
 Don't hide contradictions in DECISIONS.md. If you find one, surface it.
+
+### KNOWN_ISSUES.md is catalog, not scope
+
+A `KNOWN_ISSUES.md` entry does not override a higher-level doc or force the current work item to fix it. It preserves known wrongness until a work item schedules or resolves it.
+
+- If a KI contradicts ARCHITECTURE.md, treat ARCHITECTURE.md as the intended design and the KI as evidence that the repo does not currently meet it.
+- If the current plan fixes a KI, update status to `Scheduled` at the start of the work item and `Resolved` only after the fix is verified.
+- If the current plan discovers a new out-of-scope issue, add a new KI entry rather than expanding scope silently.
 
 ### docs/memory/YYYY-MM-DD.md is breadcrumb, not authority
 
@@ -159,7 +179,7 @@ When you find a conflict during the audit (or mid-phase):
 ### Special cases
 
 - **Live repo vs ARCHITECTURE.md disagree:** repo wins by definition (priority 1). But ask: did the repo drift accidentally, or was a deliberate decision made that wasn't documented? If accidental drift, ARCHITECTURE wins and you fix the repo. If deliberate, ARCHITECTURE needs update + a `DECISIONS.md` entry.
-- **AGENTS.md vs PROJECT_STRUCTURE.md disagree:** AGENTS.md wins on stack/conventions (it's the live project fact sheet). But propose updating PROJECT_STRUCTURE during housekeeping so external readers don't get confused.
+- **AGENTS.md / CLAUDE.md vs PROJECT_STRUCTURE.md disagree:** the project fact sheet wins on stack/conventions. If both fact files exist and disagree with each other, stop and resolve that drift first. Then propose updating PROJECT_STRUCTURE during housekeeping so external readers don't get confused.
 - **PRD vs IMPLEMENTATION_PLAN disagree on a feature:** PRD wins. The plan is a translation, not an authority. Either the plan needs revision, or the PRD needs an explicit out-of-scope clause to deprecate the feature — not silent drift.
 - **Two same-level docs disagree** (e.g. ARCHITECTURE vs PROJECT_STRUCTURE on file paths): rare, but it happens. The one tied more directly to running code wins (PROJECT_STRUCTURE in this case). Update the other.
 

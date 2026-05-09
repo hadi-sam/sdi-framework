@@ -83,4 +83,4 @@ Target length: 500–700 lines (longer for complex types). Dense is fine; repeti
 - Feeds **ROADMAP** — flows here become phase deliverables there.
 - Feeds **PROJECT_STRUCTURE** — type-specific patterns here hint at file/folder organization there.
 - Feeds **IMPLEMENTATION_PLAN** — per-phase plans reference specific flows from here.
-- Feeds **AGENTS.md** — once implementation begins, the project-specific stack identified here gets recorded in AGENTS.md so the coding agent always has the live truth.
+- Feeds **AGENTS.md / CLAUDE.md** — once implementation begins, the project-specific stack identified here gets recorded in the project fact sheet(s) so the coding agent always has the live truth.

@@ -1,6 +1,6 @@
 ---
 name: sdi-review
-description: Consultative review during SDI implementation. Equips the loaded agent with SDI-aware review framework — read planning artifacts (PRD, ARCHITECTURE, DECISIONS, plan), apply adversarial checks, return findings with verdict. USE when the user brings implementation work back for a second pair of eyes — "review this plan", "round X delivered, look at this", "agent is asking A or B", "found this bug, what now", "is this decision risky?". DO NOT USE for product scoping (use mvp-architect), planning the next work item (use sdi-next-plan), or executing implementation (use sdi-mode).
+description: Consultative review during SDI implementation. Equips the loaded agent with SDI-aware review framework — read planning artifacts (PRD, ARCHITECTURE, DECISIONS, KNOWN_ISSUES, plan), apply adversarial checks, return findings with verdict. USE when the user brings implementation work back for a second pair of eyes — "review this plan", "round X delivered, look at this", "agent is asking A or B", "found this bug, what now", "is this decision risky?". DO NOT USE for product scoping (use mvp-architect), planning the next work item (use sdi-next-plan), or executing implementation (use sdi-mode).
 ---
 
 # sdi-review
@@ -13,7 +13,7 @@ The skill does NOT delegate. It does NOT call other models. The agent reading th
 
 ## Why a single skill instead of multiple
 
-Different review entry points (plan, round, fork, bug) share the same SDI grounding: read PRD/ARCHITECTURE/DECISIONS/PLAN/AGENTS, apply the same 7 bug classes, ground every finding in evidence. The mode-specific differences (what artifacts to focus on, what to lead with) are small enough to live in one skill with mode references.
+Different review entry points (plan, round, fork, bug) share the same SDI grounding: read PRD/ARCHITECTURE/DECISIONS/KNOWN_ISSUES/PLAN/AGENTS, apply the same 7 bug classes, ground every finding in evidence. The mode-specific differences (what artifacts to focus on, what to lead with) are small enough to live in one skill with mode references.
 
 ## Entry modes
 
@@ -61,13 +61,13 @@ Action: acknowledge fairly (if the plan was wrong, own it), decide fix direction
 
 Regardless of mode, the loaded agent runs the review itself:
 
-1. **Read the SDI bundle** — `AGENTS.md`, `docs/PRD.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/PROJECT_STRUCTURE.md`, the relevant plan, the relevant round report (if any). Mode 1 reads the plan deeply; Mode 2 reads the round report deeply; all modes need the bundle context.
+1. **Read the SDI bundle** — `AGENTS.md`, `docs/PRD.md`, `docs/ARCHITECTURE.md`, `docs/KNOWN_ISSUES.md`, `docs/DECISIONS.md`, `docs/PROJECT_STRUCTURE.md`, the relevant plan, the relevant round report (if any). Mode 1 reads the plan deeply; Mode 2 reads the round report deeply; all modes need the bundle context.
 2. **Apply the active checks** in the mode reference. Cross-file consistency, plan-vs-repo grounding, plan-vs-DECISIONS, vague gates, missing prerequisites, stack-specific architecture mistakes, DECISIONS-worthy choices not flagged.
 3. **Return findings first** — class, location, what is wrong, why it bites, suggested fix.
 4. **End with verdict** — PASS / FAIL / ESCALATE per the mode's rules.
 5. **Save the artifact** to `docs/reviews/` (Mode 1: `plan-review-NN.md`; Mode 2: discussion with the user, optional `docs/reviews/round-XN-review.md` if persistent record matters). The repo gets the audit trail; the user reads the live response.
 
-The skill never edits source code. It returns review reports.
+The skill never edits source code. It returns review reports. It may edit review artifacts under `docs/reviews/` and, when the review uncovers an out-of-scope known issue with concrete evidence, `docs/KNOWN_ISSUES.md`; otherwise include a ready-to-paste KI entry in the report.
 
 ## Tone in review
 
@@ -109,3 +109,4 @@ In these cases, don't just patch the current phase — step back to scope. Ask: 
 
 - `references/plan-review-protocol.md` — plan review framework (Mode 1). Steps to read, things to actively check, bug classes, output format.
 - `references/round-report-review-patterns.md` — patterns for Modes 2, 3, 4. Tone, what NOT to do, when to pull planning back open.
+- `references/known-issues-review.md` — how reviews should use or update `KNOWN_ISSUES.md` without duplicating issues.

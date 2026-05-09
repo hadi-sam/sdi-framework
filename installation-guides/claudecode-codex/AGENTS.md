@@ -1,11 +1,11 @@
-# AGENTS.md
+# Project Agent Facts
 
-> Project-specific **fact sheet** for the SDI workflow. Read by Codex natively at the start of every session and imported by Claude Code via `CLAUDE.md`.
+> Project-specific **fact sheet** for the SDI workflow. Generated into both `AGENTS.md` and `CLAUDE.md` so the user can keep whichever file(s) their coding agents read.
 >
 > **Edit only project facts** (stack, doc map, conventions, work tracker).
 > **Never inject discipline rules** (audit steps, checkpoint behavior, tone, document precedence) — those live in the `sdi-mode` skill (Claude Code / Codex) or custom mode (Roo Code / Kilo Code / OpenCode) and propagate from there.
 >
-> - **Fact** → "DECISIONS.md lives at `docs/DECISIONS.md`", "Test runner: vitest", "Auth helpers in `src/lib/auth/`".
+> - **Fact** → "DECISIONS.md lives at `docs/DECISIONS.md`", "KNOWN_ISSUES.md lives at `docs/KNOWN_ISSUES.md`", "Test runner: vitest", "Auth helpers in `src/lib/auth/`".
 > - **Instruction** (do **not** put here) → "When you make a non-obvious choice, append to DECISIONS.md", "Stop at checkpoints", "Audit before coding".
 
 ---
@@ -34,6 +34,7 @@ All planning docs live under `docs/` unless noted:
 - `docs/PROJECT_STRUCTURE.md` — repo layout and conventions
 - `docs/DESIGN_SYSTEM.md` — visual language *(only if UI exists)*
 - `docs/IMPLEMENTATION_PLAN_*.md` — detailed spec for the current work item. `PHASE_N` for discrete phases (greenfield/migrations); `<slug>` for free-form work (features, maintenance) in ongoing projects.
+- `docs/KNOWN_ISSUES.md` — append-only catalog of known bugs, security gaps, technical debt, and deferred fixes
 - `docs/DECISIONS.md` — running paper trail of non-obvious choices *(append-only, atemporal)*
 - `docs/MEMORY.md` — index of daily memory entries
 - `docs/memory/YYYY-MM-DD.md` — daily session memory: active round, blockers, next step, open questions

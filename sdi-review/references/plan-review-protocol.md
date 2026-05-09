@@ -6,7 +6,7 @@ This file is loaded by `sdi-review` for **Mode 1: plan review**. Other modes use
 
 ## Why this exists
 
-A plan written by the same agent that scoped it tends to overstate readiness — the planner is not adversarial but wants to ship. An external review applies adversarial pressure: cross-checks every concrete claim against the repo, every choice against `DECISIONS.md`, every gate against evidenceability. The user typically runs this review across multiple sessions/models (e.g., Opus + Codex independently) to combine perspectives — each session loads this skill and runs the framework below.
+A plan written by the same agent that scoped it tends to overstate readiness — the planner is not adversarial but wants to ship. An external review applies adversarial pressure: cross-checks every concrete claim against the repo, every choice against `DECISIONS.md`, every known issue against `KNOWN_ISSUES.md`, and every gate against evidenceability. The user typically runs this review across multiple sessions/models (e.g., Opus + Codex independently) to combine perspectives — each session loads this skill and runs the framework below.
 
 ## When this is used
 
@@ -18,8 +18,8 @@ A plan written by the same agent that scoped it tends to overstate readiness —
 Before starting:
 
 1. Identify the plan file path (typically `docs/IMPLEMENTATION_PLAN_*.md`).
-2. Identify the project's stack from `AGENTS.md` (one-line summary — frontend, backend, db, key services).
-3. Identify the repo root (project directory containing `AGENTS.md`).
+2. Identify the project's stack from `AGENTS.md` or `CLAUDE.md` (one-line summary — frontend, backend, db, key services).
+3. Identify the repo root (project directory containing `AGENTS.md`, `CLAUDE.md`, or the planning `docs/` bundle).
 4. For a second-pass review, locate the prior review output (`docs/reviews/plan-review-NN.md`).
 
 ## Where the review goes
@@ -30,13 +30,14 @@ Before starting:
 ## Steps you must perform
 
 1. Read the plan file end to end.
-2. Read `AGENTS.md` (if exists) for stack, conventions, project facts.
+2. Read `AGENTS.md` or `CLAUDE.md` (if either exists) for stack, conventions, project facts. If both exist, note any drift.
 3. Read `docs/PRD.md` (if exists).
 4. Read `docs/ARCHITECTURE.md` (if exists).
 5. Read `docs/PROJECT_STRUCTURE.md` (if exists).
-6. Read `docs/DECISIONS.md` (if exists) — every prior decision binds the new plan.
-7. Spot-check the actual repo (Glob/Grep/Read) for any concrete reference the plan makes (helpers, files, modules, env vars).
-8. **[Second pass only]** Read `docs/reviews/plan-review-01.md` and verify each prior finding was addressed; flag dismissals without justification.
+6. Read `docs/KNOWN_ISSUES.md` (if exists) — every open known issue may affect scope, prerequisites, or deferrals.
+7. Read `docs/DECISIONS.md` (if exists) — every prior decision binds the new plan.
+8. Spot-check the actual repo (Glob/Grep/Read) for any concrete reference the plan makes (helpers, files, modules, env vars).
+9. **[Second pass only]** Read `docs/reviews/plan-review-01.md` and verify each prior finding was addressed; flag dismissals without justification.
 
 ## Things you MUST actively check
 
@@ -46,19 +47,21 @@ B. **Plan-vs-repo grounding** — every reference to a file path / helper / env 
 
 C. **Plan-vs-DECISIONS** — every choice that overrides or contradicts a `DECISIONS.md` entry must be flagged.
 
-D. **Plan-vs-PRD/ARCHITECTURE precedence** — PRD wins over plan; ARCHITECTURE wins over plan. Any plan choice that contradicts a higher-precedence doc is a finding.
+D. **Plan-vs-KNOWN_ISSUES** — if the plan fixes `KI-NNN`, it must reference it and include a status-update gate. If it defers a known issue, it must not accidentally claim the issue is solved.
 
-E. **Missing prerequisites** — references components, hooks, env vars, tables, helpers, conventions that no prior phase delivered AND this plan doesn't create.
+E. **Plan-vs-PRD/ARCHITECTURE precedence** — PRD wins over plan; ARCHITECTURE wins over plan. Any plan choice that contradicts a higher-precedence doc is a finding.
 
-F. **Vague or non-binary gates** — gates a reviewer can't mark ✓/✗ from evidence. "Verify the integration tests pass" is too vague; "Integration test count matches plan §8 list and all pass per the runner output below" is binary.
+F. **Missing prerequisites** — references components, hooks, env vars, tables, helpers, conventions that no prior phase delivered AND this plan doesn't create.
 
-G. **DECISIONS-worthy choices not flagged** — library choice, architecture pattern, scope deviation, accepted trade-off — must be called out as new `DECISIONS.md` entries in the plan. If the plan picks library X over Y without a `DECISIONS.md` entry, that's a finding.
+G. **Vague or non-binary gates** — gates a reviewer can't mark ✓/✗ from evidence. "Verify the integration tests pass" is too vague; "Integration test count matches plan §8 list and all pass per the runner output below" is binary.
 
-H. **Stack-specific architecture mistakes** — wrong patterns for the project's stack. In-memory state in serverless, sync APIs in RSC, missing root layouts, RLS bypass, race conditions, unhandled promise rejections, ORM N+1, etc. Adapt the lens to the stack you read in `AGENTS.md`.
+H. **DECISIONS-worthy choices not flagged** — library choice, architecture pattern, scope deviation, accepted trade-off — must be called out as new `DECISIONS.md` entries in the plan. If the plan picks library X over Y without a `DECISIONS.md` entry, that's a finding.
 
-I. **Round structure soundness** — does each round's output enable the next? Are gates evidenceable from THAT round's deliverable, not a downstream one? Can each round be reviewed in isolation?
+I. **Stack-specific architecture mistakes** — wrong patterns for the project's stack. In-memory state in serverless, sync APIs in RSC, missing root layouts, RLS bypass, race conditions, unhandled promise rejections, ORM N+1, etc. Adapt the lens to the stack you read in `AGENTS.md` / `CLAUDE.md`.
 
-**[Second pass only]** J. **Resolution of prior findings** — for each finding in `plan-review-01.md`, does the plan fix it? Was a finding dismissed without reasoning? Did a fix introduce a NEW issue?
+J. **Round structure soundness** — does each round's output enable the next? Are gates evidenceable from THAT round's deliverable, not a downstream one? Can each round be reviewed in isolation?
+
+**[Second pass only]** K. **Resolution of prior findings** — for each finding in `plan-review-01.md`, does the plan fix it? Was a finding dismissed without reasoning? Did a fix introduce a NEW issue?
 
 ## Bug classes
 
@@ -69,6 +72,8 @@ I. **Round structure soundness** — does each round's output enable the next? A
 5. DECISIONS-worthy choice without flag.
 6. Convention or architecture mistake.
 7. Anything else surprising or risky.
+
+If you discover a pre-existing out-of-scope bug/security gap/tech debt item while reviewing, apply `known-issues-review.md`: do not duplicate existing entries; append/update `KNOWN_ISSUES.md` if allowed, or include a ready-to-paste KI entry in the review report.
 
 ## Output format
 
@@ -108,7 +113,7 @@ Cap iterations at 3 by convention. If the plan still has issues at pass 3, the s
 ## Common pitfalls
 
 - **Trusting the plan's claims without verifying.** "We use the existing `useAuth` hook" — Grep for `useAuth` in the repo. If it doesn't exist or has a different shape, that's a finding (class 3).
-- **Stopping at internal consistency.** Plans that are internally consistent but disagree with `AGENTS.md`, `DECISIONS.md`, or the actual repo are still wrong. Cross-check externally.
+- **Stopping at internal consistency.** Plans that are internally consistent but disagree with `AGENTS.md` / `CLAUDE.md`, `DECISIONS.md`, or the actual repo are still wrong. Cross-check externally.
 - **Treating "passes lint/typecheck" as approval.** A plan can be lint-clean and still wrong. The review is about correctness against the bundle, not syntax.
 - **Rubber-stamping because the plan is well-written.** Style ≠ correctness. Polished plans can still have class-3 prerequisite holes or class-5 unflagged DECISIONS.
 - **Inventing findings to look thorough.** If everything checks out, output zero findings and PASS. The discipline is honest verdicts, not productivity theater.

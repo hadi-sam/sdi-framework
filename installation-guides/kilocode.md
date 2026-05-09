@@ -113,7 +113,7 @@ Ask:
 
 > "List the 8 steps of SDI discipline."
 
-Expected: Read → Audit → Propose → Implement in rounds → Tests alongside → DECISIONS.md → Revision notes → End-of-phase housekeeping.
+Expected: Read → Audit → Propose → Implement in rounds → Tests alongside → DECISIONS.md / KNOWN_ISSUES.md / memory → Revision notes → End-of-phase housekeeping.
 
 If the agent improvises:
 - Verify the agent file path (`.kilo/agents/sdi.md` or the JSON config path) is correct

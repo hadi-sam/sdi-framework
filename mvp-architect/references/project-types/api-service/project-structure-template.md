@@ -28,7 +28,7 @@ Target length: 200–300 lines.
 │   └── types/              # shared types
 ├── migrations/             # checked-in DB migrations
 ├── tests/                  # unit + integration
-├── docs/                   # PRD, ARCHITECTURE, OpenAPI/AsyncAPI specs
+├── docs/                   # PRD, ARCHITECTURE, DECISIONS, KNOWN_ISSUES, MEMORY, OpenAPI/AsyncAPI specs
 └── [config files]
 \`\`\`
 

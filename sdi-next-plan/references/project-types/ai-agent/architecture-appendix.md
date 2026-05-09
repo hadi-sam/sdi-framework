@@ -1,6 +1,6 @@
 # Architecture Appendix — AI agent / MCP server / chatbot
 
-Use these sections as the type-specific implementation lens for AI-agent, MCP-server, and chatbot work items. For cross-cutting LLM constraints, read the target project's existing `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, and any eval/prompt docs recorded in `AGENTS.md`; this skill does not carry the initial-scoping AI modifier.
+Use these sections as the type-specific implementation lens for AI-agent, MCP-server, and chatbot work items. For cross-cutting LLM constraints, read the target project's existing `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, and any eval/prompt docs recorded in `AGENTS.md` / `CLAUDE.md`; this skill does not carry the initial-scoping AI modifier.
 
 ## §2.1 Agent topology
 

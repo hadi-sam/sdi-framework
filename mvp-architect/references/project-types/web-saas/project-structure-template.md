@@ -27,7 +27,7 @@ Target length: 300–450 lines.
 │   ├── ai/                 # AI skill wrappers (if applicable)
 │   └── types/              # shared TypeScript types (create only when needed)
 ├── tests/                  # integration & e2e tests
-├── docs/                   # PRD, ARCHITECTURE, etc.
+├── docs/                   # PRD, ARCHITECTURE, DECISIONS, KNOWN_ISSUES, MEMORY, etc.
 └── [config files]
 \`\`\`
 

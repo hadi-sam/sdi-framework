@@ -61,8 +61,9 @@ But adapt §0 (Pre-requisites):
 > Source: code analysis (current repo state). This work item starts from the live production state, not from a previous framework-managed phase.
 
 - Repo at commit [SHA or branch + recent state] — convert-to-sdi run completed; framework artifacts in place.
-- AGENTS.md at root reflects current stack and conventions.
+- `AGENTS.md` / `CLAUDE.md` at root reflect current stack and conventions; if both exist, they carry the same facts.
 - DECISIONS.md seed entries reviewed by team (or pending review).
+- KNOWN_ISSUES.md exists; any known issue in scope for this work item is referenced by `KI-NNN`.
 - [If stage = production] No incidents in flight; deploy window applicable.
 - [Other pre-reqs the user mentioned during Phase 1 Q5 if relevant.]
 ```
@@ -81,7 +82,7 @@ Target same as Phase C / `sdi-next-plan` plans: 400–600 lines. For a small bug
 
 ## Update the work tracker
 
-After the plan is generated, add the row to AGENTS.md `Work tracker`:
+After the plan is generated, add the row to the `Work tracker` in `AGENTS.md` and `CLAUDE.md` when both exist:
 
 ```markdown
 | [name] | [type] | pending — plan generated | YYYY-MM-DD | docs/IMPLEMENTATION_PLAN_[name].md |
@@ -96,7 +97,7 @@ After plan generation, instruct the user how to start. The kickoff prompt has on
 ```
 Plan generated at `docs/IMPLEMENTATION_PLAN_[name].md`.
 
-AGENTS.md is at the project root with the project facts (stack, doc map, conventions, work tracker). The SDI discipline itself comes from the `sdi-mode` skill (Claude Code / Codex) or the configured `sdi-mode` custom mode (Roo Code / Kilo Code / OpenCode).
+`AGENTS.md` and `CLAUDE.md` are at the project root with the same project facts (stack, doc map, conventions, work tracker). The SDI discipline itself comes from the `sdi-mode` skill (Claude Code / Codex) or the configured `sdi-mode` custom mode (Roo Code / Kilo Code / OpenCode). The user may keep whichever file(s) their coding agents read.
 
 To start, paste:
 
@@ -107,10 +108,11 @@ To start, paste:
 >
 > Read in this order before writing any code:
 > 1. README.md to get context.
-> 2. AGENTS.md (project facts — stack, doc map, conventions, work tracker).
+> 2. AGENTS.md or CLAUDE.md (project facts — stack, doc map, conventions, work tracker).
 > 3. docs/IMPLEMENTATION_PLAN_[name].md fully.
 > 4. docs/PROJECT_STRUCTURE.md for conventions.
 > 5. docs/ARCHITECTURE.md — at minimum the type-specific section and the critical flows.
+> 6. docs/KNOWN_ISSUES.md — confirm whether any known issue is in scope or must stay deferred.
 >
 > Then audit the plan against the actual repo state. Produce an audit report covering:
 > - Blockers
@@ -144,6 +146,6 @@ After the plan is delivered and the handoff instructions are given:
 
 Sometimes the user runs convert-to-sdi to "set up the framework" but doesn't have a concrete next thing to work on yet. That's fine. In that case, skip the plan generation:
 
-> "No concrete work item right now, so I won't generate a plan. When you know what's next (feature, fix, migration, etc.), use the `sdi-next-plan` skill to generate the plan. AGENTS.md, DECISIONS, and MEMORY are already in place to receive the work when it arrives."
+> "No concrete work item right now, so I won't generate a plan. When you know what's next (feature, fix, migration, etc.), use the `sdi-next-plan` skill to generate the plan. AGENTS.md / CLAUDE.md, DECISIONS, KNOWN_ISSUES, and MEMORY are already in place to receive the work when it arrives."
 
 Then close the convert-to-sdi run with a partial completion note in `docs/memory/YYYY-MM-DD.md`.

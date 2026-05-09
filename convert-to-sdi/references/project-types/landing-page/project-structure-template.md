@@ -27,7 +27,7 @@ Target length: 150–250 lines.
 │   └── types/              # TS types for CMS schemas, etc.
 ├── content/                # CMS-drafts or local content (if not in src/)
 ├── tests/                  # smoke + visual tests
-├── docs/                   # PRD, ARCHITECTURE, etc.
+├── docs/                   # PRD, ARCHITECTURE, DECISIONS, KNOWN_ISSUES, MEMORY, etc.
 └── [config files]
 \`\`\`
 

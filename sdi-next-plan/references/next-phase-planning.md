@@ -8,7 +8,7 @@ This is **not** the initial bundle (handled by `mvp-architect` Phase 0–C). It 
 
 Strong signals — proactive offer or user-initiated:
 
-- The current `IMPLEMENTATION_PLAN_*` has had its end-of-phase housekeeping done (per sdi-mode Step 8): all gates green, AC mapped to evidence, AGENTS.md tracker updated.
+- The current `IMPLEMENTATION_PLAN_*` has had its end-of-phase housekeeping done (per sdi-mode Step 8): all gates green, AC mapped to evidence, AGENTS.md / CLAUDE.md tracker updated where present.
 - The user says: "phase X closed — let's plan the next", "what's the next plan?", "let's scope feature [Y]", "let's plan maintenance for [W]".
 - ROADMAP.md indicates the next phase and its pre-requisites are met.
 
@@ -27,13 +27,14 @@ Don't enter if:
 
 Load context from the **current state of the repo**, not from your memory of earlier conversations:
 
-1. **`AGENTS.md`** (root) — current stack, conventions, work tracker. This is the operating truth.
+1. **`AGENTS.md` / `CLAUDE.md`** (root) — current stack, conventions, work tracker. If both exist, they should carry the same project facts; note any drift before planning.
 2. **`docs/MEMORY.md` index + last 2–3 daily entries from `docs/memory/`** — what's been happening, blockers, observations the user made, open questions still pending.
 3. **`docs/DECISIONS.md`** — what's been decided. The next plan must respect these, not contradict them. Skim headers; read entries that relate to the area of the next work item.
-4. **The most recent `docs/IMPLEMENTATION_PLAN_*.md`** — what was just delivered (or is closing). Look for §13 Known divergences (resolved? deferred?), §12 Decisions Log items (all materialized?), and any deferred scope that must carry over.
-5. **`docs/ROADMAP.md`** — what was originally planned next. May still be accurate; may have shifted.
-6. **`docs/PRD.md` §Out of scope** — what was explicitly deferred. The next work item may be unlocking one of these; verify before assuming.
-7. **Code areas the next work item will touch** — directories, helpers, schemas. Saves the user from repeating "this lives at X" later.
+4. **`docs/KNOWN_ISSUES.md`** — known bugs, security gaps, tech debt, and deferred fixes. If the next work item fixes a `KI-NNN`, reference it explicitly; if it does not, keep relevant KIs out of scope.
+5. **The most recent `docs/IMPLEMENTATION_PLAN_*.md`** — what was just delivered (or is closing). Look for §13 Known divergences (resolved? deferred?), §12 Decisions Log items (all materialized?), and any deferred scope that must carry over.
+6. **`docs/ROADMAP.md`** — what was originally planned next. May still be accurate; may have shifted.
+7. **`docs/PRD.md` §Out of scope** — what was explicitly deferred. The next work item may be unlocking one of these; verify before assuming.
+8. **Code areas the next work item will touch** — directories, helpers, schemas. Saves the user from repeating "this lives at X" later.
 
 This is ~10–20 minutes of reading before generating. Don't skip it.
 
@@ -42,7 +43,7 @@ This is ~10–20 minutes of reading before generating. Don't skip it.
 Before generating the plan, verify alignment with current reality. Batch in one message; user answers in one reply:
 
 1. **Confirm the next work item.** "ROADMAP says next is [X], and the most recent memory mentions [Y]. Is the next work item [X], [Y], something else, or both?"
-2. **Carryovers.** "Anything from the previous work item that needs rework before moving on? Pending blockers, deferred scope items, regressions?"
+2. **Carryovers / known issues.** "Anything from the previous work item or `KNOWN_ISSUES.md` that needs rework before moving on? Pending blockers, deferred scope items, regressions, KI entries to schedule?"
 3. **New constraints.** "Anything that's surfaced since the original ROADMAP that changes the shape of this — customer feedback, perf data, new compliance requirement, integration availability?"
 4. **Naming preference.** "Should this be `IMPLEMENTATION_PLAN_PHASE_N.md` (next discrete phase) or `IMPLEMENTATION_PLAN_<slug>.md` (free-form work — feature, maintenance, refactor)? See naming guidance below if unsure."
 
@@ -66,7 +67,7 @@ Use `core-templates/implementation-plan-template.md` for the universal structure
 Inside the plan:
 
 - **§0 Pre-requisites** — list what from the previous work item must be green before starting this one. Reference round reports or commits where applicable. Examples: "Phase 1 housekeeping complete (smoke test green)", "DECISIONS #28-#31 materialized in code", "Migration `0007_add_billing_tables` applied".
-- **§1 Scope** — concrete in-scope and out-of-scope. The PRD §Out-of-scope is your guide for what's deferred; verify each item against the current work item.
+- **§1 Scope** — concrete in-scope and out-of-scope. The PRD §Out-of-scope and `KNOWN_ISSUES.md` are your guides for what's deferred; if the work item fixes `KI-NNN`, list it in scope and require status update during housekeeping.
 - **§2 Type-specific (database / API / UI / etc.)** — reference DECISIONS already taken (link `DECISIONS.md #N`), don't duplicate. New schema/contracts get sketched here.
 - **§11 Implementation checkpoints** — map §2–§9 work units to the standard 5 checkpoints (Foundation, Core, Integrations, UI, Housekeeping). Drop checkpoints not applicable to this work item (e.g., no UI → drop Checkpoint 4). The standard gates per checkpoint are inlined in the plan template (mirrored from sdi-mode for self-containment). Add phase-specific gates only when the phase has constraints unique to it.
 - **§12 Decisions Log** — only the decisions you anticipate this work item will memorialize. Don't pre-record decisions from earlier work items.
@@ -84,9 +85,9 @@ If subsequent phases shifted in priority or content as a result of this work ite
 
 Don't rewrite ROADMAP wholesale. If the change is large enough to warrant a rewrite, that's a re-scoping conversation — exit this skill and propose returning to `mvp-architect` for scope refresh.
 
-## Update the work tracker in AGENTS.md
+## Update the work tracker in AGENTS.md / CLAUDE.md
 
-After generating the plan, add (or update) a row in the AGENTS.md `Work tracker` section:
+After generating the plan, add (or update) a row in the `Work tracker` section of `AGENTS.md` and `CLAUDE.md` when both exist. If only one exists, update that one and mention the missing companion as a housekeeping note:
 
 ```markdown
 | billing-portal | feature | pending — plan generated | 2026-04-25 | docs/IMPLEMENTATION_PLAN_billing-portal.md |
@@ -108,16 +109,17 @@ Closing message pattern:
 - **Generating plan divorced from current repo state.** If you skip the reading order (especially DECISIONS and recent memory), the plan ignores constraints already established. Always read first.
 - **Speculating about phase N+2.** The plan is for the **next** work item, not the one after that. Future phases stay in ROADMAP, not in the next plan.
 - **Ignoring DECISIONS already taken.** A DECISIONS entry that says "we use approach X for [area]" is binding — the next plan must follow it or explicitly supersede with a new entry. Never silently ignore.
+- **Ignoring KNOWN_ISSUES.** If the next work item is a bugfix/maintenance pass, scan `KNOWN_ISSUES.md` before scoping. Don't create duplicate work for an existing `KI-NNN`, and don't leave fixed KIs without a status-update gate.
 - **Naming inconsistency.** Mixing `PHASE_N` and `<slug>` in the same project causes confusion in tracking. If the project started with phases, prefer to continue with phases unless a clear shift happens (e.g., MVP launched, now in continuous-feature mode). Document the shift in DECISIONS.
-- **Skipping the work tracker update.** AGENTS.md is the operating truth. If the tracker doesn't reflect the new work item, sdi-mode Step 1 reads stale state.
+- **Skipping the work tracker update.** AGENTS.md / CLAUDE.md are the operating truth for project facts. If the tracker doesn't reflect the new work item, sdi-mode Step 1 reads stale state.
 
 ## Difference from initial bundle
 
 | | mvp-architect Phase C (initial bundle) | sdi-next-plan (next plan) |
 |---|---|---|
 | When | Once, at project birth | Repeatedly, between work items |
-| Reads | Phase 0/A/B context (in-session) | The repo itself (post-implementation reality) |
-| Outputs | 7–8 artifacts (full bundle) | 1 artifact (one IMPLEMENTATION_PLAN), optionally 1 ROADMAP revision |
+| Reads | Phase 0/A/B context (in-session) | The repo itself (post-implementation reality, including DECISIONS, KNOWN_ISSUES, and memory) |
+| Outputs | 8–9 artifacts (full bundle, including KNOWN_ISSUES) | 1 artifact (one IMPLEMENTATION_PLAN), optionally 1 ROADMAP revision |
 | Discovery | Full universal + type-specific | Light — only what's specific to the next item |
 | Follows | mvp-architect Phase B (scope agreed) | sdi-review (review of current item) |
 | Precedes | sdi-mode (implementation begins) | sdi-mode + sdi-review (next item begins) |

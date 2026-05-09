@@ -18,7 +18,7 @@ The reviewer should be a different model from the one that produced the target w
 | Placeholder | What goes in it | Example |
 |---|---|---|
 | `[TARGET]` | What is being reviewed. A file path, a commit range, a function name, or pasted-inline content. Be specific so the reviewer doesn't have to guess. | `the plan in docs/PROPOSAL_BILLING_REWRITE.md`<br>`the diff main..feature/auth-refactor`<br>`the function processWebhook in src/webhooks/handler.ts`<br>`the architecture sketch I'm pasting below: <paste>` |
-| `[CONTEXT]` | What the reviewer needs to know that isn't in the target itself. Stack, project state, related docs to read, recent decisions. Keep it tight — a paragraph or a short bullet list. | `Next.js 15 App Router + Drizzle + Postgres. The current auth flow lives in src/auth/. We just shipped passkeys last week (DECISIONS.md entry 2026-04-21). Read AGENTS.md for conventions.` |
+| `[CONTEXT]` | What the reviewer needs to know that isn't in the target itself. Stack, project state, related docs to read, recent decisions. Keep it tight — a paragraph or a short bullet list. | `Next.js 15 App Router + Drizzle + Postgres. The current auth flow lives in src/auth/. We just shipped passkeys last week (DECISIONS.md entry 2026-04-21). Read AGENTS.md or CLAUDE.md for conventions.` |
 | `[FOCUS]` | What you're worried about, or "open adversarial review" for general. Weight findings here but don't suppress others. | `whether the migration is reversible if we have to roll back mid-deploy`<br>`race conditions when two tabs hit submit at the same time`<br>`open adversarial review` |
 | `[OUT_OF_SCOPE]` | What's already decided, what NOT to relitigate, hard requirements you've already weighed. Optional but useful — avoids noise. | `library choice (Drizzle stays); naming conventions; whether to use server actions vs route handlers (already decided in DECISIONS.md)` |
 
@@ -58,7 +58,7 @@ You may run targeted read-only checks (read files, grep, run tests if I say so e
 ## Steps
 
 1. Read the target end to end before forming any opinion.
-2. Read the context I pointed you at (named files, related docs, AGENTS.md if it exists).
+2. Read the context I pointed you at (named files, related docs, `AGENTS.md` / `CLAUDE.md` if either exists).
 3. For every concrete reference in the target — file, function, helper, env var, dep, test, hook, convention — verify it exists and actually does what the target assumes. Use git/ls/cat/grep.
 4. If the target is a plan or proposal: walk through how it would actually be implemented step by step; flag where the plan glosses over a hard part or assumes work that isn't trivial.
 5. If the target is code: trace the unhappy paths — bad input, retry, concurrent calls, partial failure, timeouts, empty state, degraded dependency.

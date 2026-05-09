@@ -28,7 +28,7 @@ Target length: 200–350 lines.
 ├── prompts/                # markdown prompts checked into version control
 ├── evals/                  # golden datasets (jsonl/yaml)
 ├── tests/                  # unit + integration tests
-├── docs/                   # PRD, ARCHITECTURE, etc.
+├── docs/                   # PRD, ARCHITECTURE, DECISIONS, KNOWN_ISSUES, MEMORY, etc.
 └── [config files]
 \`\`\`
 

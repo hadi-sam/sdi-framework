@@ -55,7 +55,7 @@ Read and **classify** any existing canonical artifacts. Detection has two parts:
 For each, record `present: yes/no` and `compatibility: compatible / partially-compatible / incompatible / n/a`:
 
 - `README.md` — at root
-- `PRD.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `PROJECT_STRUCTURE.md`, `DESIGN_SYSTEM.md`, `DECISIONS.md` — at root or in `docs/`
+- `PRD.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `PROJECT_STRUCTURE.md`, `DESIGN_SYSTEM.md`, `KNOWN_ISSUES.md`, `DECISIONS.md` — at root or in `docs/`
 - `AGENTS.md`, `CLAUDE.md` — at root
 - `CHANGELOG.md` — at root
 - `docs/decisions/` or `docs/adr/` — ADR folder (count files; check if `0001-...md` numbering)
@@ -74,7 +74,8 @@ For canonical artifacts, after reading the file, classify compatibility per the 
 | `ROADMAP.md` | phases/cycles/quarters with deliverables + acceptance criteria | phases without AC | pure backlog list, Trello/CSV export, no sequence |
 | `PROJECT_STRUCTURE.md` | directory tree + conventions section | one of two | prose without structure |
 | `DESIGN_SYSTEM.md` | tokens (color/typography/spacing) + 2+ of {layout, motion, a11y, components} | tokens only | aesthetic prose without tokens |
-| `AGENTS.md` | project context + document map + work tracker, with no embedded discipline (no 8-step list, no tone/precedence/checkpoint instructions) | framework-aware but missing pieces, or contains residual discipline that needs to be stripped | not framework-aware |
+| `KNOWN_ISSUES.md` | append-only `KI-NNN` entries or empty scaffold with format/status/severity legend | issue list exists but format varies | prose bug list with no lifecycle/status/evidence |
+| `AGENTS.md` / `CLAUDE.md` | project context + document map + work tracker, with no embedded discipline (no 8-step list, no tone/precedence/checkpoint instructions) | framework-aware but missing pieces, contains residual discipline that needs to be stripped, or one file is still a pointer | not framework-aware |
 | `DECISIONS.md` (single file) | numbered entries with Context/Decision/Rationale | entries with format variance | prose without entries |
 
 For non-canonical artifacts (CHANGELOG, runbooks, custom `docs/*.md`), compatibility is `n/a` — they're preserved unconditionally per Strategy A.
@@ -83,7 +84,7 @@ For non-canonical artifacts (CHANGELOG, runbooks, custom `docs/*.md`), compatibi
 
 Hard rules even before Phase 1.5:
 
-- If `AGENTS.md` already exists with **compatible** structure (facts-only, matches the canonical template) → propose **skipping** convert-to-sdi entirely (project is already framework-adopted; only update if structure has drifted).
+- If `AGENTS.md` and `CLAUDE.md` already exist with **compatible** structure (facts-only, same canonical project-fact content), still show the Phase 1.5 matrix. Recommend Strategy A / no material change for those files and explain that the project already appears framework-adopted; do not skip the matrix.
 - If any canonical artifact is **compatible** → default to Strategy A (preserve + framework header) in the matrix.
 - Never silently overwrite. **Always** route through Phase 1.5 if any canonical artifact is detected.
 
@@ -101,16 +102,17 @@ Add a section to the discovery report (per `auto-audit-checklist.md` §"Discover
 | `docs/ROADMAP.md` | yes | incompatible | Trello CSV export — no phase structure |
 | `docs/decisions/` | yes (12 ADR files) | special: ADR | preserve — see Phase 1.5 |
 | `docs/PRD.md` | no | n/a | will be generated thin in Phase 2 |
+| `docs/KNOWN_ISSUES.md` | no | n/a | will be generated as empty scaffold in Phase 2 |
 | `AGENTS.md` | no | n/a | will be generated in Phase 2 |
-| `CLAUDE.md` | no | n/a | will be generated as `@AGENTS.md` import |
+| `CLAUDE.md` | no | n/a | will be generated in Phase 2 with same content as `AGENTS.md` |
 
 ## Other docs detected
 
 - `CHANGELOG.md` — preserved as-is (production indicator)
-- `docs/runbooks/` (3 files) — custom; preserved + linkable in AGENTS doc map
+- `docs/runbooks/` (3 files) — custom; preserved + linkable in AGENTS.md / CLAUDE.md doc map
 ```
 
-This section triggers Phase 1.5 (the existing-artifact-triage phase) when any canonical artifact has compatibility `partially compatible` or `incompatible`, or when ADR folders exist, or when external-tool integrations are suspected. If everything is `compatible` or absent, the skill skips Phase 1.5 and goes straight to Phase 2.
+This section triggers Phase 1.5 (the existing-artifact-triage phase) whenever any canonical artifact is present, including when every detected artifact is `compatible` and the recommended action is simply Strategy A. Skip Phase 1.5 only when no canonical artifacts are present at all. Compatible artifacts still deserve a visible matrix so the user sees exactly what will be preserved, minimally touched, or left alone.
 
 See `existing-artifact-handling.md` for the full Phase 1.5 protocol and the four canonical strategies (A/B/C/D).
 
@@ -183,7 +185,7 @@ After running the audit, produce a structured report shown to the user:
 - README.md (will be preserved; product summary extracted)
 - docs/ folder with [N] files (will be preserved)
 - CHANGELOG.md (5 entries spanning 8 months — production indicator)
-- AGENTS.md: not present
+- AGENTS.md / CLAUDE.md: not present
 
 ## Production indicators
 **Stage suggestion: mature-production** (3 strong signals)

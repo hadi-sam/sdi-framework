@@ -22,13 +22,19 @@ The standard set of artifacts produced at the end of Phase C. Each has a specifi
 
    **ROADMAP coupling:** `ROADMAP.md` uses "Phase 0/1/2..." structure and is generated when a project has discrete planned phases. Continuous-feature or maintenance-mode projects may skip ROADMAP entirely or keep it minimal — work items are scoped one at a time via the `sdi-next-plan` skill.
 
-8. **AGENTS.md** *(at repo root, not in `docs/`)* — project-specific **fact sheet** for the SDI workflow. Generated from the template in `references/agents-template.md` and customized with the project's type, AI modifier flag, stack, and known conventions. Carries only project facts (stack, doc map, conventions, work tracker) — **never** the SDI discipline itself. The discipline lives in the `sdi-mode` skill (Claude Code / Codex) or the configured `sdi-mode` custom mode (Roo Code / Kilo Code / OpenCode). For Claude Code projects, also generate a one-line `CLAUDE.md` with `@AGENTS.md` so Claude Code imports the fact sheet on every session (Codex reads `AGENTS.md` natively).
+8. **DECISIONS.md** — append-only paper trail of non-obvious decisions. Generated from `references/core-templates/decisions-template.md` as an empty scaffold for greenfield projects. Do **not** invent decisions at project birth; the file exists so implementation can append decisions without first creating the container.
+
+9. **KNOWN_ISSUES.md** — append-only catalog of known bugs, security gaps, tech debt, and deferred fixes. Generated from `references/core-templates/known-issues-template.md` as an empty scaffold for greenfield projects. Do **not** invent issues at project birth; the file exists so future audits/reviews have a durable place to put out-of-scope problems.
+
+10. **MEMORY.md** + **memory/YYYY-MM-DD.md** — datable execution memory. Generated from `references/core-templates/memory-template.md` with an index and today's Phase C handoff entry. This records that the bundle was created and what the next implementation step is.
+
+11. **AGENTS.md** and **CLAUDE.md** *(at repo root, not in `docs/`)* — project-specific **fact sheets** for the SDI workflow. Both are generated from the same customized `references/agents-template.md` content with the project's type, AI modifier flag, stack, and known conventions. They carry only project facts (stack, doc map, conventions, work tracker) — **never** the SDI discipline itself. The discipline lives in the `sdi-mode` skill (Claude Code / Codex) or the configured `sdi-mode` custom mode (Roo Code / Kilo Code / OpenCode). Generate both so the user can keep whichever file(s) their coding agents read.
 
 ## Conditional generation
 
 | Artifact | Always generate? | Notes |
 |---|---|---|
-| README, PRD, ARCHITECTURE, ROADMAP, PROJECT_STRUCTURE, IMPLEMENTATION_PLAN_PHASE_1, AGENTS.md | Yes | Universal |
+| README, PRD, ARCHITECTURE, ROADMAP, PROJECT_STRUCTURE, IMPLEMENTATION_PLAN_PHASE_1, DECISIONS, KNOWN_ISSUES, MEMORY, AGENTS.md, CLAUDE.md | Yes | Universal |
 | DESIGN_SYSTEM | Only if UI | Skip for api-service, data-pipeline, automation-workflow, ai-agent (without UI) |
 | AI-modifier additions | Only if modifier active | Adds sections to ARCHITECTURE, PROJECT_STRUCTURE, DESIGN_SYSTEM, IMPLEMENTATION_PLAN_PHASE_1 |
 
@@ -37,10 +43,10 @@ The standard set of artifacts produced at the end of Phase C. Each has a specifi
 Generate in this order — each builds on the previous:
 
 ```
-PRD → ARCHITECTURE → ROADMAP → PROJECT_STRUCTURE → DESIGN_SYSTEM (if UI) → IMPLEMENTATION_PLAN_PHASE_1 → AGENTS.md → README
+PRD → ARCHITECTURE → ROADMAP → PROJECT_STRUCTURE → DESIGN_SYSTEM (if UI) → IMPLEMENTATION_PLAN_PHASE_1 → DECISIONS → KNOWN_ISSUES → MEMORY → AGENTS.md + CLAUDE.md → README
 ```
 
-README is last because it's an index — it can't index documents that don't exist yet. AGENTS.md is generated near-last because it benefits from knowing the stack/structure decisions from PROJECT_STRUCTURE and the Phase 1 prerequisites from IMPLEMENTATION_PLAN.
+README is last because it's an index — it can't index documents that don't exist yet. DECISIONS and KNOWN_ISSUES are generated near-last because they need no planning input beyond product name and date. MEMORY follows them so the first daily entry can point at the initialized logs and the Phase 1 handoff. AGENTS.md and CLAUDE.md are generated near-last because they benefit from knowing the stack/structure decisions from PROJECT_STRUCTURE and the Phase 1 prerequisites from IMPLEMENTATION_PLAN.
 
 ## Relationships
 
@@ -50,7 +56,10 @@ README is last because it's an index — it can't index documents that don't exi
 - **PROJECT_STRUCTURE** tells the coding agent where things live. Used by every subsequent plan.
 - **DESIGN_SYSTEM** is consumed by UI-producing tasks; non-UI phases can ignore it.
 - **IMPLEMENTATION_PLAN_PHASE_1** is the first "how" doc. Subsequent phases get their own plans later, not all at once.
-- **AGENTS.md** sits at repo root and is the project fact sheet — it tells the coding agent the project's stack, where to find docs, what conventions apply, and which work items are tracked. It evolves as the project proceeds (the coding agent enriches it with discovered repo conventions). The discipline (how to operate) lives in the `sdi-mode` skill or custom mode, not in `AGENTS.md`.
+- **DECISIONS** is the durable "why did we choose this?" log. It starts empty in greenfield projects and later receives numbered entries for non-obvious implementation choices, accepted trade-offs, deferrals, and material plan-vs-repo divergences.
+- **KNOWN_ISSUES** is the durable "what we know is wrong" catalog. It starts empty in greenfield projects and later receives `KI-NNN` entries for out-of-scope bugs, security gaps, tech debt, and deferred fixes discovered during audits, implementation, reviews, or incidents.
+- **MEMORY** is the dated breadcrumb trail. It starts with the Phase C handoff entry and later gets one entry per meaningful working day.
+- **AGENTS.md / CLAUDE.md** sit at repo root and contain the same project fact sheet — they tell coding agents the project's stack, where to find docs, what conventions apply, and which work items are tracked. They evolve as the project proceeds (the coding agent enriches them with discovered repo conventions). The discipline (how to operate) lives in the `sdi-mode` skill or custom mode, not in these files.
 - **README** indexes everything for human readers.
 
 ## What NOT to include in the bundle
@@ -65,7 +74,9 @@ README is last because it's an index — it can't index documents that don't exi
 
 - **Infrastructure runbooks, monitoring playbooks, incident response.** Phase 6-ish concerns.
 
-- **DECISIONS.md upfront.** This document is populated by the coding agent during implementation, not preloaded. Mention it in PROJECT_STRUCTURE and AGENTS.md as a convention, don't generate it.
+- **Invented decisions.** `DECISIONS.md` is generated upfront, but entries require real non-obvious choices. A greenfield bundle should ship it with an empty entries section and instructions only.
+
+- **Invented known issues.** `KNOWN_ISSUES.md` is generated upfront, but entries require concrete evidence. A greenfield bundle should ship it with an empty index and instructions only.
 
 ## Language
 
@@ -91,7 +102,10 @@ The artifacts are decision records, not encyclopedias. Rules of thumb:
 - **PROJECT_STRUCTURE**: ~250–450 lines (varies by type — landing pages tighter, web SaaS larger).
 - **DESIGN_SYSTEM**: ~250–400 lines.
 - **IMPLEMENTATION_PLAN_PHASE_1**: ~400–600 lines. This one is the most prescriptive; being longer is OK.
-- **AGENTS.md**: ~80–160 lines. Project facts only (type, stack, doc map, conventions, work tracker).
+- **DECISIONS**: ~30–70 lines when empty. It grows append-only as decisions are made.
+- **KNOWN_ISSUES**: ~80–140 lines when empty. It grows append-only as issues are discovered.
+- **MEMORY**: ~25–60 lines at birth (`MEMORY.md` index + one daily entry). It grows one dated entry per meaningful working day.
+- **AGENTS.md / CLAUDE.md**: ~80–160 lines each. Same project facts only (type, stack, doc map, conventions, work tracker).
 - **README**: ~30–80 lines. Strictly an index.
 
 If you're trending past these, ask yourself what can be cut. Over-long docs are ignored.

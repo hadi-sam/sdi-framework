@@ -34,7 +34,7 @@ Target length: 200–300 lines.
 ├── orchestrator/           # DAG definitions (Airflow/Prefect/Dagster) or cron specs
 ├── tests/                  # unit + integration
 ├── data/                   # local fixtures only — never production data
-├── docs/                   # PRD, ARCHITECTURE, etc.
+├── docs/                   # PRD, ARCHITECTURE, DECISIONS, KNOWN_ISSUES, MEMORY, etc.
 └── [config files]
 \`\`\`
 

@@ -45,6 +45,7 @@ Examples:
 - PRD §Target users (without a marketing site or signup analytics, often unknown)
 - ARCHITECTURE §Trade-offs (rationale for past decisions, often lost)
 - DECISIONS entries about non-obvious code patterns where rationale isn't documented
+- KNOWN_ISSUES scaffold when no concrete issue evidence was found during onboarding
 - ROADMAP future phases (when no roadmap exists)
 - Critical context section if Q5 was skipped
 
@@ -118,10 +119,11 @@ This isn't bureaucracy — it's how the framework remains honest about what it k
 After convert-to-sdi runs, every generated artifact should have a flag at the top (or section flags where appropriate). If a file is unflagged, you missed it. Sweep:
 
 - README.md — flag at top
-- AGENTS.md — flag at top, plus per-section flags for `Stack`, `Project-specific conventions`, `Production constraints`
+- AGENTS.md / CLAUDE.md — flag at top, plus per-section flags for `Stack`, `Project-specific conventions`, `Production constraints`
 - PROJECT_STRUCTURE.md — flag at top
 - ARCHITECTURE.md — flag at top, plus per-section flags
 - DECISIONS.md — entries individually marked with `Source: code analysis — confirm rationale with team`
+- KNOWN_ISSUES.md — file flag at top; individual entries must carry concrete `Repro / evidence`
 - docs/MEMORY.md — no flag (memory is always datable)
 - docs/memory/YYYY-MM-DD.md — no flag (memory is always datable)
 - PRD.md — flag at top, plus low-confidence flags on Goals/Users sections

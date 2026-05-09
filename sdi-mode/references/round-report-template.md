@@ -21,6 +21,12 @@ Every implementation round ends with a report. Same sections, same order. Users 
 1. [Decision + rationale + link to DECISIONS.md entry if applicable]
 2. ...
 
+### Known issues / technical debt updates
+
+[List new or updated `KNOWN_ISSUES.md` entries. Use "None" if the round did not discover or change any known issue.]
+
+- `KI-NNN` — [new / scheduled / partially mitigated / resolved], [one-line evidence or commit/status note]
+
 ### Testing
 
 - Commands/checks run:
@@ -32,21 +38,33 @@ Every implementation round ends with a report. Same sections, same order. Users 
 
 ### Auto-review history (default for Checkpoints 2/3/4)
 
-[For each attempt, in order. Attempt 1 has TWO reviewers (Opus subagent + codex). Attempts 2 and 3 have one retry reviewer (Opus by default; degraded Codex-only only when Opus is unavailable and Codex was the surviving attempt-1 reviewer).
+[For each attempt, in order. Default schedule unless the user overrides it: attempt 1 has THREE reviewers (Opus subagent + Sonnet subagent + Codex); attempt 2 has TWO reviewers (Opus subagent + Codex); attempt 3 has ONE reviewer (Opus subagent). Note any degraded mode, skipped reviewer, timeout, or user-requested schedule change.
 
 **Attempt 1 — merged verdict**: PASS / FAIL / ESCALATE.
   - **Opus subagent verdict**: PASS / FAIL / ESCALATE (or "skipped: <reason>" if it failed to run).
     - Full output verbatim from `docs/reviews/round-XN-attempt-1-opus.md` (findings + verdict line).
+  - **Sonnet subagent verdict**: PASS / FAIL / ESCALATE (or "skipped: <reason>" if it failed to run).
+    - Full output verbatim from `docs/reviews/round-XN-attempt-1-sonnet.md` (findings + verdict line).
   - **Codex verdict**: PASS / FAIL / ESCALATE (or "skipped: <reason>" if it failed to run).
     - Full output verbatim from `docs/reviews/round-XN-attempt-1-codex.md` (findings + verdict line).
-  - **Runtime notes**: degraded mode, timeout, or extended timeout declaration if applicable.
-  - **Merge rule applied**: e.g., "Opus FAIL + Codex PASS → FAIL (either FAIL blocks)".
-  - **Issues found** (union of both reviewers' findings if FAIL/ESCALATE): list and the fix applied between attempts, with the fix commit SHA.
+  - **Runtime notes**: degraded mode, timeout, extended timeout declaration, or user-requested schedule change if applicable.
+  - **Merge rule applied**: e.g., "Opus PASS + Sonnet FAIL + Codex PASS → FAIL (any FAIL blocks)".
+  - **Issues found** (union of reviewer findings if FAIL/ESCALATE): list and the fix applied between attempts, with the fix commit SHA.
 
-**Attempt N (N ≥ 2) — verdict**: PASS / FAIL / ESCALATE.
-  - **Retry reviewer verdict**: PASS / FAIL / ESCALATE.
-    - Full output verbatim from `docs/reviews/round-XN-attempt-N-{reviewer}.md`.
-  - **Runtime notes**: timeout or degraded retry reviewer if applicable.
+**Attempt 2 — merged verdict**: PASS / FAIL / ESCALATE.
+  - **Opus subagent verdict**: PASS / FAIL / ESCALATE (or "skipped: <reason>" if it failed to run).
+    - Full output verbatim from `docs/reviews/round-XN-attempt-2-opus.md`.
+  - **Codex verdict**: PASS / FAIL / ESCALATE (or "skipped: <reason>" if it failed to run).
+    - Full output verbatim from `docs/reviews/round-XN-attempt-2-codex.md`.
+  - **Runtime notes**: degraded mode, timeout, extended timeout declaration, or user-requested schedule change if applicable.
+  - **Prior findings re-checked**: list the prior findings included in `[PRIOR_REVIEW_FINDINGS]`.
+  - **Merge rule applied**: e.g., "Opus PASS + Codex FAIL → FAIL (any FAIL blocks)".
+  - **Issues found** (if FAIL/ESCALATE): list and the fix applied between attempts, with the fix commit SHA.
+
+**Attempt 3 — Opus verdict**: PASS / FAIL / ESCALATE.
+  - **Opus subagent verdict**: PASS / FAIL / ESCALATE (or "skipped: <reason>" if it failed to run).
+    - Full output verbatim from `docs/reviews/round-XN-attempt-3-opus.md`.
+  - **Runtime notes**: timeout or user-requested/degraded reviewer mode if applicable.
   - **Prior findings re-checked**: list the prior findings included in `[PRIOR_REVIEW_FINDINGS]`.
   - **Issues found** (if FAIL/ESCALATE): list and the fix applied between attempts, with the fix commit SHA.
 
@@ -92,6 +110,10 @@ Each design decision gets one short paragraph:
 
 If you find yourself writing more than a paragraph, it's probably a standalone DECISIONS.md entry — do that, and reference it from the report.
 
+### Known issues are not memory
+
+If the round discovered a pre-existing bug, security gap, technical debt item, or deferred fix outside current scope, it belongs in `KNOWN_ISSUES.md` with a `KI-NNN` entry. The round report should reference the KI; today's memory can say the KI was added, but memory is not the durable issue catalog.
+
 ### Test evidence should be exact
 
 Don't approximate. If your test runner says "23 tests, 23 passing," report that with the exact command you ran. If a command was skipped, timed out, failed, or required a local service/env var that was unavailable, say so. If integration tests aren't passing, say so loudly (it's an open issue, not something to gloss over). A reviewer must be able to decide whether the evidence is adequate without trusting memory from the conversation.
@@ -116,7 +138,7 @@ You've been deep in the code; you have the best sense of what should come next a
 
 ### Auto-review history is not optional when auto-review fired
 
-Auto-review is the default for Checkpoints 2/3/4. If it fired, the history must appear in the report — every attempt, every reviewer's verdict, every gate, with file:line evidence as the reviewers returned it (verbatim from `docs/reviews/round-XN-attempt-N-{reviewer}.md`). On attempt 1 BOTH reviewers' outputs appear; on attempts 2-3 the retry reviewer's output appears, along with the prior findings it was asked to re-check. The user uses this to spot-check the reviewers' calls. Don't summarize ("3 attempts, eventual PASS"); paste the structured output. Omitting or compressing it defeats the purpose of the audit trail.
+Auto-review is the default for Checkpoints 2/3/4. If it fired, the history must appear in the report — every attempt, every reviewer's verdict, every gate, with file:line evidence as the reviewers returned it (verbatim from `docs/reviews/round-XN-attempt-N-{reviewer}.md`). On attempt 1 all three reviewers' outputs appear; on attempt 2 both reviewers' outputs appear; on attempt 3 the Opus output appears, along with the prior findings it was asked to re-check. The user uses this to spot-check the reviewers' calls. Don't summarize ("3 attempts, eventual PASS"); paste the structured output. Omitting or compressing it defeats the purpose of the audit trail.
 
 If auto-review did not fire (Checkpoint 1 or 5, user opt-out, or always-escalate trigger), omit the section entirely.
 
@@ -147,6 +169,10 @@ If auto-review did not fire (Checkpoint 1 or 5, user opt-out, or always-escalate
 > 2. `rotate-secret` invalidates prior secret immediately; no grace period in Phase 1 (see DECISIONS.md #29).
 > 3. Webhook URL built from `[base URL env var]`, not `Host` header. Preview deploys would otherwise burn ephemeral URLs into source records (see DECISIONS.md #30).
 > 4. `requireRoleApi()` for JSON API routes vs `requireRole()` for page redirects. Two guards, two purposes (see DECISIONS.md #31).
+>
+> ### Known issues / technical debt updates
+>
+> - None.
 >
 > ### Testing
 >

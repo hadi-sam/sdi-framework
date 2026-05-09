@@ -1,6 +1,6 @@
 ---
 name: mvp-architect
-description: Plan a product from a rough idea to an initial spec bundle (PRD, ARCHITECTURE, ROADMAP, PROJECT_STRUCTURE, IMPLEMENTATION_PLAN, AGENTS.md). Covers 8 project types (web SaaS, landing page, dashboard, web API, mobile, data pipeline, AI agent/MCP, automation) via Phase 0 router, with optional AI/LLM modifier. USE when starting greenfield work — "I have an idea for X", "want to start a project", "help me scope a product", "need a PRD for Y", "we want to build Z from scratch". DO NOT USE for mid-implementation review (use sdi-review), planning the next work item after a phase closes (use sdi-next-plan), executing implementation (use sdi-mode), or onboarding existing code without an SDI bundle (use convert-to-sdi).
+description: Plan a product from a rough idea to an initial spec bundle (PRD, ARCHITECTURE, ROADMAP, PROJECT_STRUCTURE, IMPLEMENTATION_PLAN, DECISIONS, KNOWN_ISSUES, MEMORY, AGENTS.md, CLAUDE.md). Covers 8 project types (web SaaS, landing page, dashboard, web API, mobile, data pipeline, AI agent/MCP, automation) via Phase 0 router, with optional AI/LLM modifier. USE when starting greenfield work — "I have an idea for X", "want to start a project", "help me scope a product", "need a PRD for Y", "we want to build Z from scratch". DO NOT USE for mid-implementation review (use sdi-review), planning the next work item after a phase closes (use sdi-next-plan), executing implementation (use sdi-mode), or onboarding existing code without an SDI bundle (use convert-to-sdi).
 ---
 
 # MVP Architect
@@ -33,7 +33,7 @@ If the user's message is ambiguous (e.g., "use mvp-architect" with no context), 
 - User arrives with a product idea (vague or partial is fine — that's the normal case).
 - User asks to "refine this idea" or "help me figure out what to build".
 - User asks for help preparing specs/docs for a coding agent to implement.
-- The project has no `IMPLEMENTATION_PLAN_*` yet, no `AGENTS.md`, and no `docs/` planning bundle.
+- The project has no `IMPLEMENTATION_PLAN_*` yet, no `AGENTS.md` / `CLAUDE.md`, and no `docs/` planning bundle.
 
 If the project already has any of those artifacts, the user probably needs `sdi-review`, `sdi-next-plan`, or `sdi-mode` instead — see "When to enter" above.
 
@@ -139,7 +139,10 @@ Read `references/artifact-bundle.md` for the canonical set of artifacts, their o
 - PROJECT_STRUCTURE → `references/project-types/{type}/project-structure-template.md`
 - DESIGN_SYSTEM → `references/project-types/{type}/design-system-template.md` only for UI-bearing types (web-saas, landing-page, dashboard, mobile, or ai-agent with UI)
 - IMPLEMENTATION_PLAN → `references/core-templates/implementation-plan-template.md` + only the type references needed for the work item, starting with `references/project-types/{type}/architecture-appendix.md`
-- AGENTS.md → `references/agents-template.md`
+- DECISIONS → `references/core-templates/decisions-template.md` (empty scaffold; do not invent decisions for a greenfield project)
+- KNOWN_ISSUES → `references/core-templates/known-issues-template.md` (empty scaffold; do not invent issues for a greenfield project)
+- MEMORY → `references/core-templates/memory-template.md` (index + today's Phase C handoff entry)
+- AGENTS.md + CLAUDE.md → `references/agents-template.md` (same customized content in both files)
 - README → `references/core-templates/readme-template.md`
 
 Do not load all templates up front; load the next file only when you are about to generate that artifact.
@@ -148,7 +151,7 @@ The artifacts merge **core templates + type appendices** into single coherent do
 
 End the bundle with two outputs:
 
-1. The **AGENTS.md** for the project root, generated from the template in `references/agents-template.md` and customized with the project's type, stack, and conventions decided in Phase B. This file carries only project facts (stack, doc map, conventions, work tracker) — it does **not** carry the SDI discipline. The discipline lives in the `sdi-mode` skill (Claude Code / Codex) or the configured `sdi-mode` custom mode (Roo Code / Kilo Code / OpenCode). Never inject behavioral instructions into the generated `AGENTS.md`. For Claude Code projects, also generate a one-line `CLAUDE.md` with `@AGENTS.md`.
+1. The **AGENTS.md** and **CLAUDE.md** files for the project root, generated from the same customized template in `references/agents-template.md`. They carry only project facts (stack, doc map, conventions, work tracker) — they do **not** carry the SDI discipline. The discipline lives in the `sdi-mode` skill (Claude Code / Codex) or the configured `sdi-mode` custom mode (Roo Code / Kilo Code / OpenCode). Never inject behavioral instructions into either generated file. Generate both with identical content so the user can keep the file(s) their coding agents read.
 
 2. The **kickoff prompt** for the user to paste into their coding agent when they start implementation. Read `references/kickoff-prompt-template.md` for the consolidated template (one shape, with a single conditional line for "skill" vs "custom mode" depending on the tool).
 
@@ -185,8 +188,11 @@ Load these as needed (don't preemptively read all of them):
 - `references/core-templates/roadmap-template.md` — phased roadmap format
 - `references/core-templates/readme-template.md` — README index template
 - `references/core-templates/implementation-plan-template.md` — universal implementation plan structure
+- `references/core-templates/decisions-template.md` — empty decisions log scaffold generated at project birth
+- `references/core-templates/known-issues-template.md` — empty known-issues catalog scaffold generated at project birth
+- `references/core-templates/memory-template.md` — initial memory index and Phase C handoff entry
 - `references/project-types/{type}/architecture-appendix.md` — type-specific architecture sections
 - `references/project-types/{type}/project-structure-template.md` — repo layout per type
 - `references/project-types/{type}/design-system-template.md` — visual language (only types with UI)
 - `references/kickoff-prompt-template.md` — prompt the user pastes into the coding agent
-- `references/agents-template.md` — canonical AGENTS.md template (project facts only) used by Phase C
+- `references/agents-template.md` — canonical AGENTS.md / CLAUDE.md template (project facts only) used by Phase C

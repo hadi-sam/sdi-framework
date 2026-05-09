@@ -1,13 +1,13 @@
 # Production constraints template
 
-Insert this section into `AGENTS.md` (root) after the "Project context" section when:
+Insert this section into both `AGENTS.md` and `CLAUDE.md` (root) after the "Project context" section when:
 
 - Q3 = `(c) mature-production` or `(d) maintenance`, OR
 - Q3 was skipped but Phase 0 auto-audit detected 3+ production indicators
 
 Adapt examples to the project's actual stack and type. Below is the canonical template — replace bracketed placeholders with project specifics.
 
-## Template content (paste into AGENTS.md)
+## Template content (paste into AGENTS.md and CLAUDE.md)
 
 ```markdown
 ## Production constraints (live system)
@@ -124,7 +124,7 @@ Append the relevant block based on the project type. Insert after the "Critical 
 
 ## How the user fills the placeholders
 
-After convert-to-sdi runs, the user reads AGENTS.md and replaces brackets:
+After convert-to-sdi runs, the user reads `AGENTS.md` or `CLAUDE.md` and replaces brackets:
 
 - `[N]` thresholds with project-specific numbers
 - `[location]` placeholders with their actual paths

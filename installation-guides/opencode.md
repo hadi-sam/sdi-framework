@@ -146,7 +146,7 @@ Ask:
 
 > "List the 8 steps of SDI discipline."
 
-Expected: Read → Audit → Propose → Implement in rounds → Tests alongside → DECISIONS.md → Revision notes → End-of-phase housekeeping.
+Expected: Read → Audit → Propose → Implement in rounds → Tests alongside → DECISIONS.md / KNOWN_ISSUES.md / memory → Revision notes → End-of-phase housekeeping.
 
 If the agent improvises:
 - Verify the file exists at `.opencode/agents/sdi.md` (Approach A) or that the `{file:...}` path resolves (Approach B)

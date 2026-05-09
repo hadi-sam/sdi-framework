@@ -1,17 +1,18 @@
 # Auto-Review Mode (default for Checkpoints 2/3/4)
 
-A workflow extension that delegates checkpoint verification to a **reviewer ensemble** — a different-model Opus subagent and a Codex CLI process — escalating to the user only when something needs human judgment. **Default-on** for Checkpoints 2, 3, and 4. The user can opt out per session.
+A workflow extension that delegates checkpoint verification to a **reviewer ensemble** — different-model Opus and Sonnet subagents plus a Codex CLI process on the first attempt, narrowing on later retries — escalating to the user only when something needs human judgment. **Default-on** for Checkpoints 2, 3, and 4. The user can opt out per session or request a different reviewer schedule.
 
 ## What this is
 
 Implementation rounds end with structured verdicts from independent reviewers:
 
-- **Attempt 1** runs **two reviewers in parallel**: an Opus subagent (via Anthropic Agent tool) and a Codex CLI process (`codex exec`, typically gpt-5.5 with reasoning effort `xhigh` per the user's `~/.codex/config.toml`).
-- **Attempts 2 and 3** (if needed after a FAIL) run the retry reviewer: Opus subagent by default. If the runtime cannot provide an Opus subagent but Codex produced a usable attempt-1 review, use Codex as the degraded retry reviewer and note that in the round report. If no retry reviewer is available, escalate to the user.
+- **Attempt 1** runs **three reviewers in parallel**: an Opus subagent (via Anthropic Agent tool, `model: opus`), a Sonnet subagent (via Anthropic Agent tool, `model: sonnet`), and a Codex CLI process (`codex exec`, typically gpt-5.5 with reasoning effort `xhigh` per the user's `~/.codex/config.toml`).
+- **Attempt 2** (if needed after a FAIL) runs **two reviewers in parallel**: Opus subagent + Codex CLI, using a retry packet that includes all prior findings and fix commit(s).
+- **Attempt 3** (if needed after a second FAIL) runs **one reviewer**: Opus subagent only, using the same retry-packet discipline.
 
-The ensemble on attempt 1 is load-bearing: empirically, Opus and Codex find partially-disjoint bugs (in this framework's validation runs: Codex 5/5 planted + 6 unplanted; Opus 4/5 planted + 3 unplanted; the union catches more than either alone). For retries, the bug surface has shrunk to verifying the fix, so one retry reviewer is sufficient and saves cost/latency as long as the prior findings are included in the retry packet.
+This 3/2/1 schedule is the default unless the user explicitly asks for a different schedule for the session or round. The attempt-1 ensemble is load-bearing: different models find partially-disjoint bugs, and the union catches more than any one reviewer alone. For retries, the bug surface shrinks toward verifying fixes, so the schedule narrows while still keeping Opus + Codex diversity on attempt 2.
 
-Both reviewers receive the **same self-contained prompt** (the adversarial review template below) with explicit cross-file checks (CSS classes used vs defined, API contracts caller-vs-handler, report-vs-reality, optimistic UI revert paths). Outputs are captured to `docs/reviews/round-XN-attempt-N-{opus,codex}.md` for audit trail.
+Reviewers on a given attempt receive the **same self-contained prompt** (the adversarial review template below) with explicit cross-file checks (CSS classes used vs defined, API contracts caller-vs-handler, report-vs-reality, optimistic UI revert paths). Outputs are captured to `docs/reviews/round-XN-attempt-N-{opus,sonnet,codex}.md` as applicable for the audit trail.
 
 Goals:
 - Remove friction at low-stakes checkpoints without losing review depth.
@@ -21,7 +22,7 @@ Goals:
 - Escalate quickly when something needs human judgment.
 
 Non-goals:
-- Replacing human review of decisions. Anything that needs a `DECISIONS.md` entry escalates.
+- Replacing human review of decisions or issue deferrals. Anything that needs a `DECISIONS.md` entry, or a new/changed `KNOWN_ISSUES.md` entry, escalates.
 - Speeding up the implementer agent itself (auto-review is purely about the gate at the end of each round).
 - Working without explicit per-gate criteria. A vague "review this" prompt produces theater.
 
@@ -99,187 +100,83 @@ Even within a default-on checkpoint, the round escalates immediately when any of
 If any of these occur during the round, the implementer skips auto-review for that round and stops for the user:
 
 1. **The round produced (or should produce) a `DECISIONS.md` entry.** A material divergence, a deferred feature, a non-obvious trade-off, a deviation from convention — by definition a judgment call. See `decisions-log-format.md` for what qualifies.
-2. **Blocker encountered during implementation.** Anything that prevents finishing the round (missing dependency the user needs to install, contradictory plan content, broken external service).
-3. **Emergency deviation.** Per `stop-and-review-patterns.md` — security bug, data-loss risk, regression of previously-working functionality.
-4. **Schema migration with data-loss risk** (drop column, NOT NULL on existing column without backfill, type change that loses precision). Even if tests pass, the user must approve.
-5. **New external dependency added** beyond what the plan listed. Plan said use library X; the implementer pulled in library Y too. Escalate.
-6. **Security-relevant change** beyond plan scope (auth helper added/changed, RLS policy modified, secret-handling code touched, CORS or CSP changed).
-7. **Plan revision (`rN`) added during the round.** A revision means reality diverged from plan; the user should see what changed before the next round proceeds.
-8. **PRD or ARCHITECTURE deviation.** If implementing a §2 surface required deviating from the higher-precedence doc, escalate (see `expected-artifacts.md` precedence rules).
+2. **The round discovered or changed a `KNOWN_ISSUES.md` entry.** A new out-of-scope bug/security gap/tech debt item, a severity/blast-radius change, a scheduled fix, a partial mitigation, or a resolved KI should be visible to the user.
+3. **Blocker encountered during implementation.** Anything that prevents finishing the round (missing dependency the user needs to install, contradictory plan content, broken external service).
+4. **Emergency deviation.** Per `stop-and-review-patterns.md` — security bug, data-loss risk, regression of previously-working functionality.
+5. **Schema migration with data-loss risk** (drop column, NOT NULL on existing column without backfill, type change that loses precision). Even if tests pass, the user must approve.
+6. **New external dependency added** beyond what the plan listed. Plan said use library X; the implementer pulled in library Y too. Escalate.
+7. **Security-relevant change** beyond plan scope (auth helper added/changed, RLS policy modified, secret-handling code touched, CORS or CSP changed).
+8. **Plan revision (`rN`) added during the round.** A revision means reality diverged from plan; the user should see what changed before the next round proceeds.
+9. **PRD or ARCHITECTURE deviation.** If implementing a §2 surface required deviating from the higher-precedence doc, escalate (see `expected-artifacts.md` precedence rules).
 
 Surface the trigger explicitly when escalating: "Auto-review skipped because [trigger]. Stopping for your review."
 
 ## The loop
 
-```
-┌────────────────────────────────────────┐
-│ Implementer finishes round and commits │
-│  ("round X/CN: <summary>")             │
-└────────────────────────────────────────┘
-                 │
-                 ▼
-┌────────────────────────────────────────┐
-│ Always-escalate trigger fired?         │──── yes ──► Stop for user
-│ OR user opted out this session?        │
-└────────────────────────────────────────┘
-                 │ no
-                 ▼
-┌────────────────────────────────────────┐
-│ Preflight clean workspace              │
-│ + build review packet                  │
-│ (substitute placeholders; write to     │
-│  .sdi-review-prompt-tmp.txt)           │
-└────────────────────────────────────────┘
-                 │
-                 ▼
-        ┌────────┴─────────┐
-        │ Attempt number?  │
-        └────────┬─────────┘
-                 │
-        ┌────────┴─────────┐
-        ▼                  ▼
-   Attempt 1            Attempts 2-3
-        │                  │
-        ▼                  ▼
-┌──────────────────┐  ┌──────────────────┐
-│ Run BOTH in      │  │ Run retry        │
-│ parallel:        │  │ reviewer         │
-│  - Opus subagent │  │ (Opus default;   │
-│    (Agent tool)  │  │ degraded Codex   │
-│  - codex exec    │  │ only if needed)  │
-│ Outputs:         │  │   round-XN-      │
-│  docs/reviews/   │  │   attempt-N-     │
-│   round-XN-      │  │   opus.md        │
-│   attempt-1-     │  │                  │
-│   {reviewer}.md  │  │                  │
-│  docs/reviews/   │  │                  │
-│   round-XN-      │  │                  │
-│   attempt-1-     │  │                  │
-│   codex.md       │  │                  │
-└──────────────────┘  └──────────────────┘
-        │                  │
-        ▼                  ▼
-┌──────────────────┐  ┌──────────────────┐
-│ Both ran?        │  │ Run succeeded?   │
-└──────────────────┘  └──────────────────┘
-        │                  │
-   ┌────┴────┐         ┌───┴────┐
-   │ both    │         │ yes    │
-   ▼         ▼         ▼        ▼
- yes       one fail   ok      no (escalate)
-   │         │         │
-   ▼         ▼         │
-┌──────────────────┐   │
-│ Merge verdicts:  │   │
-│ - PASS only if   │   │
-│   both PASS      │   │
-│ - FAIL if either │   │
-│   FAIL           │   │
-│ - ESCALATE if    │   │
-│   either         │   │
-│   ESCALATE       │   │
-└──────────────────┘   │
-        │              │
-   one fail (a1)       │
-        ▼              │
-┌──────────────────┐   │
-│ Continue with    │   │
-│ surviving        │   │
-│ reviewer's       │   │
-│ verdict; note    │   │
-│ skip in report   │   │
-└──────────────────┘   │
-        │              │
-        ▼              ▼
-┌────────────────────────────────────────┐
-│ Both reviewers failed (a1)?            │──── yes ──► Stop for user
-│ (codex CLI down + Opus subagent error) │           ("Auto-review
-└────────────────────────────────────────┘            unavailable")
-                 │ no
-                 ▼
-        ┌────────┴────────┐
-        ▼                 ▼
-      PASS              FAIL/ESCALATE
-        │                 │
-        │                 ▼
-        │         ┌─────────────────┐
-        │         │ ESCALATE?       │── yes ──► Stop for user
-        │         └─────────────────┘
-        │                 │ no (FAIL)
-        │                 ▼
-        │         ┌─────────────────┐
-        │         │ attempt < 3?    │── no  ──► Stop for user
-        │         └─────────────────┘            ("loop cap hit")
-        │                 │ yes
-        │                 ▼
-        │         ┌─────────────────┐
-        │         │ Apply union of  │
-        │         │ findings, commit│
-        │         │ ("round X/CN    │
-        │         │   fix N: ...")  │
-        │         └─────────────────┘
-        │                 │
-        │                 └──► back to "Build review packet"
-        ▼                       (BASE_SHA unchanged; next attempt = retry reviewer)
-┌────────────────────────────────────────┐
-│ Append history to round report         │
-│ Delete .sdi-review-prompt-tmp.txt      │
-│ Propose next round (still stop briefly │
-│ to deliver the report; user may        │
-│ interject before next round starts)    │
-└────────────────────────────────────────┘
-```
+1. Implementer finishes the round and commits `round X/CN: <summary>`.
+2. If an always-escalate trigger fired, or the user opted out / requested user-gated review, stop for the user.
+3. Run the clean-state preflight, write/update the round report draft, and build `.sdi-review-prompt-tmp.txt`.
+4. Run the scheduled reviewers for the attempt:
+   - Attempt 1: Opus subagent + Sonnet subagent + Codex, in parallel.
+   - Attempt 2: Opus subagent + Codex, in parallel.
+   - Attempt 3: Opus subagent only.
+5. Apply reviewer timeout/fallback. If no scheduled reviewer produced usable output, stop for the user.
+6. Parse verdicts and merge them: PASS only if all surviving reviewers PASS; ESCALATE if any surviving reviewer ESCALATE; otherwise FAIL.
+7. On PASS, append auto-review history to the round report, delete `.sdi-review-prompt-tmp.txt`, commit review artifacts, post the report, and propose the next round.
+8. On ESCALATE, append history and stop for the user. Do not apply fixes automatically.
+9. On FAIL, apply the union of findings, commit `round X/CN fix N: <what>`, and retry if attempt < 3. After attempt 3 still FAIL, stop for the user with the full review history.
+
+BASE_SHA stays fixed across all attempts in a round. Each retry packet includes prior findings and the fix commit(s) that claim to address them.
 
 PASS does not mean "skip the round report" — the implementer still posts the report (with auto-review history attached). It means the user does not have to gate-check explicitly; they can let the next round start, or interject if they want to look closer.
 
-## Verdict merging (attempt 1 only)
+## Verdict merging (attempts 1 and 2)
 
-When both reviewers ran, merge verdicts mechanically:
+When multiple reviewers run on an attempt, merge verdicts mechanically:
 
-| Opus | Codex | Merged |
-|---|---|---|
-| PASS | PASS | **PASS** |
-| PASS | FAIL | FAIL |
-| FAIL | PASS | FAIL |
-| FAIL | FAIL | FAIL |
-| any | ESCALATE | ESCALATE |
-| ESCALATE | any | ESCALATE |
+| Reviewer verdicts | Merged |
+|---|---|
+| all PASS | **PASS** |
+| one or more FAIL, no ESCALATE | FAIL |
+| any ESCALATE | ESCALATE |
 
 Rules in plain language:
-- **PASS only when both PASS.** Either reviewer's FAIL or ESCALATE blocks PASS.
-- **ESCALATE wins over FAIL.** If either reviewer escalates, the round escalates — the user must judge.
-- **Findings unionize.** When the merged verdict is FAIL, fix attempts must address the union of findings from both reviewers, not just one.
+- **PASS only when every reviewer that ran returns PASS.** Any FAIL or ESCALATE blocks PASS.
+- **ESCALATE wins over FAIL.** If any reviewer escalates, the round escalates — the user must judge.
+- **Findings unionize.** When the merged verdict is FAIL, fix attempts must address the union of findings from all reviewers on the attempt.
+- **Attempt 3 is direct.** Attempt 3 normally has only Opus, so its verdict is the attempt verdict unless the user requested a different schedule.
 
-## Reviewer fallback (one reviewer fails to run)
+## Reviewer fallback
 
 If a reviewer cannot be invoked or produces unusable output (binary missing, network down, timeout, malformed output, no parseable `VERDICT:` line):
 
 | Situation | Action |
 |---|---|
-| One reviewer ok, one failed | Continue with the one that ran. Note the skip in the round report ("codex skipped: <reason>" or "opus subagent skipped: <reason>"). Mark the mode as `degraded` in the auto-review history, but do NOT downgrade the surviving reviewer's verdict — if Opus alone returned PASS, treat as PASS. |
-| Both reviewers failed | **Escalate to the user.** Surface: "Both reviewers failed: [opus reason], [codex reason]. Auto-review unavailable for this round — please review manually or fix the reviewer setup." |
+| At least one reviewer ok, at least one failed | Continue with the reviewer(s) that ran. Note each skip in the round report ("sonnet skipped: <reason>", "codex skipped: <reason>", or "opus subagent skipped: <reason>"). Mark the mode as `degraded` in the auto-review history, but do NOT downgrade surviving verdicts — if the surviving reviewers all returned PASS, treat as PASS. |
+| All scheduled reviewers failed | **Escalate to the user.** Surface: "All scheduled reviewers failed: [reasons]. Auto-review unavailable for this round — please review manually, fix the reviewer setup, or specify a different schedule." |
 
-For attempts 2 and 3, use the configured retry reviewer. Default is Opus. If Opus is unavailable in this runtime and Codex produced the only usable attempt-1 review, Codex may be used as the degraded retry reviewer. If the configured retry reviewer fails, escalate immediately.
+If the user has not overridden the schedule, attempt 2 is Opus + Codex and attempt 3 is Opus. If a scheduled reviewer is unavailable in this runtime, use the fallback table above; do not silently substitute a different model unless the user has requested it or the runtime documents an equivalent reviewer mode in the round report.
 
 ## Reviewer timeouts
 
 Reviewer orchestration uses a wall-clock timeout so "still thinking" does not become an invisible stall.
 
 - **Default soft timeout:** 20 minutes per reviewer.
-- **Attempt 1:** start Opus and Codex in parallel. If one reviewer returns usable output and the other exceeds 20 minutes, treat the slow reviewer as timed out, continue with the surviving reviewer via reviewer fallback, and record the timeout in the round report. If both exceed 20 minutes without usable output, `ESCALATE`.
-- **Attempts 2 and 3:** if the retry reviewer exceeds 20 minutes without usable output, `ESCALATE`.
+- **Attempt 1:** start Opus, Sonnet, and Codex in parallel. If at least one reviewer returns usable output and another exceeds 20 minutes, treat the slow reviewer as timed out, continue with the surviving reviewer(s) via reviewer fallback, and record the timeout in the round report. If all three exceed 20 minutes without usable output, `ESCALATE`.
+- **Attempt 2:** start Opus and Codex in parallel. Apply the same timeout + fallback policy. If both exceed 20 minutes without usable output, `ESCALATE`.
+- **Attempt 3:** start Opus. If Opus exceeds 20 minutes without usable output, `ESCALATE`.
 - **Large-diff exception:** before launching review, the implementer may declare a longer timeout in the round report when the diff is unusually large. If a review is expected to need more than 45 minutes, split the round or escalate instead of silently waiting.
 
 Use the host runtime's background-process/subagent timeout mechanism when available. If the runtime cannot enforce timeouts automatically, the implementer must record start time, check elapsed wall-clock time, and apply the policy manually.
 
 ## Building the review packet
 
-Before invoking either reviewer, build a self-contained prompt by substituting placeholders into the template in §"Adversarial review prompt template" below. Substitute BEFORE writing the prompt to disk / passing to the subagent — neither reviewer expands placeholders.
+Before invoking any reviewer, build a self-contained prompt by substituting placeholders into the template in §"Adversarial review prompt template" below. Substitute BEFORE writing the prompt to disk / passing to subagents — reviewers do not expand placeholders.
 
 | Placeholder | Source |
 |---|---|
 | `[ROUND_ID]` | e.g., "Phase 2 — Round B — Checkpoint 2 Core" |
-| `[STACK]` | one-line stack summary from `AGENTS.md` (e.g., "Next.js 15 App Router + Drizzle + Postgres + Supabase Auth") |
+| `[STACK]` | one-line stack summary from `AGENTS.md` or `CLAUDE.md` (e.g., "Next.js 15 App Router + Drizzle + Postgres + Supabase Auth") |
 | `[BASE_SHA]` | the SHA captured at the start of this round (recorded in the round report header) |
 | `[ROUND_REPORT_PATH]` | path to the round report draft/final artifact, e.g. `docs/reviews/round-B-C2-report.md` |
 | `[PLAN_PATH]` | path to the implementation plan, e.g. `docs/IMPLEMENTATION_PLAN_PHASE_2.md` |
@@ -293,10 +190,11 @@ Packet checklist before invocation:
 - The round report includes a `Testing` section with exact commands/checks, results, counts, skips, and manual smoke evidence where applicable.
 - On retries, `[PRIOR_REVIEW_FINDINGS]` includes the union of earlier findings and the fix commit(s) that claim to address them.
 
-Write/update the round report draft at `[ROUND_REPORT_PATH]` before invoking reviewers. Then write the substituted prompt to `.sdi-review-prompt-tmp.txt` at the repo root (used as stdin to codex; the same file content is passed as the `prompt` parameter to the Opus subagent). Add this file to `.gitignore` if it isn't already (it is temporary and recreated per attempt). Delete after the round closes.
+Write/update the round report draft at `[ROUND_REPORT_PATH]` before invoking reviewers. Then write the substituted prompt to `.sdi-review-prompt-tmp.txt` at the repo root (used as stdin to codex; the same file content is passed as the `prompt` parameter to the Opus and Sonnet subagents when scheduled). Add this file to `.gitignore` if it isn't already (it is temporary and recreated per attempt). Delete after the round closes.
 
-The same packet goes to both reviewers — they see identical input. Outputs are captured per reviewer:
+The same packet goes to every reviewer scheduled for that attempt — they see identical input. Outputs are captured per reviewer:
 - Opus subagent: returned as the Agent tool's text result; the implementer writes it to `docs/reviews/round-XN-attempt-N-opus.md`.
+- Sonnet subagent: returned as the Agent tool's text result; the implementer writes it to `docs/reviews/round-XN-attempt-N-sonnet.md` when Sonnet is scheduled.
 - Codex: written directly via `--output-last-message docs/reviews/round-XN-attempt-N-codex.md`.
 
 These output files ARE committed for audit trail after the auto-review loop closes, together with the final round report.
@@ -304,9 +202,9 @@ These output files ARE committed for audit trail after the auto-review loop clos
 Do **not** include in the packet:
 - Prior conversation context.
 - Prior rounds' diffs (only this round, computed by each reviewer via `git diff [BASE_SHA]..HEAD`).
-- Memory entries or DECISIONS log directly (each reviewer reads them itself by grepping the repo when needed; the packet stays focused on this round's diff and report).
+- Memory entries, DECISIONS log, or KNOWN_ISSUES log directly (each reviewer reads them itself by grepping the repo when needed; the packet stays focused on this round's diff and report).
 
-Exception: retry packets MUST include prior auto-review findings in `[PRIOR_REVIEW_FINDINGS]` so the retry reviewer verifies fixes for both Opus and Codex findings from earlier attempts.
+Exception: retry packets MUST include prior auto-review findings in `[PRIOR_REVIEW_FINDINGS]` so retry reviewers verify fixes for all Opus, Sonnet, and Codex findings from earlier attempts.
 
 ## Adversarial review prompt template
 
@@ -331,10 +229,11 @@ You may run targeted read-only-compatible checks when they materially improve co
 2. Run `git status --short`. If uncommitted files outside `.sdi-review-prompt-tmp.txt` and this round's `docs/reviews/round-XN-*` artifacts are present, file a class-4 finding because the reviewed state is ambiguous.
 3. Read [ROUND_REPORT_PATH] end to end.
 4. Read [PLAN_PATH] sections [PLAN_SECTIONS] to know what this round was supposed to deliver.
-5. Read AGENTS.md for stack and conventions.
-6. For each concrete claim in the round report, verify it against the diff and the actual file system. Use git/ls/cat/grep as needed.
-7. Audit the report's Testing section: commands run, results, counts, skips, and manual smoke evidence. If the evidence is missing, vague, contradictory, or too weak for the gate, file a class-4 finding.
-8. If prior review findings are listed, verify each one was actually fixed. Do not PASS a retry until every prior finding is either fixed or explicitly escalated.
+5. Read `AGENTS.md` or `CLAUDE.md` for stack and conventions. If both exist, they should carry the same facts; note any drift as a finding.
+6. Read `docs/KNOWN_ISSUES.md` if present. If the report/plan claims to fix or defer a `KI-NNN`, verify status/evidence alignment.
+7. For each concrete claim in the round report, verify it against the diff and the actual file system. Use git/ls/cat/grep as needed.
+8. Audit the report's Testing section: commands run, results, counts, skips, and manual smoke evidence. If the evidence is missing, vague, contradictory, or too weak for the gate, file a class-4 finding.
+9. If prior review findings are listed, verify each one was actually fixed. Do not PASS a retry until every prior finding is either fixed or explicitly escalated.
 
 ## Things you MUST actively check (beyond standard code review)
 
@@ -347,6 +246,7 @@ F. Plan-vs-implementation. For each gate marked ✓ in the report, locate the ev
 G. Report wording precision. UI behavior phrasing in the report must match code exactly.
 H. Stack-specific architecture and high-blast-radius risk. Adapt to [STACK]: in-memory state in serverless, sync APIs in RSC, missing root layouts, RLS bypass, race conditions, unhandled promise rejections. Also weight failure categories that are expensive, dangerous, or hard to detect: auth/tenant isolation and trust boundaries; data loss, duplication, or irreversible state changes; rollback safety, retries, partial failure, idempotency gaps; ordering assumptions and re-entrancy; empty-state, null, timeout, and degraded-dependency behavior; version skew, schema drift, migration hazards; observability gaps that hide failure or block recovery.
 I. DECISIONS log. For non-obvious choices in the diff, grep DECISIONS.md for an entry. Unflagged choices ESCALATE.
+J. KNOWN_ISSUES log. For pre-existing bugs, security gaps, tech debt, or deferred fixes outside round scope, check `docs/KNOWN_ISSUES.md`. If absent or missing the issue, file a class-7 finding with a proposed `KI-NNN` entry; urgent P0/P1 issues ESCALATE.
 
 ## Bug classes
 
@@ -393,11 +293,11 @@ Each reviewer returns its review as Markdown text. The implementer parses the la
 
 If the verdict line is missing, malformed, or the output is empty/garbage, treat that reviewer as failed (see §"Reviewer fallback"). Do not reject a short but well-formed PASS response solely because it is brief.
 
-After parsing, apply the merge table above (attempt 1 only) and proceed per the loop.
+After parsing, apply the merge rules above for attempts 1-2, or use the direct Opus verdict on attempt 3, then proceed per the loop.
 
 ## Loop cap
 
-- **Maximum 3 review attempts per round** (1 ensemble attempt + 2 single-reviewer retries).
+- **Maximum 3 review attempts per round** (attempt 1: Opus + Sonnet + Codex; attempt 2: Opus + Codex; attempt 3: Opus), unless the user explicitly requests a different schedule.
 - After attempt 3 still FAIL → stop and escalate to the user with the full review history.
 - Hitting the cap is a signal that something structural is wrong — either the gate criteria are not the right ones for this round, or the round is doing more than it should, or there's a bug the agents can't see. The implementer says so explicitly when surfacing: "Auto-review hit 3 attempts without PASS — escalating; this usually means a structural issue worth a closer look."
 
@@ -406,26 +306,26 @@ After parsing, apply the merge table above (attempt 1 only) and proceed per the 
 Every auto-reviewed round must include the auto-review history in its round report. See `round-report-template.md` for the exact section shape.
 
 For each attempt:
-- Attempt N — reviewers run (`opus + codex` on attempt 1; Opus retry reviewer on attempts 2-3 unless the runtime is in a documented degraded reviewer mode) and verdict (merged on attempt 1, direct on retries).
+- Attempt N — reviewers run (default: `opus + sonnet + codex` on attempt 1, `opus + codex` on attempt 2, `opus` on attempt 3 unless the user overrides the schedule or the runtime is in documented degraded mode) and verdict (merged on attempts 1-2, direct on attempt 3).
 - Per reviewer: full structured output verbatim from `docs/reviews/round-XN-attempt-N-{reviewer}.md` (findings + verdict line).
 - Runtime notes: degraded mode, timeout, or extended timeout declaration if applicable.
 - Issues found (if any) and the fix applied between attempts (with the fix commit SHA).
 
 Do not summarize ("3 attempts, eventual PASS"). The user uses the history to spot-check the reviewers' calls — omitting it defeats the purpose of the audit trail.
 
-## Invocation — Opus subagent (Agent tool)
+## Invocation — Anthropic subagents (Agent tool)
 
-When the host runtime supports it, the Opus subagent runs via the Anthropic Agent tool. Use the `general-purpose` subagent type with explicit `model: "opus"` so the subagent runs Opus regardless of the parent session's model. If the host runtime has no Agent tool or no Opus model selection, record "opus subagent unavailable: <reason>" and apply reviewer fallback.
+When the host runtime supports it, the Opus and Sonnet subagents run via the Anthropic Agent tool. Use the `general-purpose` subagent type with explicit `model: "opus"` or `model: "sonnet"` so the subagent runs the scheduled model regardless of the parent session's model. If the host runtime has no Agent tool or no requested model selection, record "`<model>` subagent unavailable: <reason>" and apply reviewer fallback.
 
 Inputs:
 - `description`: short, e.g. `Round B/C2 attempt 1 review`.
 - `subagent_type`: `general-purpose`.
-- `model`: `opus`.
+- `model`: `opus` or `sonnet`, depending on the scheduled reviewer.
 - `prompt`: the substituted contents of `.sdi-review-prompt-tmp.txt` (the entire adversarial review prompt with placeholders filled in).
 
-The subagent inherits file/Bash tools so it can run `git diff`, read files, and grep the repo as the prompt instructs. The text response is the review report — write it to `docs/reviews/round-XN-attempt-N-opus.md` for audit trail.
+The subagent inherits file/Bash tools so it can run `git diff`, read files, and grep the repo as the prompt instructs. The text response is the review report — write it to `docs/reviews/round-XN-attempt-N-{opus,sonnet}.md` for audit trail.
 
-If the parent session is already running Opus, the subagent still runs as a separate process with no shared conversation context — that's the load-bearing piece (independent reasoning over the same inputs).
+If the parent session is already running the same model, the subagent still runs as a separate process with no shared conversation context — that's the load-bearing piece (independent reasoning over the same inputs).
 
 ## Invocation — Codex CLI (codex exec)
 
@@ -450,21 +350,24 @@ Notes:
 
 The run typically takes 3–10 minutes with xhigh reasoning on a meaningful round diff. Run as a background command (your tool's mechanism for long-running shell commands), record start time, and apply the 20-minute reviewer timeout above.
 
-## Parallel orchestration (attempt 1 only)
+## Parallel orchestration
 
-On attempt 1, the implementer fires both reviewers and waits for both:
+On each attempt, the implementer fires the scheduled reviewers in parallel and waits for them:
 
 1. Write/update `docs/reviews/round-XN-report.md` as the report draft for this attempt, including the Testing evidence.
 2. Run the clean-state preflight. Do not invoke reviewers if uncommitted non-artifact changes remain.
-3. Write the substituted prompt to `.sdi-review-prompt-tmp.txt` with `[PRIOR_REVIEW_FINDINGS] = "None — first attempt."`.
+3. Write the substituted prompt to `.sdi-review-prompt-tmp.txt` with `[PRIOR_REVIEW_FINDINGS] = "None — first attempt."` on attempt 1, or the union of prior findings plus fix commit(s) on attempts 2-3.
 4. Run the packet checklist. Do not invoke reviewers if placeholders remain or required paths/sections are missing.
-5. Spawn the Opus subagent (Agent tool, `run_in_background: true`) and record start time.
-6. Start `codex exec` as a background Bash command and record start time.
-7. Wait for both to complete, applying the 20-minute timeout policy.
-8. Read both output files. Parse VERDICT from each. Apply the merge table.
-9. If either reviewer failed to produce usable output, apply §"Reviewer fallback".
+5. Spawn the scheduled subagents (Agent tool, `run_in_background: true`) and record start time.
+6. Start `codex exec` as a background Bash command and record start time when Codex is scheduled.
+7. Wait for scheduled reviewers to complete, applying the 20-minute timeout policy.
+8. Read output files. Parse VERDICT from each usable reviewer output. Apply the merge rules or direct Opus verdict.
+9. If any reviewer failed to produce usable output, apply §"Reviewer fallback".
 
-On attempts 2 and 3, update the report draft and substitute `[PRIOR_REVIEW_FINDINGS]` with the union of findings from earlier attempts plus the fix commit(s) that claim to address them. Run the clean-state preflight and packet checklist again before invocation. Fire the configured retry reviewer (Opus by default; degraded Codex-only only when Opus is unavailable and Codex was the surviving attempt-1 reviewer). Wait with the 20-minute timeout, parse VERDICT, proceed per the loop.
+Default schedule:
+- Attempt 1: Opus subagent + Sonnet subagent + Codex.
+- Attempt 2: Opus subagent + Codex.
+- Attempt 3: Opus subagent.
 
 After the round closes (PASS or escalation), append final auto-review history to `docs/reviews/round-XN-report.md`, delete `.sdi-review-prompt-tmp.txt` (it's gitignored and recreated per attempt anyway), and commit the round report + per-attempt output files with `round X/CN review artifacts: <verdict>`. Do NOT delete the per-attempt output files in `docs/reviews/` — those are the audit trail.
 
@@ -475,19 +378,19 @@ After the round closes (PASS or escalation), append final auto-review history to
 - **Dirty workspace at review time.** If uncommitted non-artifact changes are present, `git diff BASE_SHA..HEAD` no longer describes the same state the reviewer sees on disk. Commit intended round changes first; escalate on unrelated/user-owned changes.
 - **Forgetting to substitute placeholders.** Neither reviewer expands `[BASE_SHA]` or `[ROUND_REPORT_PATH]` — substitute them into the prompt template before writing to disk / passing to the subagent, or the run is wasted.
 - **Waiting forever on a reviewer.** Apply the 20-minute timeout. A timed-out reviewer is unavailable for this attempt; the fallback/escalation policy exists so the loop stays mechanical.
-- **Each reviewer is a fresh subprocess with no shared context.** Build the packet to be entirely self-contained. The parent session's conversation context is invisible to both reviewers.
+- **Each reviewer is a fresh subprocess with no shared context.** Build the packet to be entirely self-contained. The parent session's conversation context is invisible to all reviewers.
 - **If the diff is too large for either reviewer's context, the round was too big.** Modern models handle 100k+ tokens, but extremely large rounds may overflow. Split the round (one commit's worth of work each) and re-invoke per chunk.
 - **Treating PASS as "skip the round report".** PASS still requires the report. The user reads the report to track progress; the auto-review history is an addendum, not a replacement.
 - **Looping on cosmetic issues.** If attempt 2 fixed the substantive gate failure but attempt 3 fails on a tiny new issue, the loop cap is your friend — escalate, don't go for attempt 4.
 - **Ignoring escalation triggers.** An always-escalate trigger means stop, period. Don't try to pre-resolve it and skip to auto-review; the user must see it.
-- **Skipping the pre-review checklist.** Walk the 8 always-escalate triggers (see SKILL.md §Step 4.5) at the end of every round, before invoking reviewers. Catching a trigger after the reviewers fired wastes a review cycle and produces an ESCALATE the implementer should have surfaced themselves.
+- **Skipping the pre-review checklist.** Walk the always-escalate triggers (see SKILL.md §Step 4.5) at the end of every round, before invoking reviewers. Catching a trigger after the reviewers fired wastes a review cycle and produces an ESCALATE the implementer should have surfaced themselves.
 - **Treating ESCALATE as FAIL.** ESCALATE means user judgment is required — stop, surface the findings, wait. Do **not** apply fixes and retry on ESCALATE; that path is only for FAIL. The most common ESCALATE is a class-5 finding (DECISIONS-worthy choice without flag), and writing the DECISIONS entry silently before retrying defeats the purpose of escalation.
 - **Aborting Codex on stderr noise.** Codex writes its session banner to stderr by design. PowerShell may wrap codex stderr in `NativeCommandError` records; corporate ConstrainedLanguage mode may add `[Console]::OutputEncoding` errors. None of those are failures — validate by exit code + `--output-last-message` file presence, not by inspecting stderr text. See §"Invocation — Codex CLI" for the invocation rules.
 - **Letting reviewers edit code.** The review prompt instructs read-only. If a gate failure requires a fix, the implementer makes the fix between attempts.
-- **Codex CLI assumptions.** The framework assumes `codex` is on PATH and the user has `~/.codex/config.toml` (or `$CODEX_HOME/config.toml`) selecting an appropriate reviewer model. The framework does not configure this. If `codex --version` fails, surface the gap to the user — attempt 1 falls back to Opus-only per §"Reviewer fallback" (note in the round report). For Windows-specific invocation rules (Bash default, PowerShell `cmd /c` fallback, exit-code-not-stderr validation), see §"Invocation — Codex CLI" above.
-- **Opus subagent assumptions.** Full ensemble mode assumes the host runtime supports the Anthropic Agent tool with model selection. On runtimes without that, Opus-as-subagent is unavailable: attempt 1 may run Codex-only in degraded mode, and retries may use Codex as the retry reviewer only if Codex produced the surviving attempt-1 review. If no independent reviewer can run, escalate or opt out of auto-review.
+- **Codex CLI assumptions.** The framework assumes `codex` is on PATH and the user has `~/.codex/config.toml` (or `$CODEX_HOME/config.toml`) selecting an appropriate reviewer model. The framework does not configure this. If `codex --version` fails, surface the gap to the user and apply §"Reviewer fallback" for any attempt where Codex was scheduled. For Windows-specific invocation rules (Bash default, PowerShell `cmd /c` fallback, exit-code-not-stderr validation), see §"Invocation — Codex CLI" above.
+- **Anthropic subagent assumptions.** Full ensemble mode assumes the host runtime supports the Anthropic Agent tool with Opus and Sonnet model selection. On runtimes without that, the unavailable subagent(s) are skipped via reviewer fallback. If no scheduled reviewer can run, escalate or opt out of auto-review.
 - **`codex review --base/--commit` parser quirk.** The CLI rejects custom `[PROMPT]` when `--base` or `--commit` is set. This protocol uses `codex exec` (not `codex review`) precisely to bypass that limitation. Do not switch to `codex review`.
-- **Sequencing the reviewers serially.** On attempt 1, run both in parallel, not one after the other. Serial costs ~2x the wall-clock latency for no benefit. The runtime supports parallel Agent + Bash background invocations.
+- **Sequencing reviewers serially.** On attempts with multiple scheduled reviewers, run them in parallel, not one after the other. Serial execution multiplies wall-clock latency for no benefit. The runtime supports parallel Agent + Bash background invocations.
 
 ## When auto-review is wrong
 

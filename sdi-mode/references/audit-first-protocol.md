@@ -41,6 +41,12 @@ Deliver the audit as a single response. The user reads it, resolves issues, then
 1. [Question] → [options A, B, C with trade-offs if you have a view]
 2. ...
 
+### Known issues / tech debt updates
+(pre-existing bugs, security gaps, or tech debt discovered during audit that are outside current scope)
+
+1. Added / propose `KI-NNN`: [short title] — evidence: [file:line or repro]. Why deferred: [reason].
+2. Updated `KI-NNN`: [status/severity/blast radius change].
+
 ### Aligned / no action
 (quick list of things the plan got right or that are already in place; helps the user calibrate the audit's thoroughness)
 
@@ -83,6 +89,7 @@ Concrete proposal for what to deliver first, pending resolution of the above.
 
 - The plan's claims about `[data isolation policy]`, service-role use, auth gates — do they hold given the actual repo's `[auth/identity service]`, middleware, etc.?
 - The plan's isolation invariants (e.g. "organization_id enforced in code because RLS is bypassed here") — is the code path it describes actually going to execute as planned?
+- If you find a pre-existing security/data correctness issue outside current scope, add or propose a `KNOWN_ISSUES.md` entry instead of hiding it in the audit narrative.
 
 ### Type-specific concerns (load only the relevant)
 
@@ -113,13 +120,13 @@ Plan references resource `agents.id` as a relationship target in Phase 1, but th
 Plan assumes package X is installed (because ARCHITECTURE.md mentioned it); it was deferred in DECISIONS.md. Audit must check DECISIONS.md, not just ARCHITECTURE.md.
 
 ### 5. Convention not written down
-The repo follows a convention the plan doesn't mention (e.g. "all enums use `[database enum pattern]`, never `text` with check"). If the repo is consistent, follow it and add a note to DECISIONS.md so the convention becomes documented. Also propose adding the convention to AGENTS.md.
+The repo follows a convention the plan doesn't mention (e.g. "all enums use `[database enum pattern]`, never `text` with check"). If the repo is consistent, follow it and add a note to DECISIONS.md so the convention becomes documented. Also propose adding the convention to `AGENTS.md` / `CLAUDE.md` if those fact files are present.
 
 ### 6. Missing runtime deps
 Plan requires libraries (e.g. `jsonpath-plus`, `libphonenumber-js`, an LLM SDK) — not yet installed. Not a blocker if you'll install them, but flag it in the audit so the user sees the diff before you run the install.
 
-### 7. AGENTS.md gap
-Plan assumes a stack item that AGENTS.md doesn't yet record (or AGENTS.md is missing entirely). Propose updating AGENTS.md as part of resolving the audit.
+### 7. Project fact sheet gap
+Plan assumes a stack item that `AGENTS.md` / `CLAUDE.md` doesn't yet record (or the project fact sheet is missing entirely). Propose updating the fact sheet as part of resolving the audit.
 
 ## Classifying findings
 
@@ -132,6 +139,8 @@ Each audit finding goes in one bucket:
 - **Divergence (plan-wins, needs migration)**: plan describes the target state; repo is out of date. Proceed per the plan, register the migration needed.
 
 - **Open question**: the plan genuinely doesn't decide something you need a call on. Present options; get the user's answer.
+
+- **Known issue**: pre-existing bug/debt/security gap with concrete evidence that is outside current scope. Add or propose a `KNOWN_ISSUES.md` entry; do not silently expand the implementation scope to fix it.
 
 - **Aligned**: fine as is. Include a brief list in the report so the user can calibrate how thorough the audit was.
 
@@ -148,7 +157,8 @@ Once the user resolves the blockers and open questions:
 
 1. Update the plan with a **revision note** at the top (`r2`, `r3`) summarizing the audit resolutions. See `revision-notes-format.md`.
 2. Add relevant entries to `DECISIONS.md`.
-3. Propose updates to `AGENTS.md` for any project-specific conventions the audit surfaced.
-4. Propose the first concrete deliverable and stop for review (see `stop-and-review-patterns.md`).
+3. Add/update `KNOWN_ISSUES.md` for any concrete out-of-scope bugs, security gaps, or tech debt found during the audit.
+4. Propose updates to `AGENTS.md` / `CLAUDE.md` for any project-specific conventions the audit surfaced; if both exist, keep them in sync.
+5. Propose the first concrete deliverable and stop for review (see `stop-and-review-patterns.md`).
 
 Don't skip the revision note. Later, someone will read the plan; they need to know it was audited and adjusted.

@@ -1,6 +1,6 @@
 ---
 name: convert-to-sdi
-description: Onboard an existing codebase to the sdi-framework workflow by generating the artifact bundle from the repo as it stands. USE when the project already has code and the user wants to adopt SDI going forward. DO NOT USE for greenfield projects (use mvp-architect), code refactor or review work, throwaway scripts, or projects already converted (use sdi-next-plan for subsequent work).
+description: Onboard an existing codebase to the sdi-framework workflow by generating the artifact bundle from the repo as it stands, including KNOWN_ISSUES.md for known bugs/debt/security gaps. USE when the project already has code and the user wants to adopt SDI going forward. DO NOT USE for greenfield projects (use mvp-architect), code refactor or review work, throwaway scripts, or projects already converted (use sdi-next-plan for subsequent work).
 ---
 
 # convert-to-sdi
@@ -42,7 +42,7 @@ Read `references/auto-audit-checklist.md` for the full checklist. Categories det
 - **Project type** (mapped to one of the framework's 8 types)
 - **Stack** (language, framework, ORM, database, auth, deployment)
 - **Conventions** (file layout, test runner, linting, commit style)
-- **Existing canonical artifacts + format compatibility** (`README`, `PRD`, `ARCHITECTURE`, `ROADMAP`, `PROJECT_STRUCTURE`, `DESIGN_SYSTEM`, `DECISIONS`, `AGENTS`, ADR folders) — classified as compatible / partially-compatible / incompatible
+- **Existing canonical artifacts + format compatibility** (`README`, `PRD`, `ARCHITECTURE`, `ROADMAP`, `PROJECT_STRUCTURE`, `DESIGN_SYSTEM`, `KNOWN_ISSUES`, `DECISIONS`, `AGENTS`, ADR folders) — classified as compatible / partially-compatible / incompatible
 - **Other docs** (CHANGELOG, custom `docs/*.md`, IDE rule files) — inventoried; preserved unconditionally
 - **Production indicators** (semver tags, CHANGELOG with multiple versions, monitoring config, feature flag systems, billing/multi-tenancy in code)
 - **AI modifier signals** (LLM SDKs, prompts/, evals/)
@@ -63,20 +63,20 @@ The 5 questions cover:
 
 Do **not** ask additional questions proactively. If the user volunteers more context, capture it; otherwise move on.
 
-### Phase 1.5 — Existing artifact triage (only if Phase 0 detected pre-existing canonical artifacts)
+### Phase 1.5 — Existing artifact triage (if Phase 0 detected pre-existing canonical artifacts)
 
-This phase **runs only when needed**. Skip entirely if Phase 0 found no existing canonical artifacts (or all detected ones are absent / clearly compatible with the framework). When it does run, it prevents `convert-to-sdi` from silently overwriting the user's PRD, ARCHITECTURE, ROADMAP, etc.
+This phase runs whenever Phase 0 found one or more existing canonical artifacts, even if every detected file is compatible and the recommended action is minimal. Skip only when Phase 0 found no existing canonical artifacts at all. The phase prevents `convert-to-sdi` from silently overwriting the user's PRD, ARCHITECTURE, ROADMAP, etc., and gives the user a clear per-file plan before generation.
 
 Read `references/existing-artifact-handling.md` for the full protocol, including the matrix of default strategies, format compatibility heuristics, and the four canonical handling strategies:
 
 - **Strategy A — Preserve as-is + framework header.** Existing file already does its job; framework just adds a marker.
 - **Strategy B — Convert in place.** Merge canonical structure with existing content; show diff; user approves.
 - **Strategy C — Rename existing + generate new.** Rename existing to `<name>.legacy.md`, generate fresh canonical version, link the legacy.
-- **Strategy D — Skip generation entirely.** Don't generate the artifact; document that source of truth lives elsewhere (Notion, Linear, Figma, etc.) in AGENTS.md "External artifact references".
+- **Strategy D — Skip generation entirely.** Don't generate the artifact; document that source of truth lives elsewhere (Notion, Linear, Figma, etc.) in `AGENTS.md` / `CLAUDE.md` "External artifact references".
 
 The flow:
 
-1. **Present the matrix** — show the user a table with each detected canonical artifact, its compatibility class, and the proposed default strategy. Include ADR folders (special case — default to Option 1: keep ADRs + DECISIONS.md as index) and any custom `docs/` content (default to Strategy A).
+1. **Present the matrix** — show the user a table with each detected canonical artifact, its compatibility class, and the proposed default strategy. Include ADR folders (special case — default to Option 1: keep ADRs + DECISIONS.md as index) and any custom `docs/` content (default to Strategy A). Always include a short legend below the table explaining Strategy A/B/C/D in plain language; never show only "A" or "B" without definitions. If the table includes ADR Option 1/2, include a second tiny legend explaining those ADR options too.
 
 2. **User responds** — accepts defaults ("ok", "go") or overrides per-file ("ROADMAP: keep as-is", "PRD: skip — lives in Notion at [link]").
 
@@ -84,17 +84,18 @@ The flow:
 
 The skill **never silently overwrites** a canonical artifact. Even if the user says "go" without reading the matrix, every Strategy B (convert in place) requires showing the diff during Phase 2 generation before writing.
 
-If everything in the matrix maps to Strategy A (all compatible) and there's no ADR / external-tool integration to confirm, this phase is brief — basically a "I detected these existing files; they're all compatible; will preserve + add framework header. ok to proceed?" message.
+If everything in the matrix maps to Strategy A (all compatible) and there's no ADR / external-tool integration to confirm, this phase is still shown. Keep it brief: "I detected these existing files; they're compatible; recommended action is Strategy A (preserve as-is + add framework header). Confirm or override per file?"
 
 ### Phase 2 — Generate artifacts
 
 Read `references/artifact-generation-rules.md` and `references/confidence-flags.md`. Generate the bundle:
 
-- **AGENTS.md** (rich) — stack, conventions, document map, work tracker (empty), `Production constraints` section if stage = production (template at `references/production-constraints-template.md`).
+- **AGENTS.md + CLAUDE.md** (rich) — same project-fact content in both files: stack, conventions, document map, work tracker (empty), `Production constraints` section if stage = production (template at `references/production-constraints-template.md`).
 - **PROJECT_STRUCTURE.md** (rich) — documents the repo as it actually is.
 - **ARCHITECTURE.md** (mixed) — §Stack and §Critical flows extracted from code; §Type-specific appendix populated as far as code reveals; §Trade-offs as placeholder.
 - **DESIGN_SYSTEM.md** (medium, only if UI) — extracted tokens and components; aesthetic intent left as placeholder.
 - **DECISIONS.md** (seed, 3–5 entries) — obvious patterns detected (e.g. "uses Drizzle ORM", "monorepo with pnpm workspaces"). Marked `Source: code analysis — confirm rationale with team`.
+- **KNOWN_ISSUES.md** (fresh or preserved) — append-only catalog scaffold. Preserve existing issue entries; for fresh generation, leave empty unless onboarding found concrete evidence-backed issues outside setup scope.
 - **docs/MEMORY.md + docs/memory/YYYY-MM-DD.md** (fresh) — index empty except for today's entry, which describes the framework setup itself.
 - **PRD.md** (thin by design) — `Current state` (extracted from code/README) + `Out of scope` placeholder.
 - **ROADMAP.md** (optional) — only if Q4 = "discrete phases planned" and the user has visibility into future work; otherwise minimal note pointing to the `sdi-next-plan` skill for forward planning.
@@ -119,7 +120,7 @@ Generate the corresponding `IMPLEMENTATION_PLAN_*.md`:
 The plan's §0 Pre-requisites lists the **current production state as the foundation** — not "Phase N-1 delivered". The plan is grounded in the live repo.
 
 After generation, instruct the user how to load `sdi-mode`:
-- Claude Code / Codex: install the `sdi-mode`, `sdi-review`, and `sdi-next-plan` skills under the tool's skills path (alongside `mvp-architect` and `convert-to-sdi`) if they aren't there yet. AGENTS.md (project facts) is already at repo root. Paste the kickoff prompt to start the work item — the `sdi-mode` skill auto-invokes from there.
+- Claude Code / Codex: install the `sdi-mode`, `sdi-review`, and `sdi-next-plan` skills under the tool's skills path (alongside `mvp-architect` and `convert-to-sdi`) if they aren't there yet. `AGENTS.md` and `CLAUDE.md` (same project facts) are already at repo root; keep whichever file(s) the user's coding agents read. Paste the kickoff prompt to start the work item — the `sdi-mode` skill auto-invokes from there.
 - Roo Code / Kilo Code / OpenCode: configure the `sdi-mode` custom mode following the appropriate guide in your local copy of `sdi-framework/installation-guides/`. Once active, paste the kickoff prompt.
 
 Closing message:
@@ -145,7 +146,7 @@ Closing message:
 
 User should be able to:
 
-1. Open `AGENTS.md` and recognize their project (stack, type, conventions).
+1. Open `AGENTS.md` or `CLAUDE.md` and recognize their project (stack, type, conventions).
 2. Open the generated `IMPLEMENTATION_PLAN_*.md` and see a plan grounded in current code.
 3. Start a session in their coding agent (Claude Code / Codex / Roo / Kilo / OpenCode), paste the kickoff prompt, and have the agent operate with SDI discipline.
 
@@ -160,9 +161,9 @@ Load these as needed:
 - `references/existing-artifact-handling.md` — Phase 1.5: matrix + 4 strategies (A/B/C/D) for existing PRD/ARCHITECTURE/ROADMAP/etc. + ADR special handling
 - `references/confidence-flags.md` — how to mark thin sections in artifacts
 - `references/artifact-generation-rules.md` — Phase 2: per-artifact rules and confidence levels
-- `references/agents-template.md` — canonical AGENTS.md template (project facts only) used by Phase 2
-- `references/production-constraints-template.md` — section emitted in AGENTS.md when stage = production
-- `references/core-templates/` — universal templates duplicated from `mvp-architect` so this skill is self-contained: `architecture-template.md`, `implementation-plan-template.md`, `prd-template.md`, `readme-template.md`, `roadmap-template.md`
+- `references/agents-template.md` — canonical AGENTS.md / CLAUDE.md template (project facts only) used by Phase 2
+- `references/production-constraints-template.md` — section emitted in AGENTS.md / CLAUDE.md when stage = production
+- `references/core-templates/` — universal templates duplicated from `mvp-architect` so this skill is self-contained: `architecture-template.md`, `implementation-plan-template.md`, `known-issues-template.md`, `prd-template.md`, `readme-template.md`, `roadmap-template.md`
 - `references/project-types/{type}/` — type-specific templates (8 types: ai-agent, api-service, automation-workflow, dashboard, data-pipeline, landing-page, mobile, web-saas) — each carries `architecture-appendix.md`, `project-structure-template.md`, and `design-system-template.md` (UI types only)
 - `references/modifiers/ai.md` — AI/LLM cross-cutting sections, applied when the AI modifier is active
 - `references/first-work-item.md` — Phase 3: handoff to sdi-mode

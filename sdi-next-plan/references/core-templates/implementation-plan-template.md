@@ -21,7 +21,7 @@ Target length: 400–600 lines (longer for complex phases).
 # Implementation Plan — Phase N: [Phase Title]
 # (or: Implementation Plan — <slug>: [Title] — for free-form work)
 
-> Detailed spec for this work item. Companion to PRD.md, ARCHITECTURE.md, and PROJECT_STRUCTURE.md. This file is intentionally prescriptive where ambiguity would cause rework.
+> Detailed spec for this work item. Companion to PRD.md, ARCHITECTURE.md, PROJECT_STRUCTURE.md, DECISIONS.md, and KNOWN_ISSUES.md. This file is intentionally prescriptive where ambiguity would cause rework.
 >
 > **Revision note (rN):** [only present after implementation-time audits reshape the plan. Summarize what changed vs previous revision.]
 
@@ -123,6 +123,7 @@ Skip checkpoints that don't apply (e.g. drop Checkpoint 4 if there is no UI). **
 - [ ] All Blockers from the audit are either resolved or explicitly waived by the user
 - [ ] All Open Questions from the audit are answered
 - [ ] Each **material** plan-vs-repo Divergence has a corresponding `DECISIONS.md` entry; mechanical divergences are noted in the round report only
+- [ ] Each concrete out-of-scope bug/security gap/tech debt finding has a `KNOWN_ISSUES.md` entry, or the audit states no new known issues were found
 - [ ] Plan has a revision note (`rN`) summarizing audit changes (if any landed)
 - [ ] User has given explicit go ("yes", "go", "proceed") — silence is **not** consent
 - [ ] Today's `docs/memory/YYYY-MM-DD.md` entry mentions this checkpoint passing
@@ -141,7 +142,7 @@ Skip checkpoints that don't apply (e.g. drop Checkpoint 4 if there is no UI). **
 - [ ] All pure functions in scope for this checkpoint are implemented
 - [ ] Unit tests cover the edge cases called out in the plan (count vs plan list)
 - [ ] All unit tests pass (real count from the runner, not approximation)
-- [ ] No TODO/FIXME left in the code without a corresponding `DECISIONS.md` or memory entry
+- [ ] No TODO/FIXME left in the code without a corresponding `DECISIONS.md`, `KNOWN_ISSUES.md`, or memory entry
 - [ ] Round report posted in canonical format
 - [ ] Auto-review (default) — reviewer ensemble returned merged PASS with all gates ✓ **OR** user opted out of auto-review and gave explicit go to move into integrations (see `auto-review-mode.md`)
 - [ ] Today's `docs/memory/YYYY-MM-DD.md` entry summarizes the round
@@ -183,20 +184,21 @@ Skip checkpoints that don't apply (e.g. drop Checkpoint 4 if there is no UI). **
 
 ### Checkpoint 5 — Housekeeping **(user-gated)**
 
-**Covers:** §10 Acceptance Criteria mapping, §12 Decisions Log materialization, §13 Known divergences resolution, doc updates (`PROJECT_STRUCTURE`, `AGENTS.md`).
+**Covers:** §10 Acceptance Criteria mapping, §12 Decisions Log materialization, §13 Known divergences resolution, known-issues lifecycle updates, doc updates (`PROJECT_STRUCTURE`, `AGENTS.md` / `CLAUDE.md`).
 
 **Standard gates:**
 - [ ] Every acceptance criterion in the current `IMPLEMENTATION_PLAN_*.md` §Acceptance Criteria has linked evidence
 - [ ] `PROJECT_STRUCTURE.md` reflects the actual repo (no documented paths missing in code, no code paths missing in doc)
-- [ ] `AGENTS.md` updates proposed and approved by user
+- [ ] `AGENTS.md` / `CLAUDE.md` updates proposed and approved by user; if both exist, keep them in sync
 - [ ] `DESIGN_SYSTEM.md` audit complete (UI types only) — tokens documented match tokens in code
 - [ ] `DECISIONS.md` end-of-phase sweep done — no orphan/contradictory entries
+- [ ] `KNOWN_ISSUES.md` end-of-phase sweep done — new out-of-scope issues cataloged, fixed issues marked `Resolved`, scheduled issues linked to work items
 - [ ] All revision notes on the plan reference resolved changes
 - [ ] Lint passes
 - [ ] Typecheck passes
 - [ ] All unit + integration test suites pass
 - [ ] Manual smoke test of the main acceptance criterion completed live and documented
-- [ ] Phase tracker in `AGENTS.md` updated to ✓ with date
+- [ ] Phase tracker in `AGENTS.md` / `CLAUDE.md` updated to ✓ with date
 - [ ] Today's `docs/memory/YYYY-MM-DD.md` entry marks the phase as closed
 
 **Phase-specific gates:**
@@ -219,7 +221,7 @@ Record at end of phase:
 
 [End-of-doc kickoff prompt. Keeps the plan self-contained — reader knows exactly how to start execution.]
 
-> "Implement Phase N per `docs/IMPLEMENTATION_PLAN_PHASE_N.md` (rN). Follow `docs/PROJECT_STRUCTURE.md` for file locations and `AGENTS.md` for stack/conventions. When the plan disagrees with the actual repo, the repo wins — note the divergence in `DECISIONS.md` and proceed.
+> "Implement Phase N per `docs/IMPLEMENTATION_PLAN_PHASE_N.md` (rN). Follow `docs/PROJECT_STRUCTURE.md` for file locations and `AGENTS.md` for stack/conventions. Read `docs/KNOWN_ISSUES.md` before audit. When the plan disagrees with the actual repo, the repo wins — note material divergences in `DECISIONS.md`; catalog pre-existing out-of-scope bugs/debt/security gaps in `KNOWN_ISSUES.md`.
 >
 > Implement in checkpoints per §11 of the plan; standard gates for each checkpoint are inlined there. Start by proposing:
 > 1. [First deliverable — usually Checkpoint 1 Foundation: schema + deps + audit]

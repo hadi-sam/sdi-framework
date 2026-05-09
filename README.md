@@ -10,13 +10,13 @@ It is stack-agnostic, single-developer friendly, and designed for IDE-based AI c
 
 | Piece | Type | Purpose | Use when |
 | --- | --- | --- | --- |
-| `mvp-architect` | Skill | Turn an idea into the initial spec bundle (PRD, ARCHITECTURE, ROADMAP, PROJECT_STRUCTURE, IMPLEMENTATION_PLAN_PHASE_1, AGENTS.md). | Starting greenfield. |
+| `mvp-architect` | Skill | Turn an idea into the initial spec bundle (PRD, ARCHITECTURE, ROADMAP, PROJECT_STRUCTURE, IMPLEMENTATION_PLAN_PHASE_1, DECISIONS, KNOWN_ISSUES, MEMORY, AGENTS.md, CLAUDE.md). | Starting greenfield. |
 | `convert-to-sdi` | Skill | Adopt SDI on a project that already has code. | Joining a legacy project or formalizing an in-flight project. |
-| `sdi-mode` | Skill (Claude Code / Codex) **or** Custom mode (Roo / Kilo / OpenCode) | Implement against specs with audit-first checkpoints, decisions, memory, and document precedence. Auto-review of Checkpoints 2/3/4 default-on via reviewer ensemble (Opus subagent + codex exec on attempt 1; one retry reviewer on retries). | Writing code from an SDI plan. |
+| `sdi-mode` | Skill (Claude Code / Codex) **or** Custom mode (Roo / Kilo / OpenCode) | Implement against specs with audit-first checkpoints, decisions, known issues, memory, and document precedence. Auto-review of Checkpoints 2/3/4 default-on via reviewer ensemble (attempt 1: Opus subagent + Sonnet subagent + codex exec; attempt 2: Opus subagent + codex exec; attempt 3: Opus subagent). | Writing code from an SDI plan. |
 | `sdi-review` | Skill | SDI-aware lens for reviewing plans, rounds, fork decisions, and bug findings. Runs in whatever agent the user invokes (Opus, Codex, etc.) — no orchestration, no delegation. | Mid-implementation second pair of eyes — "review this plan", "round X delivered", "agent asking A or B", "found this bug". |
-| `sdi-next-plan` | Skill | Generate the next `IMPLEMENTATION_PLAN_*.md` after a phase or feature closes. Reads current repo state (AGENTS, DECISIONS, MEMORY, ROADMAP, prior plan). | Between work items in an ongoing project — "phase X closed, plan the next", "scope feature Y". |
+| `sdi-next-plan` | Skill | Generate the next `IMPLEMENTATION_PLAN_*.md` after a phase or feature closes. Reads current repo state (AGENTS, DECISIONS, KNOWN_ISSUES, MEMORY, ROADMAP, prior plan). | Between work items in an ongoing project — "phase X closed, plan the next", "scope feature Y". |
 
-`mvp-architect`, `convert-to-sdi`, and `sdi-next-plan` generate or update planning artifacts. `sdi-review` reviews artifacts. `sdi-mode` carries the implementation discipline; the project's `AGENTS.md` carries only project facts (stack, doc map, conventions, work tracker).
+`mvp-architect`, `convert-to-sdi`, and `sdi-next-plan` generate or update planning artifacts. `sdi-review` reviews artifacts. `sdi-mode` carries the implementation discipline; the project's `AGENTS.md` / `CLAUDE.md` files carry only project facts (stack, doc map, conventions, work tracker).
 
 ## Quick Start
 
@@ -39,7 +39,7 @@ After `convert-to-sdi` runs once on a project, do not run it again on the same p
 1. Start with a rough idea.
 2. Run `mvp-architect` Phase 0 to pick the project type and optional AI/LLM modifier.
 3. Run Phases A and B for discovery and trade-off resolution.
-4. Run Phase C to generate the bundle: `PRD`, `ARCHITECTURE`, `ROADMAP`, `PROJECT_STRUCTURE`, optional `DESIGN_SYSTEM`, `IMPLEMENTATION_PLAN_PHASE_1`, `AGENTS.md` (project facts only), and `README`. For Claude Code projects, a one-line `CLAUDE.md` (`@AGENTS.md`) is generated alongside.
+4. Run Phase C to generate the bundle: `PRD`, `ARCHITECTURE`, `ROADMAP`, `PROJECT_STRUCTURE`, optional `DESIGN_SYSTEM`, `IMPLEMENTATION_PLAN_PHASE_1`, `DECISIONS`, `KNOWN_ISSUES`, `MEMORY`, `AGENTS.md` and `CLAUDE.md` (same project facts), and `README`.
 5. Invoke the `sdi-mode` skill (Claude Code / Codex) or activate the `sdi-mode` custom mode (Roo / Kilo / OpenCode) and implement Phase 1 in audited rounds.
 6. At the end of the phase, use `sdi-review` for review if needed and `sdi-next-plan` to plan the next work item.
 
@@ -47,7 +47,7 @@ After `convert-to-sdi` runs once on a project, do not run it again on the same p
 
 1. Run `convert-to-sdi` Phase 0 for an automatic repo audit.
 2. Answer Phase 1 triage questions, with "don't know" always accepted.
-3. If existing canonical artifacts are detected (including an existing `AGENTS.md`), Phase 1.5 walks through preserve / merge / rename / skip per artifact.
+3. If existing canonical artifacts are detected (including an existing `AGENTS.md` or `CLAUDE.md`), Phase 1.5 always shows the artifact matrix, the recommended action per file, and the A/B/C/D strategy legend before proceeding.
 4. Run Phase 2 to generate the SDI bundle from the repo as it exists.
 5. Run Phase 3 to create the first `IMPLEMENTATION_PLAN_*`.
 6. Invoke `sdi-mode` and continue future work through the `sdi-review` / `sdi-next-plan` loop.
@@ -59,7 +59,7 @@ The framework has five installable units (`sdi-mode/`, `mvp-architect/`, `conver
 - **Skill discovery** — Claude Code, Codex.
 - **Custom mode / agent** — Roo Code, Kilo Code, OpenCode.
 
-In both models, `AGENTS.md` lives at the project's repo root and carries only project facts. It is generated by `mvp-architect` (greenfield) or `convert-to-sdi` (existing repos); it is **not** copied manually from this repo.
+In both models, `AGENTS.md` and `CLAUDE.md` live at the project's repo root and carry the same project facts. They are generated by `mvp-architect` (greenfield) or `convert-to-sdi` (existing repos); they are **not** copied manually from this repo.
 
 ### Claude Code
 
@@ -70,7 +70,7 @@ Install all five skills under one of:
 
 Each skill is self-contained — copy the whole directory, including its `SKILL.md` and `references/`. The `sdi-mode` skill auto-invokes when you start implementation work; `mvp-architect` for initial scoping; `sdi-review` for mid-implementation review; `sdi-next-plan` for next-phase planning; `convert-to-sdi` for adopting an existing repo.
 
-For `sdi-mode` auto-review (default-on for Checkpoints 2/3/4), attempt 1 runs an Opus subagent (via the Anthropic Agent tool, when the runtime supports it) and `codex exec` in parallel. Attempts 2-3 run one retry reviewer: Opus by default; degraded Codex-only only when Opus is unavailable and Codex was the surviving attempt-1 reviewer. For Codex to participate, the `codex` CLI must be on PATH and `~/.codex/config.toml` (or `$CODEX_HOME/config.toml`) must select an appropriate reviewer model (recommended: gpt-5.5 with reasoning effort `xhigh`). Auto-review runs after a clean-worktree preflight; reviewers audit the implementer's test/check evidence in read-only mode with a default 20-minute timeout. If one reviewer is unavailable, `sdi-mode` continues with the surviving reviewer and marks auto-review as degraded; if both are unavailable, it escalates to the user. `sdi-review` does not depend on Codex — it's an SDI-aware lens that runs in whatever agent the user invokes, so the user can drive Codex separately for an independent perspective if they want one.
+For `sdi-mode` auto-review (default-on for Checkpoints 2/3/4), attempt 1 runs Opus and Sonnet subagents (via the Anthropic Agent tool, when the runtime supports them) plus `codex exec` in parallel. Attempt 2 runs Opus + Codex after a FAIL; attempt 3 runs Opus only after a second FAIL. For Codex to participate, the `codex` CLI must be on PATH and `~/.codex/config.toml` (or `$CODEX_HOME/config.toml`) must select an appropriate reviewer model (recommended: gpt-5.5 with reasoning effort `xhigh`). Auto-review runs after a clean-worktree preflight; reviewers audit the implementer's test/check evidence in read-only mode with a default 20-minute timeout. If a scheduled reviewer is unavailable, `sdi-mode` continues with the surviving reviewer(s) and marks auto-review as degraded; if no scheduled reviewer is available, it escalates to the user. `sdi-review` does not depend on Codex — it's an SDI-aware lens that runs in whatever agent the user invokes, so the user can drive Codex separately for an independent perspective if they want one.
 
 `AGENTS.md` and `CLAUDE.md` are generated for the target project by `mvp-architect` or `convert-to-sdi` — they are not part of this repo's installation.
 
@@ -120,25 +120,26 @@ If the project does not fit any type, the skill asks whether to adapt on the fly
 
 ## Core Disciplines
 
-These rules live in `sdi-mode/SKILL.md` and are loaded as a skill (Claude Code / Codex) or as the system prompt of a custom mode / agent (Roo / Kilo / OpenCode). They never live inside `AGENTS.md`.
+These rules live in `sdi-mode/SKILL.md` and are loaded as a skill (Claude Code / Codex) or as the system prompt of a custom mode / agent (Roo / Kilo / OpenCode). They never live inside `AGENTS.md` or `CLAUDE.md`.
 
 1. **Audit the plan against the repo before coding.** Plans contain assumptions; the repo is reality. When they disagree, the repo wins and the plan gets a revision note.
 2. **Stop at explicit checkpoints with binary gates.** Each phase has natural checkpoints, and each gate must pass before the round closes.
 3. **Maintain decisions and memory separately.** Put durable rationale in `docs/DECISIONS.md`. Put dated work state, blockers, and next steps in `docs/memory/YYYY-MM-DD.md`.
-4. **Respect document precedence.** Live repo state > `AGENTS.md` (project facts) > `PRD` > `ARCHITECTURE` > `ROADMAP` > `PROJECT_STRUCTURE` > `IMPLEMENTATION_PLAN` > `DESIGN_SYSTEM` > `README`. `DECISIONS.md` patches authority; `docs/memory/` is a breadcrumb trail, not source of truth.
+4. **Maintain known issues separately.** Put known bugs, security gaps, tech debt, and deferred fixes in `docs/KNOWN_ISSUES.md` with append-only lifecycle status.
+5. **Respect document precedence.** Live repo state > `AGENTS.md` / `CLAUDE.md` (project facts) > `PRD` > `ARCHITECTURE` > `ROADMAP` > `PROJECT_STRUCTURE` > `IMPLEMENTATION_PLAN` > `DESIGN_SYSTEM` > `README`. `DECISIONS.md` patches authority; `KNOWN_ISSUES.md` catalogs known wrongness; `docs/memory/` is a breadcrumb trail, not source of truth.
 
 ## Generated Artifacts
 
 After `mvp-architect` or `convert-to-sdi`, a project usually has:
 
-- `AGENTS.md`: project fact sheet — type, stack, doc map, project-specific conventions, work tracker. **No discipline rules** — those live in `sdi-mode`.
-- `CLAUDE.md` (Claude Code projects only): one-line `@AGENTS.md` import.
+- `AGENTS.md` / `CLAUDE.md`: same project fact sheet — type, stack, doc map, project-specific conventions, work tracker. **No discipline rules** — those live in `sdi-mode`. Keep whichever file(s) your coding agents read.
 - `docs/PRD.md`: product scope and user-facing requirements.
 - `docs/ARCHITECTURE.md`: system shape, critical flows, and trade-offs.
 - `docs/ROADMAP.md`: phase or work-item progression.
 - `docs/PROJECT_STRUCTURE.md`: repo layout and conventions.
 - `docs/DESIGN_SYSTEM.md`: UI projects only.
 - `docs/IMPLEMENTATION_PLAN_*.md`: the current work item.
+- `docs/KNOWN_ISSUES.md`: append-only catalog of known bugs, security gaps, technical debt, and deferred fixes.
 - `docs/DECISIONS.md`: append-only durable decisions.
 - `docs/MEMORY.md` and `docs/memory/YYYY-MM-DD.md`: dated execution memory.
 
@@ -154,6 +155,9 @@ sdi-framework/
       agents-template.md
       artifact-bundle.md
       core-templates/
+        decisions-template.md
+        known-issues-template.md
+        memory-template.md
       discovery-themes.md
       kickoff-prompt-template.md
       modifiers/
@@ -167,6 +171,7 @@ sdi-framework/
       auto-audit-checklist.md
       confidence-flags.md
       core-templates/                # duplicated from mvp-architect for self-containment
+        known-issues-template.md
       existing-artifact-handling.md
       first-work-item.md
       modifiers/                     # duplicated from mvp-architect for self-containment
@@ -180,6 +185,7 @@ sdi-framework/
       auto-review-mode.md
       decisions-log-format.md
       expected-artifacts.md
+      known-issues-discipline.md
       memory-discipline.md
       revision-notes-format.md
       round-report-template.md
@@ -187,6 +193,7 @@ sdi-framework/
   sdi-review/
     SKILL.md
     references/
+      known-issues-review.md
       plan-review-protocol.md
       round-report-review-patterns.md
   sdi-next-plan/
@@ -210,7 +217,7 @@ sdi-framework/
 ## What SDI Is Not
 
 - **Not a code reviewer.** `sdi-mode` implements with discipline; the human still reviews the work.
-- **Not an auto-approver.** Foundation and Housekeeping checkpoints stay user-gated regardless. Mid-phase checkpoints (Core, Integrations, UI) are verified by a reviewer ensemble — Opus subagent + `codex exec` on attempt 1, then one retry reviewer on retries (default-on; user can opt out per session) — but the discipline still requires per-gate evidence with file:line citations, not implementer self-approval. Always-escalate triggers (DECISIONS-worthy choice, schema migration with data-loss risk, new external dependency, security-relevant change, plan revision, PRD/ARCHITECTURE deviation) keep the round user-gated even when auto-review is on.
+- **Not an auto-approver.** Foundation and Housekeeping checkpoints stay user-gated regardless. Mid-phase checkpoints (Core, Integrations, UI) are verified by a reviewer ensemble — attempt 1: Opus subagent + Sonnet subagent + `codex exec`; attempt 2: Opus subagent + `codex exec`; attempt 3: Opus subagent (default-on; user can opt out per session) — but the discipline still requires per-gate evidence with file:line citations, not implementer self-approval. Always-escalate triggers (DECISIONS-worthy choice, KNOWN_ISSUES entry/status change, schema migration with data-loss risk, new external dependency, security-relevant change, plan revision, PRD/ARCHITECTURE deviation) keep the round user-gated even when auto-review is on.
 - **Not a refactor agent.** `convert-to-sdi` documents reality; it never edits source code.
 - **Not scope-from-scratch for in-flight projects.** Use the `sdi-next-plan` skill for next-plan work.
 - **Not bureaucracy for its own sake.** Friction should earn its keep by improving clarity, quality, or auditability.

@@ -28,7 +28,7 @@ Confirm? If wrong, which of the 8 types is correct?
 0. Don't know / skip
 ```
 
-**Skip behavior (0):** Keep the auto-detected type with a low-confidence flag in AGENTS.md. The framework still works; user can correct later by editing AGENTS.md.
+**Skip behavior (0):** Keep the auto-detected type with a low-confidence flag in `AGENTS.md` / `CLAUDE.md`. The framework still works; user can correct later by editing the project fact sheet(s).
 
 ### Q2 — AI modifier
 
@@ -53,7 +53,7 @@ What stage is the project in?
 (e) Don't know / skip
 ```
 
-**Skip behavior (e):** Use the auto-detected stage. If 3+ production indicators were detected, treat as `mature-production` and emit the `Production constraints` section in AGENTS.md (the indicators justify it even without confirmation). If 0–2 indicators, mark stage as "unknown" and skip the production section — user can add later.
+**Skip behavior (e):** Use the auto-detected stage. If 3+ production indicators were detected, treat as `mature-production` and emit the `Production constraints` section in `AGENTS.md` / `CLAUDE.md` (the indicators justify it even without confirmation). If 0–2 indicators, mark stage as "unknown" and skip the production section — user can add later.
 
 ### Q4 — Work cadence
 
@@ -82,7 +82,7 @@ What stage is the project in?
 Anything relevant? (free-form answer, or "nothing" / "don't know")
 ```
 
-**Skip behavior ("nothing" or "don't know"):** Leave the `Critical context` section in AGENTS.md as a placeholder with a `> Source: best-effort placeholder — populate as you learn the project` flag. User adds context as it surfaces.
+**Skip behavior ("nothing" or "don't know"):** Leave the `Critical context` section in `AGENTS.md` / `CLAUDE.md` as a placeholder with a `> Source: best-effort placeholder — populate as you learn the project` flag. User adds context as it surfaces.
 
 ## After Q5
 
