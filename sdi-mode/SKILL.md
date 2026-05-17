@@ -125,9 +125,16 @@ Read `references/stop-and-review-patterns.md` for the standard checkpoints, thei
 
 Once approved on the foundation, implement in rounds. A **round** is a coherent chunk of work (e.g. "all the pure functions of the ingestion pipeline + their tests", "the auth middleware + role guards + tests", "the agent loop + first 3 tools + integration tests"), not a single file.
 
-**Per-round commit convention.** End every round with `git commit -m "round X/CN: <summary>"` (e.g. `round B/C2: callback + middleware`). Capture `BASE_SHA = git rev-parse HEAD` at the **start** of the round (this is the last commit of the previous round, or the phase-start commit for round A) and record it in the round report header. The auto-review uses BASE_SHA to compute `git diff BASE_SHA..HEAD`. Fix attempts triggered by auto-review FAIL get their own commits (`round X/CN fix N: <what>`), preserving the audit trail. Round reports and reviewer outputs live under `docs/reviews/`; keep them uncommitted while the auto-review loop is running, then commit them after PASS/escalation with `round X/CN review artifacts: <verdict>`. No squashing — the granular history is the audit.
+**Per-round commit convention — split A + B (see §Step 4.5 below and `references/auto-review-mode.md` §"Per-round commit convention" for the canonical detail).** Each round produces **two commits**:
 
-Before auto-review, `HEAD` must contain the round/fix commit being reviewed and the working tree must be clean except for `.sdi-review-prompt-tmp.txt` and this round's `docs/reviews/round-XN-*` artifacts. If unrelated or user-owned uncommitted changes are present, skip auto-review and escalate with the file list instead of reviewing an ambiguous state.
+1. **Commit A (code-only):** `git commit -m "round X/CN: <summary>"` (e.g. `round B/C2: callback + middleware`) carries the code/test/migration edits — NO round report inside this commit.
+2. **Commit B (report-only):** `git commit -m "round X/CN report: at HEAD <short-SHA-de-A>"` carries the round report draft referencing A's literal SHA.
+
+Capture `BASE_SHA = git rev-parse HEAD` at the **start** of the round — this is the **last `round X/CN review artifacts: <verdict>` commit of the previous round**, OR for Round A: the phase-start commit (previous phase's last `review artifacts` commit, or `mvp-bundle commit` for Phase 1). NOT "last commit of the previous round" (which after split is commit B or a fix N report). The auto-review uses BASE_SHA to compute `git diff BASE_SHA..HEAD`.
+
+Fix attempts triggered by auto-review FAIL produce a pair of commits each (`round X/CN fix N: <what>` code + `round X/CN fix N report: at HEAD <SHA>` paper trail). After the loop closes (PASS, ESCALATE, or cap), the per-attempt reviewer outputs at `docs/reviews/round-XN-attempt-N-{reviewer}.md` get committed together with the final round report via `round X/CN review artifacts: <verdict>`. The reviewer outputs stay uncommitted during the loop so the convergence check can compare attempt N to attempt N-1 in the working tree. No squashing — the granular history is the audit.
+
+Before auto-review, `HEAD` must contain **both** the round's commit A (code) AND commit B (report referencing A's SHA), OR the current fix attempt's commit pair. The working tree must be clean except for `.sdi-review-prompt-tmp.txt` and prior attempts' reviewer outputs at `docs/reviews/round-XN-attempt-*-{opus,sonnet,codex}.md`. If unrelated or user-owned uncommitted changes are present, skip auto-review and escalate with the file list instead of reviewing an ambiguous state.
 
 At the end of each round, deliver a structured report. Read `references/round-report-template.md` for the exact format. In summary:
 

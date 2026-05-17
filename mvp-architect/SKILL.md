@@ -163,7 +163,22 @@ Every concrete reference in the generated artifacts — method, class, hook, fil
 
 **Anti-pattern explicitly to avoid:** assertions like "(already exists in code)" / "(method available)" / "(N sites to change)" without Grep evidence immediately before the assertion. For greenfield Phase C: assertions about "this will be at `service/auth/`" must specify creation in the plan, not pretend the path exists.
 
-**Doesn't apply** to narrative text (motivation, rationale) — only to concrete claims that the coding agent will use as evidence during implementation. When in doubt: if an adversarial reviewer could flag the claim with Grep, you should have Grep'd first. See `sdi-next-plan/references/next-phase-planning.md` §"Verify-before-claim discipline" for worked examples on the narrative vs concrete boundary.
+**Doesn't apply** to narrative text (motivation, rationale) — only to concrete claims that the coding agent will use as evidence during implementation. When in doubt: if an adversarial reviewer could flag the claim with Grep, you should have Grep'd first.
+
+**Worked examples (narrative vs concrete boundary):**
+
+| Claim in plan | Category | Grep required? |
+|---|---|---|
+| "Bling rate limit is 3 req/s (per Bling V3 docs)" | Narrative (motivation, external source) | No — doesn't cite repo code |
+| "Bling rate limiter is in `RateLimitService.acquire`" | Concrete (cites repo symbol) | **YES** — Grep `RateLimitService.acquire` |
+| "Mirror the `OmieClient` pattern" | Concrete-precedent (cites symbol) | **YES** — Grep/Read `OmieClient` to confirm pattern |
+| "10 sites of `validateMembership` to migrate" | Concrete-count | **YES** — Grep and count literally |
+| "Auth helpers live in `service/auth/`" | Concrete-path | **YES** — Glob `service/auth/**` to confirm directory exists |
+| "Users expect latency < 200ms" | Narrative (UX rationale) | No — doesn't cite code |
+| "RateLimitService drops requests above threshold" | Concrete-behavior (claim about code) | **YES** — Read `RateLimitService` to confirm behavior |
+| "(method already exists in code)" with no name | Antipattern — vague concrete | **YES** — name the method AND grep; OR remove the parenthetical |
+
+Rule of thumb: **if a reviewer could open the file and say "this is wrong"**, it's concrete and needs Grep. **If the only validation is "does this make conceptual sense"**, it's narrative.
 
 ## Tone and writing style
 

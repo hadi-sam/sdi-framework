@@ -119,7 +119,22 @@ Generate the corresponding `IMPLEMENTATION_PLAN_*.md`:
 
 The plan's §0 Pre-requisites lists the **current production state as the foundation** — not "Phase N-1 delivered". The plan is grounded in the live repo.
 
-**Verify-before-claim discipline:** every concrete reference in the generated plan (method, class, hook, file:line, precedent, count) must be preceded by Grep/Read confirming existence and shape in the codebase. Especially critical for convert-to-sdi plans because the agent is working with code it didn't write — assumptions about "what exists" are easy to invent. Anti-pattern to avoid: assertions like "(already exists)" / "(method available)" / "(N sites)" without Grep evidence immediately before the assertion. Doesn't apply to narrative text (motivation, rationale). See `sdi-next-plan/references/next-phase-planning.md` §"Verify-before-claim discipline" for worked examples on the narrative vs concrete boundary.
+**Verify-before-claim discipline:** every concrete reference in the generated plan (method, class, hook, file:line, precedent, count) must be preceded by Grep/Read confirming existence and shape in the codebase. Especially critical for convert-to-sdi plans because the agent is working with code it didn't write — assumptions about "what exists" are easy to invent. Anti-pattern to avoid: assertions like "(already exists)" / "(method available)" / "(N sites)" without Grep evidence immediately before the assertion. Doesn't apply to narrative text (motivation, rationale).
+
+**Worked examples (narrative vs concrete boundary):**
+
+| Claim in plan | Category | Grep required? |
+|---|---|---|
+| "Bling rate limit is 3 req/s (per Bling V3 docs)" | Narrative (motivation, external source) | No — doesn't cite repo code |
+| "Bling rate limiter is in `RateLimitService.acquire`" | Concrete (cites repo symbol) | **YES** — Grep `RateLimitService.acquire` |
+| "Mirror the `OmieClient` pattern" | Concrete-precedent (cites symbol) | **YES** — Grep/Read `OmieClient` to confirm pattern |
+| "10 sites of `validateMembership` to migrate" | Concrete-count | **YES** — Grep and count literally |
+| "Auth helpers live in `service/auth/`" | Concrete-path | **YES** — Glob `service/auth/**` to confirm directory exists |
+| "Users expect latency < 200ms" | Narrative (UX rationale) | No — doesn't cite code |
+| "RateLimitService drops requests above threshold" | Concrete-behavior (claim about code) | **YES** — Read `RateLimitService` to confirm behavior |
+| "(method already exists in code)" with no name | Antipattern — vague concrete | **YES** — name the method AND grep; OR remove the parenthetical |
+
+Rule of thumb: **if a reviewer could open the file and say "this is wrong"**, it's concrete and needs Grep. **If the only validation is "does this make conceptual sense"**, it's narrative.
 
 After generation, instruct the user how to load `sdi-mode`:
 - Claude Code / Codex: install the `sdi-mode`, `sdi-review`, and `sdi-next-plan` skills under the tool's skills path (alongside `mvp-architect` and `convert-to-sdi`) if they aren't there yet. `AGENTS.md` and `CLAUDE.md` (same project facts) are already at repo root; keep whichever file(s) the user's coding agents read. Paste the kickoff prompt to start the work item — the `sdi-mode` skill auto-invokes from there.
