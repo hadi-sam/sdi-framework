@@ -470,6 +470,22 @@ If the parent session is already running the same model, the subagent still runs
 
 **Validate success by `exit code == 0` AND `--output-last-message` file is non-empty.** Never by stderr. Codex writes its session banner to stderr by design; on Windows machines with PowerShell `ConstrainedLanguage` mode (corporate Group Policy), codex.exe's internal PowerShell calls can also throw `[Console]::OutputEncoding` errors to stderr. Both can coexist with a clean exit 0 and a valid review output file — the agent should not abort the run on stderr noise alone.
 
+**Pre-flight: ensure `docs/reviews/` exists before invoking** — codex exits 0 even when `--output-last-message` can't be written (parent dir missing), so the output file is silently absent. Run `mkdir -p docs/reviews` before the first attempt of any round.
+
+**Two-step invocation — do not skip step 1.** Codex CLI 0.128+ has a subtle gotcha: if the prompt is passed as a positional argument AND stdin is not a TTY (which it never is in Claude Code Bash, CI runners, or any background-task wrapper), codex sees "stdin is piped → append it to my positional prompt" and **hangs forever waiting for EOF that never comes**. Symptoms: process spawns, 0 bytes output, 0 session files, hangs indefinitely. The canonical pattern below avoids this entirely by routing the prompt through stdin redirected from a file (which closes naturally on EOF).
+
+### Step 1 — Write the substituted prompt to a file
+
+```
+cat > .sdi-review-prompt-tmp.txt <<'PROMPT_EOF'
+<the full substituted adversarial review prompt — all placeholders replaced>
+PROMPT_EOF
+```
+
+The heredoc delimiter MUST be quoted (`'PROMPT_EOF'`, not `PROMPT_EOF`) so bash doesn't expand `$variables`, backticks, or `[BASE_SHA]`-style placeholders inside the prompt. The file is gitignored and recreated per attempt; delete after the loop closes (after the review-artifacts commit).
+
+### Step 2 — Invoke codex with stdin redirected from the file
+
 ```
 codex exec --ephemeral \
   --sandbox read-only \
@@ -478,12 +494,17 @@ codex exec --ephemeral \
   - < .sdi-review-prompt-tmp.txt
 ```
 
-Notes:
+Flag/argument notes:
 - `--ephemeral` — codex doesn't persist this run as a session.
 - `--sandbox read-only` — reviewer runs read-only; the CLI still writes the final message to `--output-last-message`. Do not switch to writable sandbox just to let Codex rerun cache-writing tests; the implementer should run those checks and report evidence before review.
-- `--output-last-message <FILE>` — captures only the final agent message in the output file. Skips intermediate stdout noise.
-- `-C [REPO_ROOT]` — sets codex's working directory.
-- `- < <prompt-file>` — passes the prompt via stdin (cleaner than escaping inline arguments).
+- `--output-last-message <FILE>` — captures only the final agent message in the output file. Skips intermediate stdout noise. Parent dir MUST exist (see pre-flight above).
+- `-C [REPO_ROOT]` — sets codex's working directory. Use this instead of `cd <dir> && codex exec ...` so codex's own working-directory tracking is explicit.
+- `- < <prompt-file>` — the `-` argument explicitly tells codex to read prompt from stdin; the `< file` redirection feeds the file as stdin AND closes naturally on EOF. **This is the load-bearing piece** — never replace this with a positional prompt argument (see two-step rationale above).
+
+**Never do this** (these cause the hang described above):
+- `codex exec ... "$(cat <<EOF ... EOF)"` — positional prompt via heredoc substitution; stdin stays open, codex hangs.
+- `codex exec ... "<inline prompt string>"` — positional prompt; same hang.
+- `codex exec ... "PROMPT" < /dev/null` — "works" technically (closes stdin so codex doesn't hang), but the `- < file` pattern is canonical, self-documenting, and survives prompts with characters that bash would otherwise mangle in argument-quoting.
 
 The run typically takes 3–10 minutes with xhigh reasoning on a meaningful round diff. Run as a background command (your tool's mechanism for long-running shell commands), record start time, and apply the 20-minute reviewer timeout above.
 
@@ -493,12 +514,13 @@ On each attempt, the implementer fires the scheduled reviewers in parallel and w
 
 1. Write/update `docs/reviews/round-XN-report.md` as the report draft for this attempt, including the Testing evidence.
 2. Run the clean-state preflight. Do not invoke reviewers if uncommitted non-artifact changes remain.
-3. Write the substituted prompt to `.sdi-review-prompt-tmp.txt` with `[PRIOR_REVIEW_FINDINGS] = "None — first attempt."` on attempt 1, or the union of prior findings plus fix commit(s) on attempts 2+.
-4. Run the packet checklist. Do not invoke reviewers if placeholders remain or required paths/sections are missing.
-5. Spawn the scheduled subagents (Agent tool, `run_in_background: true`) and record start time.
-6. Start `codex exec` as a background Bash command and record start time when Codex is scheduled.
-7. Wait for scheduled reviewers to complete, applying the 20-minute timeout policy.
-8. Read output files. Parse VERDICT from each usable reviewer output. Apply the merge rules or direct Opus verdict.
+3. **Pre-flight `mkdir -p docs/reviews`** if it doesn't exist — codex `--output-last-message` silently fails (exit 0 but no file) when the parent dir is missing.
+4. **Step 1 of two-step codex invocation:** write the substituted prompt to `.sdi-review-prompt-tmp.txt` (heredoc with quoted delimiter, so placeholders don't get expanded by bash) with `[PRIOR_REVIEW_FINDINGS] = "None — first attempt."` on attempt 1, or the union of prior findings plus fix commit(s) on attempts 2+.
+5. Run the packet checklist. Do not invoke reviewers if placeholders remain in `.sdi-review-prompt-tmp.txt` or required paths/sections are missing.
+6. Spawn the scheduled subagents (Agent tool, `run_in_background: true`) and record start time.
+7. **Step 2 of two-step codex invocation:** start `codex exec ... - < .sdi-review-prompt-tmp.txt` as a background Bash command and record start time when Codex is scheduled. NEVER pass the prompt as a positional argument — codex will hang waiting for stdin EOF (see §"Invocation — Codex CLI" for the rationale).
+8. Wait for scheduled reviewers to complete, applying the 20-minute timeout policy.
+9. Read output files. Parse VERDICT from each usable reviewer output. Apply the merge rules.
 9. If any reviewer failed to produce usable output, apply §"Reviewer fallback".
 
 Default schedule:
@@ -528,6 +550,8 @@ After the round closes (PASS or escalation), append final auto-review history to
 - **Codex CLI assumptions.** The framework assumes `codex` is on PATH and the user has `~/.codex/config.toml` (or `$CODEX_HOME/config.toml`) selecting an appropriate reviewer model. The framework does not configure this. If `codex --version` fails, surface the gap to the user and apply §"Reviewer fallback" for any attempt where Codex was scheduled. For Windows-specific invocation rules (Bash default, PowerShell `cmd /c` fallback, exit-code-not-stderr validation), see §"Invocation — Codex CLI" above.
 - **Anthropic subagent assumptions.** Full ensemble mode assumes the host runtime supports the Anthropic Agent tool with Opus and Sonnet model selection. On runtimes without that, the unavailable subagent(s) are skipped via reviewer fallback. If no scheduled reviewer can run, escalate or opt out of auto-review.
 - **`codex review --base/--commit` parser quirk.** The CLI rejects custom `[PROMPT]` when `--base` or `--commit` is set. This protocol uses `codex exec` (not `codex review`) precisely to bypass that limitation. Do not switch to `codex review`.
+- **Passing the prompt as a positional argument.** `codex exec ... "$(cat <<EOF ... EOF)"` or `codex exec ... "<inline string>"` hangs forever in any non-TTY shell (Claude Code Bash, CI, background tasks). Codex sees "stdin is piped" and tries to read it to append to the positional prompt; stdin never closes; process hangs with 0 bytes output and 0 session files. Always use the two-step `cat > file` + `- < file` pattern documented in §"Invocation — Codex CLI". If you absolutely must use a positional prompt (e.g., for a one-line smoke test), add `< /dev/null` to close stdin.
+- **Forgetting `mkdir -p docs/reviews` before the first attempt.** Codex exits 0 even when `--output-last-message` writes fail (parent dir missing), so a missing reviewer output file is silently empty/absent. The audit-trail commit then has no Codex content. Pre-flight the directory once per round (or per project, then leave it).
 - **Sequencing reviewers serially.** On attempts with multiple scheduled reviewers, run them in parallel, not one after the other. Serial execution multiplies wall-clock latency for no benefit. The runtime supports parallel Agent + Bash background invocations.
 
 ## When auto-review is wrong

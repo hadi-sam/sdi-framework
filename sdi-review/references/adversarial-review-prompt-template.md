@@ -124,7 +124,19 @@ Do NOT edit any files. Your response is the review report itself.
 
 ## Pairing with codex exec or a subagent
 
-If you want to run this review headless (background process, structured artifact), the same template works — just write the filled prompt to a file and pipe it:
+If you want to run this review headless (background process, structured artifact), the same template works. **Two steps, do not skip step 1:**
+
+### Step 1 — Write the filled prompt to a file
+
+```
+cat > my-filled-review-prompt.txt <<'PROMPT_EOF'
+<the full filled prompt — all four placeholders replaced>
+PROMPT_EOF
+```
+
+The heredoc delimiter MUST be quoted (`'PROMPT_EOF'`) so bash doesn't expand `$variables` or backticks inside the prompt content.
+
+### Step 2 — Invoke codex with stdin redirected from the file
 
 ```
 codex exec --ephemeral --sandbox read-only \
@@ -133,4 +145,12 @@ codex exec --ephemeral --sandbox read-only \
   - < my-filled-review-prompt.txt
 ```
 
-Or pass the filled prompt to an Agent subagent (Anthropic Agent tool, `model: opus`, `subagent_type: general-purpose`) as the `prompt` argument. The output is the review report.
+The `- < file` pattern is load-bearing: the `-` argument tells codex to read prompt from stdin, the `< file` feeds the file as stdin AND closes naturally on EOF.
+
+**Never pass the prompt as a positional argument** (e.g., `codex exec ... "$(cat <<EOF ... EOF)"`). In any non-TTY shell (Claude Code Bash, CI, background tasks), codex sees "stdin is piped" and tries to read it to append to the positional prompt; stdin never closes; the process hangs with 0 bytes output. Always use stdin redirect.
+
+**Pre-flight:** ensure the directory containing the `--output-last-message` path exists (e.g., `mkdir -p docs/reviews` if writing there). Codex exits 0 even when the output file can't be written, so a missing parent dir results in a silently empty/absent reviewer output.
+
+---
+
+Or pass the filled prompt to an Agent subagent (Anthropic Agent tool, `model: opus`, `subagent_type: general-purpose`) as the `prompt` argument — no stdin gymnastics needed; the subagent runtime handles input. The output is the review report.
