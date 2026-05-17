@@ -157,6 +157,14 @@ End the bundle with two outputs:
 
 After Phase C, hand off the bundle to a coding agent via the kickoff prompt. For mid-implementation review (plan reviews, round report reviews, fork decisions, bug findings), the user invokes the `sdi-review` skill. For planning the next work item after the current one closes, the user invokes the `sdi-next-plan` skill. Neither belongs in this skill anymore.
 
+### Verify-before-claim discipline
+
+Every concrete reference in the generated artifacts — method, class, hook, file:line, precedent ("mirrors pattern of X"), count ("N sites to change") — must be preceded by Grep/Read confirming existence and shape in the codebase (or, for greenfield, that the named thing is being created by this very plan). Cite output verbatim when useful.
+
+**Anti-pattern explicitly to avoid:** assertions like "(already exists in code)" / "(method available)" / "(N sites to change)" without Grep evidence immediately before the assertion. For greenfield Phase C: assertions about "this will be at `service/auth/`" must specify creation in the plan, not pretend the path exists.
+
+**Doesn't apply** to narrative text (motivation, rationale) — only to concrete claims that the coding agent will use as evidence during implementation. When in doubt: if an adversarial reviewer could flag the claim with Grep, you should have Grep'd first. See `sdi-next-plan/references/next-phase-planning.md` §"Verify-before-claim discipline" for worked examples on the narrative vs concrete boundary.
+
 ## Tone and writing style
 
 - **Direct, low on hedging.** The user is a technical decision-maker. They want your position, not a list of "on one hand / on the other hand" without a conclusion. Have a recommendation; give it; be ready to defend or revise.

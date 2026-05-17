@@ -73,7 +73,30 @@ Inside the plan:
 - **§12 Decisions Log** — only the decisions you anticipate this work item will memorialize. Don't pre-record decisions from earlier work items.
 - **§13 Known divergences** — pre-populate with anything the audit of recent memory dailies surfaced.
 
-Plan length: same target as initial-bundle plans (400–600 lines). Don't pad.
+Plan length: same target as initial-bundle plans (400–600 lines, hard cap 800). Don't pad.
+
+### Verify-before-claim discipline
+
+Every concrete reference in the generated plan — method, class, hook, file:line, precedent ("mirrors pattern of X"), count ("N sites to change") — must be preceded by Grep/Read confirming existence and shape in the codebase. Cite output verbatim when useful.
+
+**Anti-pattern explicitly to avoid:** assertions like "(already exists in code)" / "(method available)" / "(N sites to change)" without Grep evidence immediately before the assertion.
+
+**Doesn't apply** to narrative text (motivation, rationale) — only to concrete claims that the coding agent will use as evidence during implementation. When in doubt: if an adversarial reviewer could flag the claim with Grep, you should have Grep'd first.
+
+**Worked examples (narrative vs concrete boundary):**
+
+| Claim in plan | Category | Grep required? |
+|---|---|---|
+| "Bling rate limit is 3 req/s (per Bling V3 docs)" | Narrative (motivation, external source) | No — doesn't cite repo code |
+| "Bling rate limiter is in `RateLimitService.acquire`" | Concrete (cites repo symbol) | **YES** — Grep `RateLimitService.acquire` |
+| "Mirror the `OmieClient` pattern" | Concrete-precedent (cites symbol) | **YES** — Grep/Read `OmieClient` to confirm pattern |
+| "10 sites of `validateMembership` to migrate" | Concrete-count | **YES** — Grep and count literally |
+| "Auth helpers live in `service/auth/`" | Concrete-path | **YES** — Glob `service/auth/**` to confirm directory exists |
+| "Users expect latency < 200ms" | Narrative (UX rationale) | No — doesn't cite code |
+| "RateLimitService drops requests above threshold" | Concrete-behavior (claim about code) | **YES** — Read `RateLimitService` to confirm behavior |
+| "(method already exists in code)" with no name | Antipattern — vague concrete | **YES** — name the method AND grep; OR remove the parenthetical |
+
+Rule of thumb: **if a reviewer could open the file and say "this is wrong"**, it's concrete and needs Grep. **If the only validation is "does this make conceptual sense"**, it's narrative.
 
 ## Optional ROADMAP update
 

@@ -13,7 +13,13 @@ The framework treats `IMPLEMENTATION_PLAN_*.md` uniformly. Use whichever naming 
 
 Throughout this template, sections referencing "Phase N" apply equally when the plan is named with a slug — substitute the slug as the work-item identifier. Headers below show "Phase N" as the dominant example; replace mentally if your plan uses a slug.
 
-Target length: 400–600 lines (longer for complex phases).
+Target length: 400–600 lines. **Hard cap: 800 lines.** If a plan exceeds 800 lines, it indicates one of three causes:
+
+1. Plan covers multiple poorly-scoped work items → split.
+2. Cross-section restatement is happening → consolidate to SSOT (see §"Writing tips" — "Each fact has ONE canonical section").
+3. Revision archeology is accumulating → move details to review files (see §"Revision notes" — ≤5 lines per note).
+
+No exceptions without explicit justification recorded in DECISIONS.md.
 
 ## Structure
 
@@ -182,7 +188,7 @@ Skip checkpoints that don't apply (e.g. drop Checkpoint 4 if there is no UI). **
 **Phase-specific gates:**
 - [ ] [optional]
 
-### Checkpoint 5 — Housekeeping **(user-gated)**
+### Checkpoint 5 — Housekeeping **(auto-review comprehensive — escalation-only)**
 
 **Covers:** §10 Acceptance Criteria mapping, §12 Decisions Log materialization, §13 Known divergences resolution, known-issues lifecycle updates, doc updates (`PROJECT_STRUCTURE`, `AGENTS.md` / `CLAUDE.md`).
 
@@ -200,6 +206,7 @@ Skip checkpoints that don't apply (e.g. drop Checkpoint 4 if there is no UI). **
 - [ ] Manual smoke test of the main acceptance criterion completed live and documented
 - [ ] Phase tracker in `AGENTS.md` / `CLAUDE.md` updated to ✓ with date
 - [ ] Today's `docs/memory/YYYY-MM-DD.md` entry marks the phase as closed
+- [ ] CP5 comprehensive review run (auto-review default) — phase-wide diff (`git diff PHASE_BASE_SHA..HEAD`), per-CP packet split by default. Decision Bundle posted; findings escalated to user (no fix loop). User resolved all findings (via user-gated housekeeping fix rounds, accepted as KNOWN_ISSUES entries, or opened follow-up work items). OR user opted out and reviewed manually.
 
 **Phase-specific gates:**
 - [ ] [optional]
@@ -233,32 +240,35 @@ Record at end of phase:
 
 ## Writing tips
 
-- **Each fact has ONE canonical section.** Tool shapes in §2; contracts in §3; helper signatures in §4; UI behavior in §6; observability in §9; acceptance criteria in §10. Other sections reference by §-number, never restate. Restatement is the #1 source of cross-section drift between revisions — every duplicated fact is a copy that must be edited in sync, and adversarial review reliably catches the missed copies one round later.
+- **Each fact has ONE canonical section.** Tool shapes in §2; contracts in §3; helper signatures in §4; UI behavior in §6; observability in §9; acceptance criteria in §10. Other sections reference by §-number, never restate. Restatement is the #1 source of cross-section drift between revisions — every duplicated fact is a copy that must be edited in sync, and adversarial review reliably catches the missed copies one round later. **SSOT is a hard rule, not a guideline.** The fix for a finding that would ask "add a gate restating spec" is ALWAYS to consolidate the reference to the canonical section + point pointer (`Per §X.Y`), NEVER to copy the spec into the gate. Adversarial review automatically flags restatement as class-6 (convention mistake).
 - **§1 In-scope bullets are TOC entries, not summaries.** ≤1 line each, ending in "see §[N]". Resist the urge to summarize what §2–§9 contain; the summary rots the moment §2–§9 are revised. Same rule for §10 acceptance criteria and §11 phase-specific gates.
+- **Phase-specific gates are ONE LINE.** Format: `- [ ] Per §X.Y[, §Z.W], <testable clause in ≤15 words>`. Details (SQL, fixtures, commands, exact counts) live in the canonical referenced section. Gates as paragraphs restating spec sub-clauses are **anti-pattern** — they generate cross-section drift.
+
+  **Good:** `- [ ] Per §3.5.1, 8 sites of IntegrationApiService migrated from validateMembership to validateCanManage`
+
+  **Bad:** `- [ ] r7 fix Findings C+D + r8 fix Findings A+B — RBAC hardening §3.5: confirm validateMembership → validateCanManage applied in the 8 sites of IntegrationApiService listed in §3.5.1 table (enumeration corrected; r8/r9 plan spec'd 3 surfaces citing IntegrationCard.tsx but real shipped 5...)`
+- **Acceptance criteria are ONE LINE each.** Format: `<N>. Per §X.Y, <testable invariant>`. Exact commands, SQL queries, fixtures, unit test code, escalation trees — DON'T go in §10. They live in §8 Tests, §11 Checkpoint phase-specific gates, or in the canonical section that defines the invariant. §10 is the checklist the user verifies; if they have to scroll 75 lines to understand a criterion, the criterion is poorly written.
 - **Every "in scope" bullet corresponds to something specific elsewhere in the doc.** If §3 doesn't describe an algorithm for "ingest leads", don't list it in scope.
 - **Type-specific schemas/contracts/specs (§2) should be close to production-ready.** Not final, but the structure should survive the implementation with only minor tweaks.
 - **API contracts (when applicable) should include every status code.** If your contract table has 3 rows, you're missing error cases.
-- **Acceptance criteria (§10) are a checklist the user can actually verify.** Avoid "X is stable" — use "X is covered by test Y" or "smoke test Z passes."
 - **§11 Implementation checkpoints maps work to the sdi-mode discipline.** Both the canonical gates (mirrored from sdi-mode for self-containment) and phase-specific slots appear inline. Only add phase-specific gates when the phase has constraints unique to it; don't restate the standard gates.
 
-> **Maintenance note (for framework maintainers, not for inclusion in generated plans):** §11's standard gates are mirrored from the sdi-mode skill's `stop-and-review-patterns.md`. All three planning skills (`mvp-architect`, `convert-to-sdi`, `sdi-next-plan`) carry their own copy of this template on purpose so a generated plan can be reviewed without sdi-mode installed. When the canonical gates change, update all three copies (`mvp-architect/references/core-templates/implementation-plan-template.md`, `convert-to-sdi/references/core-templates/implementation-plan-template.md`, and `sdi-next-plan/references/core-templates/implementation-plan-template.md`) to match. Same convention as `agents-template.md`.
+> **Maintenance note (for framework maintainers, not for inclusion in generated plans):** §11's standard gates are mirrored from the sdi-mode skill's `stop-and-review-patterns.md`. All three planning skills (`mvp-architect`, `convert-to-sdi`, `sdi-next-plan`) carry their own copy on purpose so a generated plan can be reviewed without sdi-mode installed. When the canonical gates change, update all three copies (`mvp-architect/references/core-templates/implementation-plan-template.md`, `convert-to-sdi/references/core-templates/implementation-plan-template.md`, and `sdi-next-plan/references/core-templates/implementation-plan-template.md`) to match. Same convention as `agents-template.md`.
 - **§12 Decisions Log is a checklist for end-of-phase housekeeping.** Each becomes a real DECISIONS.md entry at phase close.
 - **§13 is where the plan is honest about its own limitations.** Usually empty at initial draft; populated during audit.
 
 ## Revision notes (r2, r3, ...)
 
-When the coding agent audits this plan against the repo and finds divergences, the plan gets revised. The pattern:
+Revision notes stack at the top of the plan, newest first. **Each note is 1-5 lines** in the format:
 
-```markdown
-> **Revision note (r2):** audited against Phase N-1 repo state. 3 adjustments:
-> 1. [Change — rationale]
-> 2. [Change — rationale]
-> 3. [Change — rationale]
->
-> **General rule**: when this plan disagrees with actual repo conventions, the repo wins.
-```
+> **Revision note (rN, YYYY-MM-DD):** plan review-N returned M findings ([verdict]). Applied K fixes; J substantive turned into DECISIONS #X. Details verbatim in `docs/reviews/plan-review-N-{opus,sonnet,codex}.md`.
 
-Revision notes stack at the top of the doc, newest first. Never delete prior revision notes — they're the history of the plan's evolution.
+Prose details of each individual finding — which class, which reviewer quote, which fix — DON'T go here. They live in the review files.
+
+After r5+, old history can (and should) be **consolidated into a single line**:
+> **Consolidated r2-r5:** 32 findings resolved; main: DECISIONS #14/#17/#20/#22. Details in `docs/reviews/`.
+
+Never delete review files (external audit trail). But the plan itself stays lean.
 
 ## Common failure modes
 
@@ -270,3 +280,17 @@ Revision notes stack at the top of the doc, newest first. Never delete prior rev
 - **Skipping the type-specific section.** §2 must be filled with the appropriate type appendix; otherwise the plan loses its prescriptive value.
 - **Empty §11 Implementation checkpoints.** A plan without checkpoint mapping forces the implementer to retrofit the discipline at execution time. Map every §2–§9 work unit to a checkpoint, drop checkpoints that don't apply, and always keep Checkpoints 1 and 5.
 - **Missing the kickoff prompt.** §"How to feed this to the coding agent" is valuable — users copy-paste it. If the plan doesn't have one, the user has to invent it, and they'll miss things.
+- **Sections beyond §13 + §"How to feed this to the coding agent".** Don't create §14, §15, etc. — all the information from these "ready-for-implementation checklists" / "surface review tables" / "trajectories" has a home in another section:
+  - Resolved decisions → §12 (DECISIONS checklist) + DECISIONS.md
+  - Surgical mitigations → §11 phase-specific gates
+  - Review trajectory / surface review table → review files in `docs/reviews/` (NOT in the plan)
+  - Operational pre-reqs → §0 Pre-requisites + §11 CP1 phase-specific gates
+  - Disciplines / lessons-learned → memory entries (`feedback_*.md`), not in the plan
+  - **Project-specific operational overrides** (custom deploy command, non-default env vars, project-specific build flags) → `AGENTS.md` / `CLAUDE.md` (operational facts canonical), with cross-ref from §0 Pre-requisites if relevant to start the phase
+
+  If you're about to create §14, stop. Identify where the info should live per the canonical template and put it there. Excess "meta" sections are a symptom of accumulated archeology — the plan isn't the place for history.
+- **Hybrid pre-impl + post-impl plan.** Once implementation begins (first round commit in the diff), the plan does NOT receive substantive edits except via explicit revision note `rN` declaring "post-CP_K audit" or similar. Spec sections (§2-§9) only get edited:
+  1. In an **explicit revision note** during audit-first protocol (CP1), with note at the top of the plan.
+  2. In the **CP5 housekeeping sweep**, recorded as a housekeeping update.
+
+  Silently editing §5.1 because "I discovered the real rate limit after Round A" without a revision note breaks the audit trail — whoever reads the plan doesn't know if they're seeing the original spec or the corrected spec. Always use `rN` revision note.

@@ -134,6 +134,7 @@ If a working day produces no meaningful events (all spent on review of someone e
 - **Plan changes** — those go as revision notes in the plan itself.
 - **Detailed code commentary** — the code and round report cover that.
 - **Apologies, hedging, or self-narration** — be matter-of-fact.
+- **Framework-level disciplines** like verify-before-claim or plan-writing patterns — those live in the skill files (`auto-review-mode.md`, `next-phase-planning.md`, etc.), not in project memory. Memory captures project-specific facts; disciplines are skill-level conventions.
 
 ## Cross-references
 

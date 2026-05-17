@@ -119,6 +119,8 @@ Generate the corresponding `IMPLEMENTATION_PLAN_*.md`:
 
 The plan's §0 Pre-requisites lists the **current production state as the foundation** — not "Phase N-1 delivered". The plan is grounded in the live repo.
 
+**Verify-before-claim discipline:** every concrete reference in the generated plan (method, class, hook, file:line, precedent, count) must be preceded by Grep/Read confirming existence and shape in the codebase. Especially critical for convert-to-sdi plans because the agent is working with code it didn't write — assumptions about "what exists" are easy to invent. Anti-pattern to avoid: assertions like "(already exists)" / "(method available)" / "(N sites)" without Grep evidence immediately before the assertion. Doesn't apply to narrative text (motivation, rationale). See `sdi-next-plan/references/next-phase-planning.md` §"Verify-before-claim discipline" for worked examples on the narrative vs concrete boundary.
+
 After generation, instruct the user how to load `sdi-mode`:
 - Claude Code / Codex: install the `sdi-mode`, `sdi-review`, and `sdi-next-plan` skills under the tool's skills path (alongside `mvp-architect` and `convert-to-sdi`) if they aren't there yet. `AGENTS.md` and `CLAUDE.md` (same project facts) are already at repo root; keep whichever file(s) the user's coding agents read. Paste the kickoff prompt to start the work item — the `sdi-mode` skill auto-invokes from there.
 - Roo Code / Kilo Code / OpenCode: configure the `sdi-mode` custom mode following the appropriate guide in your local copy of `sdi-framework/installation-guides/`. Once active, paste the kickoff prompt.

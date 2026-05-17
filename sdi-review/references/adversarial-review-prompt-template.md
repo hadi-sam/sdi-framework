@@ -74,6 +74,7 @@ E. Unhappy paths. Bad input, retries, concurrent calls, partial failure, timeout
 F. High-blast-radius risk. Auth/tenant isolation and trust boundaries; data loss, duplication, or irreversible state changes; rollback safety, retries, partial failure, idempotency gaps; ordering assumptions and re-entrancy; version skew, schema drift, migration hazards; observability gaps that hide failure or block recovery.
 G. Vague claims. "Tests pass", "performant", "secure", "scalable", "easy to extend" without evidence — flag and say what would constitute proof.
 H. Scope risk. Is the target trying to do too much in one step? Is there a piece that should be its own decision or its own change?
+K. Verify-before-claim audit. For every concrete reference in `[TARGET]` — method, class, hook, file:line, precedent ("mirrors pattern of X"), count ("N sites to change") — Grep/Read and confirm it exists in the shape claimed. Invented / fictitious citations are class-3 (missing prerequisite); shape mismatches are class-1 (internal inconsistency). Especially watch for assertions like "(already exists in code)" / "(method available)" / "(N sites)" without Grep evidence immediately before the assertion.
 
 ## Bug classes (use to organize findings)
 
@@ -84,6 +85,7 @@ H. Scope risk. Is the target trying to do too much in one step? Is there a piece
 5. Decision-worthy choice without justification — non-obvious trade-off treated as obvious.
 6. Architecture or convention mistake.
 7. Other — surprising, risky, or load-bearing in a way the author didn't flag.
+K. Verify-before-claim violation — target cited a method/class/hook/file:line/precedent/count that doesn't exist in the codebase as claimed (semantically same role as class-3, but distinguishes "reviewer-discovered fictitious citation" from "code reference to nonexistent symbol").
 
 ## Calibration
 
@@ -99,12 +101,14 @@ Findings-first. Do not summarize what works. For each finding:
 - Suggested fix or what would need to be true to resolve it (one sentence).
 
 End with TWO lines:
-- TOTAL FINDINGS: N. By class: 1=a, 2=b, 3=c, 4=d, 5=e, 6=f, 7=g.
+- TOTAL FINDINGS: N. By class: 1=a, 2=b, 3=c, 4=d, 5=e, 6=f, 7=g, K=k.
 - BOTTOM LINE: <SHIP | FIX-THEN-SHIP | RETHINK | BLOCK> + one sentence saying why.
 
+**Output format hint:** wrap method/class/symbol references in backticks always (enables convergence-check symbol extraction when this prompt feeds into an automated loop).
+
 BOTTOM LINE rules:
-- SHIP — zero findings of class 1-6; class 7 only if minor and optional.
-- FIX-THEN-SHIP — at least one class 1-4 or 6 finding, but all are mechanically fixable without rethinking the approach.
+- SHIP — zero findings of class 1-6 or K; class 7 only if minor and optional.
+- FIX-THEN-SHIP — at least one class 1-4, 6, or K finding, but all are mechanically fixable without rethinking the approach.
 - RETHINK — at least one class 5 finding (decision needs to be made deliberately), or the structure is wrong enough that fixing one finding at a time won't help.
 - BLOCK — class 7 marked urgent, or something I as the author need to stop and address before any further work on this target.
 

@@ -142,17 +142,20 @@ At the end of each round, deliver a structured report. Read `references/round-re
 
 At user-gated checkpoints, stop and wait for explicit user go. At auto-reviewed checkpoints, a merged PASS closes the gate; still post the report and next suggested round so the user can interject before the next round starts.
 
-### Step 4.5: Auto-review (default for Checkpoints 2/3/4)
+### Step 4.5: Auto-review (default for Checkpoints 2/3/4 + CP5 comprehensive)
 
-**Auto-review fires automatically at the end of every round in Checkpoints 2, 3, and 4.** Verification is delegated to a **reviewer ensemble**:
+**Auto-review fires automatically at the end of every round in Checkpoints 2, 3, and 4** (per-round review). **CP5 also gets auto-review comprehensive** (phase-wide diff, 1 attempt only, escalation-only — no fix loop). CP1 stays user-gated.
 
-- **Attempt 1**: three reviewers run in parallel on the same self-contained packet: an Opus subagent (Anthropic Agent tool, `model: opus`), a Sonnet subagent (Anthropic Agent tool, `model: sonnet`), and `codex exec` (typically gpt-5.5 with reasoning effort `xhigh` per the user's `~/.codex/config.toml`). Different models find partially-disjoint bugs; empirically the union catches more than any one reviewer alone.
-- **Attempt 2** (after a FAIL): Opus subagent + `codex exec` run in parallel on the retry packet, including all prior findings and the fix commit(s). Merge their verdicts mechanically: PASS only if both PASS; ESCALATE wins; either FAIL blocks.
-- **Attempt 3** (after a second FAIL): Opus subagent runs as the final retry reviewer. The bug surface has shrunk to verifying the fix, so one final reviewer is enough as long as prior findings are included in the retry packet.
+The flow: **review → dedup → present Decision Bundle → decide** (auto-apply obvious fixes OR pause for user input on `needs-decision` / `judgment-required` findings).
 
-This reviewer schedule is the default unless the user explicitly asks for a different schedule for the session or round.
+Verification is delegated to a **reviewer ensemble**:
 
-Foundation (Checkpoint 1) and Housekeeping (Checkpoint 5) stay user-gated regardless. Within an auto-eligible checkpoint, the round still escalates immediately when any of the always-escalate triggers below fires.
+- **Attempts 1-2**: three reviewers run in parallel on the same self-contained packet: an Opus subagent (Anthropic Agent tool, `model: opus`), a Sonnet subagent (Anthropic Agent tool, `model: sonnet`), and `codex exec` (typically gpt-5.5 with reasoning effort `xhigh` per the user's `~/.codex/config.toml`). Sonnet stays in attempt 2 because fix commits introduce new code that merits full ensemble review.
+- **Attempts 3+**: Opus subagent + `codex exec` run in parallel. Sonnet drops at this point for cost/time; Opus + Codex preserve diversity.
+
+This 3/3/2+ reviewer schedule is the default unless the user explicitly asks for a different schedule.
+
+Foundation (Checkpoint 1) stays user-gated regardless. Within an auto-eligible checkpoint, the round still escalates immediately when any of the always-escalate triggers below fires.
 
 **Pre-review checklist — run before invoking reviewers.** If any item is ✓, STOP and escalate to the user; do **not** build the packet, do **not** invoke reviewers. Catching an escalation trigger after the reviewers fired wastes a review cycle and produces an ESCALATE you should have surfaced yourself.
 
@@ -170,18 +173,24 @@ If every item is ✗, run the clean-state preflight (see `references/auto-review
 
 Each reviewer receives the same packet (diff + plan §s + gate checklist + per-gate verifiable criteria, plus active cross-file checks like CSS-class-defined and report-vs-reality) and returns a structured PASS / FAIL / ESCALATE verdict with file:line evidence per gate. Reviewers audit the implementer's verification evidence; they may run targeted read-only-compatible checks, but the implementer owns tests/checks that require writing caches, build output, snapshots, local DB state, or generated files.
 
-**Verdict merge — attempts 1 and 2 (multiple reviewers ran):**
+**Verdict merge — all attempts (multiple reviewers ran):**
 
 - PASS only if every reviewer that ran returned PASS.
 - FAIL if any reviewer returned FAIL and none returned ESCALATE.
 - ESCALATE if any reviewer returned ESCALATE.
 - When a reviewer fails to run or times out, apply reviewer fallback before merging the surviving verdicts.
 
-Attempt 1 normally merges Opus + Sonnet + Codex. Attempt 2 normally merges Opus + Codex. Attempt 3 uses the single Opus verdict directly.
+Attempts 1-2 normally merge Opus + Sonnet + Codex. Attempts 3+ normally merge Opus + Codex.
 
-**ESCALATE is not FAIL.** FAIL means the failure is mechanically fixable — apply the fix, commit, retry up to the loop cap. ESCALATE means the user must judge — stop, surface the findings, do **not** apply fixes and retry. The most common ESCALATE trigger is a class-5 finding (DECISIONS-worthy choice without flag), and the right response is to write the DECISIONS entry *with the user*, not silently before retrying.
+**Per-round commit convention — split A + B:** each round produces **two commits** instead of one: commit A (`round X/CN: <summary>`) carries code-only, commit B (`round X/CN report: at HEAD <SHA-A>`) carries the report-only paper trail referencing A's SHA. Fix attempts mirror the pattern: `round X/CN fix N` (code) + `round X/CN fix N report: at HEAD <SHA>` (paper trail). This eliminates the chicken-egg drift where a single combined commit's report references the commit's own SHA before that SHA exists.
 
-**Reviewer fallback**: if one reviewer fails to run or times out on a multi-reviewer attempt, continue with the surviving reviewer(s) in degraded mode; if no reviewer returns usable output, escalate to the user. Default reviewer timeout is 20 minutes; unusually large reviews can declare a longer timeout up front, but expected reviews over 45 minutes should be split or escalated. Loop cap: 3 attempts. Auto-review history is appended to the round report verbatim (three reviewers on attempt 1, two on attempt 2, one on attempt 3 unless degraded or user-overridden) so the user can spot-check.
+**ESCALATE is not FAIL.** FAIL means the failure is mechanically fixable — apply the fix via the Decision Bundle flow, commit, retry up to the cap. ESCALATE means the user must judge — surface as `judgment-required` in the Bundle, do **not** auto-apply. The most common ESCALATE trigger is a class-5 finding (DECISIONS-worthy choice without flag), and the right response is to write the DECISIONS entry *with the user*, not silently before retrying.
+
+**Reviewer fallback**: if one reviewer fails to run or times out on a multi-reviewer attempt, continue with the surviving reviewer(s) in degraded mode; if no reviewer returns usable output, escalate to the user. Default reviewer timeout is 20 minutes; unusually large reviews can declare a longer timeout up front, but expected reviews over 45 minutes should be split or escalated.
+
+**Loop cap: 5 attempts** (circuit breaker, not "structural problem" indicator). Plus **convergence check**: if last 2 attempts produced findings with same class + same file + same symbol/identifier OR within ±5 lines, escalate early — agent is stuck in lazy fix. See `references/auto-review-mode.md` §"Loop cap" for the deterministic symbol extraction algorithm.
+
+Auto-review history is appended to the round report verbatim (three reviewers on attempts 1-2, two on attempts 3+ unless degraded or user-overridden) so the user can spot-check.
 
 **Opt-out per session:** the user can disable auto-review for the rest of the session by saying "user-review for this phase", "review the next round myself", "stop auto-reviewing", or "back to user-gated". Re-enable with "auto-review again". Session-scoped — every new session starts default-on.
 
@@ -278,7 +287,7 @@ These files do **not** carry the SDI discipline. The discipline lives here, in t
 ## What this mode is not
 
 - **Not a code reviewer.** Your job is to implement with discipline. The user reviews your work. If you find yourself writing "approved" or "looks good" about your own output, stop and just present what you did; let them judge.
-- **Not an auto-approver.** At Checkpoints 1 and 5, don't proceed without explicit user go-ahead. At Checkpoints 2/3/4, auto-review (attempt 1: Opus subagent + Sonnet subagent + codex exec; attempt 2: Opus subagent + codex exec; attempt 3: Opus subagent) is the default — but always-escalate triggers (including DECISIONS-worthy choices and KNOWN_ISSUES entry/status changes) and user opt-out keep the user gate intact when needed. "Silence = continue" is never right at user-gated checkpoints.
+- **Not an auto-approver.** At Checkpoint 1, don't proceed without explicit user go-ahead. At Checkpoints 2/3/4, auto-review (attempts 1-2: Opus subagent + Sonnet subagent + codex exec; attempts 3+: Opus subagent + codex exec) is the default — Decision Bundle dedups + classifies findings, only auto-applies when ALL are obvious-fix. CP5 gets comprehensive review (phase-wide, escalation-only, no fix loop). Always-escalate triggers (including DECISIONS-worthy choices and KNOWN_ISSUES entry/status changes) and user opt-out keep the user gate intact when needed. "Silence = continue" is never right at user-gated checkpoints.
 - **Not a speculation engine.** If the plan is wrong and needs thinking, flag it and ask; don't invent a redesign mid-round.
 
 ## Tone
@@ -295,7 +304,7 @@ Load these as needed:
 - `references/expected-artifacts.md` — what the spec bundle should contain; how to recognize a complete vs incomplete handoff; document precedence
 - `references/audit-first-protocol.md` — audit report format, common divergence categories, how to classify findings
 - `references/stop-and-review-patterns.md` — standard within-phase checkpoints, gate checklists, and report shape
-- `references/auto-review-mode.md` — default-on delegated verification for Checkpoints 2–4 via reviewer ensemble (attempt 1: Opus subagent + Sonnet subagent + codex exec; attempt 2: Opus subagent + codex exec; attempt 3: Opus subagent) with loop cap, escalation triggers, opt-out per session, verdict-merging rules, reviewer fallback, and per-round commit convention
+- `references/auto-review-mode.md` — default-on delegated verification for Checkpoints 2/3/4 (per-round) + CP5 comprehensive (phase-wide, escalation-only) via reviewer ensemble (attempts 1-2: Opus subagent + Sonnet subagent + codex exec; attempts 3+: Opus subagent + codex exec). Covers Decision Bundle dedup/classification flow, cap 5 + convergence check, escalation triggers, opt-out per session, verdict-merging rules, reviewer fallback, split-commit per-round convention (A code + B report), and verify-before-claim discipline (check K)
 - `references/round-report-template.md` — end-of-round report format
 - `references/decisions-log-format.md` — how to write a DECISIONS.md entry
 - `references/known-issues-discipline.md` — how to create/update KNOWN_ISSUES.md entries and bootstrap the file for older bundles

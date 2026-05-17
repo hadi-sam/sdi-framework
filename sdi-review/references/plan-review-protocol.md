@@ -43,7 +43,7 @@ Before starting:
 
 A. **Internal consistency** — § X says one thing, § Y says another (numbers, names, behaviors, lifetimes, ordering of rounds, dates, counts).
 
-B. **Plan-vs-repo grounding** — every reference to a file path / helper / env var / table / module name must exist in the repo or be created by the plan itself. Verify by Glob/Grep, not by trust.
+B. **Plan-vs-repo grounding (verify-before-claim audit)** — every reference to a file path / helper / env var / table / module / method / class / hook / file:line / precedent ("mirrors pattern of X") / count ("N sites to change") must exist in the repo or be created by the plan itself. Verify by Glob/Grep/Read, not by trust. **Plan reviews are especially vulnerable to fictitious citations** because the coding agent hasn't touched code yet — claims about "what exists" are easy to invent. Match the disciplined check K from the manual adversarial prompt: invented citations are class-3 (missing prerequisite), shape mismatches are class-1 (internal inconsistency). Especially watch for assertions like "(already exists in code)" / "(method available)" / "(N sites)" without Grep evidence immediately before the assertion in the plan prose.
 
 C. **Plan-vs-DECISIONS** — every choice that overrides or contradicts a `DECISIONS.md` entry must be flagged.
 

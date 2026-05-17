@@ -20,9 +20,13 @@ These are typical — adapt to the specific phase.
 
 ### Auto-review eligibility
 
-**Auto-review is the default for Checkpoints 2, 3, and 4** — verification is delegated to a different-model reviewer ensemble unless the user asks for a different schedule: attempt 1 runs Opus subagent + Sonnet subagent + `codex exec` (typically gpt-5.5 with reasoning effort `xhigh`) in parallel; attempt 2 runs Opus subagent + `codex exec` in parallel after a FAIL; attempt 3 runs Opus subagent only after a second FAIL. Different models find partially-disjoint bugs; the union catches more than any one reviewer alone. The checkpoint gate at those checkpoints is closed by a structured merged verdict (PASS / FAIL / ESCALATE with file:line evidence per gate). The user can opt out per session — see `auto-review-mode.md`.
+**Auto-review is the default for Checkpoints 2, 3, and 4** (per-round review) **and CP5** (comprehensive phase-wide review, escalation-only). Verification is delegated to a different-model reviewer ensemble unless the user asks for a different schedule: attempts 1-2 run Opus subagent + Sonnet subagent + `codex exec` (typically gpt-5.5 with reasoning effort `xhigh`) in parallel; attempts 3+ run Opus subagent + `codex exec` in parallel. Different models find partially-disjoint bugs; the union catches more than any one reviewer alone. The checkpoint gate is closed by a structured Decision Bundle (per `auto-review-mode.md` §"Decision Bundle format") that classifies findings as obvious-fix (auto-apply eligible), needs-decision (user input), or judgment-required (never auto-applied). The user can opt out per session — see `auto-review-mode.md`.
 
-**Checkpoint 1 (Foundation) and Checkpoint 5 (Housekeeping) stay user-gated regardless** — the cost of an auto-pass at those points is too high. Any round that produces a `DECISIONS.md` entry, adds/updates a `KNOWN_ISSUES.md` entry, hits any blocker, any emergency deviation, any plan revision, and any always-escalate trigger from `auto-review-mode.md` also stays user-gated even within an eligible checkpoint.
+**Checkpoint 1 (Foundation) stays user-gated regardless** — audit findings routinely trigger always-escalate (DECISIONS material divergences, KI entries, blockers), making auto-review CP1-eligibility a near no-op. User gates the audit directly.
+
+**Checkpoint 5 (Housekeeping) has comprehensive auto-review — escalation-only.** Reviewers look at the entire phase (diff between `PHASE_BASE_SHA` and `HEAD`), per-CP packet split by default. FAIL/ESCALATE never auto-applies a fix; user decides next steps. See `auto-review-mode.md` §"CP5 comprehensive review".
+
+Any round that produces a `DECISIONS.md` entry, adds/updates a `KNOWN_ISSUES.md` entry, hits any blocker, any emergency deviation, any plan revision, and any always-escalate trigger from `auto-review-mode.md` also stays user-gated even within an eligible checkpoint.
 
 Each checkpoint header below carries an eligibility tag. Auto-eligible checkpoints have a single gate that accommodates both default auto-review and opt-out user-gated modes.
 
@@ -116,7 +120,7 @@ Each checkpoint header below carries an eligibility tag. Auto-eligible checkpoin
 
 ---
 
-### Checkpoint 5: Housekeeping (end of phase) **(user-gated)**
+### Checkpoint 5: Housekeeping (end of phase) **(auto-review comprehensive — escalation-only)**
 
 **Deliver:**
 - Acceptance criteria mapped to evidence (test file + line, or smoke step).
@@ -142,6 +146,7 @@ Each checkpoint header below carries an eligibility tag. Auto-eligible checkpoin
 - [ ] Manual smoke test of the main acceptance criterion completed live and documented
 - [ ] Phase tracker in `AGENTS.md` / `CLAUDE.md` updated to ✓ with date
 - [ ] Today's `docs/memory/YYYY-MM-DD.md` entry marks the phase as closed
+- [ ] CP5 comprehensive review run (auto-review default) — Decision Bundle posted, findings escalated to user; user resolved all findings (applied via user-gated housekeeping fix rounds, accepted as KNOWN_ISSUES entries, or opened follow-up work items). OR user opted out and reviewed manually.
 
 ---
 
