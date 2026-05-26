@@ -110,3 +110,4 @@ In these cases, don't just patch the current phase — step back to scope. Ask: 
 - `references/plan-review-protocol.md` — plan review framework (Mode 1). Steps to read, things to actively check, bug classes, output format.
 - `references/round-report-review-patterns.md` — patterns for Modes 2, 3, 4. Tone, what NOT to do, when to pull planning back open.
 - `references/known-issues-review.md` — how reviews should use or update `KNOWN_ISSUES.md` without duplicating issues.
+- `references/adversarial-review-prompt-template.md` — self-contained adversarial prompt for ad-hoc reviews outside the SDI loop (review a file, branch, sketch, etc.). Includes the two-step `codex exec` pattern (write filled prompt to file, then `- < file` stdin redirect) for headless invocation.
