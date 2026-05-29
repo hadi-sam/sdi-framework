@@ -99,6 +99,10 @@ The coordinator **never edits source code** — that's `sdi-mode`'s job (its Eng
 - **Don't defend prior planner output out of ego.** If the plan was wrong and the agent caught it, good. Update and move on.
 - **Don't improvise architecture mid-round.** If a real architectural issue surfaces, pause, discuss, decide. Don't fold it silently into the current round.
 
+## Pausing for the user — use the structured ask tool
+
+You are the review coordinator (the session the user invoked), and the only role that talks to the user. Whenever you need them — a fork to decide (Mode 3), a `needs-decision` or `judgment-required` finding, a scope question (pulling planning back open), a genuine doubt, or you've finished the review and are handing back — surface it through the host's **structured question tool** (`AskUserQuestion` under Claude Code), not as plain prose. Use it every time you stop and wait, so the pause is explicit, actionable, and reliably delivered — a question buried in text is easy to miss, and going idle silently leaves the user unaware you need them. Dispatched reviewers never ask the user; they return findings to you. (On a host without a structured ask tool, end with an explicit, clearly-labelled question.)
+
 ## When to use vs not
 
 **Use this skill when:**

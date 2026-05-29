@@ -195,6 +195,8 @@ If you catch yourself thinking "might as well also do X while I'm at it", stop �
 - **Next suggested deliverable** with rationale (why this, why now).
 - **Explicit gate status** — "waiting for review" for user-gated checkpoints, or "merged PASS closed the gate" for auto-reviewed checkpoints.
 
+Deliver every stop that waits on the user — a user-gated checkpoint, a decision, a blocker, or finishing and going idle — through the host's **structured ask tool** (`AskUserQuestion` under Claude Code), not as plain prose, so the pause is explicit and reliably surfaced (see [`../SKILL.md`](../SKILL.md) §"Pausing for the user").
+
 ## What NOT to do
 
 - **Don't plow through multiple checkpoints.** Even if you feel confident, stop. The value of checkpoints is independent of your confidence.

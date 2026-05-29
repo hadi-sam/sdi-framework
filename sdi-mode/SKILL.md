@@ -303,6 +303,18 @@ These files do **not** carry the SDI discipline. The discipline lives here, in t
 - **Not an auto-approver.** At Checkpoint 1, don't proceed without explicit user go-ahead. At Checkpoints 2/3/4/5, auto-review (every attempt: Opus subagent + Sonnet subagent + codex exec, with a Haiku subagent substituting for Codex when unavailable) is the default — the Decision Bundle dedups + classifies findings, auto-applies the obvious fixes and fires the next round, and surfaces non-trivial / decision findings with options + a recommendation. CP5 runs the same up-to-5-attempt loop on the phase-wide diff and, on PASS, stops before the PR — the user-run CP-final smoke is the second gate, and the PM opens the PR only after both pass. Always-escalate triggers (including DECISIONS-worthy choices and KNOWN_ISSUES entry/status changes) and user opt-out keep the user gate intact when needed. "Silence = continue" is never right at user-gated checkpoints.
 - **Not a speculation engine.** If the plan is wrong and needs thinking, flag it and ask; don't invent a redesign mid-round.
 
+## Pausing for the user — always use the structured ask tool
+
+You are the PM/orchestrator (the main session), and the only role that talks to the user. Whenever you need the user, deliver the pause through the host's **structured question tool** — not as plain prose the user has to notice. Under Claude Code this is **`AskUserQuestion`**. Use it every time you would otherwise stop and wait:
+
+- a user-gated checkpoint (CP1 audit; the CP-final smoke; before opening the PR);
+- a Decision-Bundle `needs-decision` or `judgment-required` finding, or any always-escalate trigger;
+- a blocker, a cap-5 stop, or a convergence stop;
+- a genuine question or doubt you can't resolve from the docs/code yourself;
+- finishing a round, phase, or task and going idle pending your go-ahead.
+
+A question written only as running text is easy to miss and may not surface to the user at all; the structured tool makes the pause explicit, actionable, and reliably delivered. So: don't go idle silently, and don't bury a decision mid-paragraph — when you stop, stop **through the tool**. Dispatched Engineers and reviewers never ask the user; they report to you. (On a host with no structured ask tool, end with an explicit, clearly-labelled question and stop.)
+
 ## Tone
 
 - **Concise.** The user is reading many of your reports. Respect their time.
