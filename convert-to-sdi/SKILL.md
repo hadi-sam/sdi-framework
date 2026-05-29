@@ -90,13 +90,14 @@ If everything in the matrix maps to Strategy A (all compatible) and there's no A
 
 Read `references/artifact-generation-rules.md` and `references/confidence-flags.md`. Generate the bundle:
 
-- **AGENTS.md + CLAUDE.md** (rich) — same project-fact content in both files: stack, conventions, document map, work tracker (empty), `Production constraints` section if stage = production (template at `references/production-constraints-template.md`).
+- **AGENTS.md + CLAUDE.md** (rich) — same project-fact content in both files: stack, conventions, document map, work tracker (one-line index, retroactive conversion row only), `Production constraints` section if stage = production (template at `references/production-constraints-template.md`).
 - **PROJECT_STRUCTURE.md** (rich) — documents the repo as it actually is.
 - **ARCHITECTURE.md** (mixed) — §Stack and §Critical flows extracted from code; §Type-specific appendix populated as far as code reveals; §Trade-offs as placeholder.
 - **DESIGN_SYSTEM.md** (medium, only if UI) — extracted tokens and components; aesthetic intent left as placeholder.
 - **DECISIONS.md** (seed, 3–5 entries) — obvious patterns detected (e.g. "uses Drizzle ORM", "monorepo with pnpm workspaces"). Marked `Source: code analysis — confirm rationale with team`.
 - **KNOWN_ISSUES.md** (fresh or preserved) — append-only catalog scaffold. Preserve existing issue entries; for fresh generation, leave empty unless onboarding found concrete evidence-backed issues outside setup scope.
 - **docs/MEMORY.md + docs/memory/YYYY-MM-DD.md** (fresh) — index empty except for today's entry, which describes the framework setup itself.
+- **docs/WORK_LOG.md** (fresh) — verbose per-work-item narrative; header + a single retroactive `## Framework adoption` section. The verbose counterpart to the one-line Work tracker.
 - **PRD.md** (thin by design) — `Current state` (extracted from code/README) + `Out of scope` placeholder.
 - **ROADMAP.md** (optional) — only if Q4 = "discrete phases planned" and the user has visibility into future work; otherwise minimal note pointing to the `sdi-next-plan` skill for forward planning.
 

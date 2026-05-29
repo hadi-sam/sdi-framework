@@ -110,13 +110,13 @@ Don't rewrite ROADMAP wholesale. If the change is large enough to warrant a rewr
 
 ## Update the work tracker in AGENTS.md / CLAUDE.md
 
-After generating the plan, add (or update) a row in the `Work tracker` section of `AGENTS.md` and `CLAUDE.md` when both exist. If only one exists, update that one and mention the missing companion as a housekeeping note:
+After generating the plan, add (or update) a one-line index row in the `Work tracker` section of `AGENTS.md` and `CLAUDE.md` when both exist. If only one exists, update that one and mention the missing companion as a housekeeping note:
 
 ```markdown
 | billing-portal | feature | pending — plan generated | 2026-04-25 | docs/IMPLEMENTATION_PLAN_billing-portal.md |
 ```
 
-Mark the previous work item as ✓ if it isn't already.
+Keep the row to one line — the verbose narrative goes to `docs/WORK_LOG.md` when the item closes (sdi-mode Step 8), not here. Mark the previous work item as ✓ if it isn't already; if its `docs/WORK_LOG.md` section hasn't been written yet (e.g. it closed under an older bundle), that's a housekeeping gap for sdi-mode to fill, not something this skill backfills.
 
 ## Handoff to sdi-mode
 

@@ -51,6 +51,7 @@ All planning docs live under `docs/` unless noted:
 - `docs/DECISIONS.md` — running paper trail of non-obvious choices *(append-only, atemporal)*
 - `docs/MEMORY.md` — index of daily memory entries
 - `docs/memory/YYYY-MM-DD.md` — daily session memory: active round, blockers, next step, open questions
+- `docs/WORK_LOG.md` — verbose per-work-item narrative; the **Work tracker** section is its one-line index
 
 ## Project-specific conventions
 
@@ -73,17 +74,19 @@ All planning docs live under `docs/` unless noted:
 
 ## Work tracker
 
+One-line index per work item — current status + pointers, nothing more. The full narrative of each item lives in [`docs/WORK_LOG.md`](docs/WORK_LOG.md) and in the canonical artifacts each row links (the plan, `docs/memory/`, `DECISIONS.md`, `KNOWN_ISSUES.md`). Keep each `Notes` cell to a single line — new detail goes to `WORK_LOG.md` and those artifacts, never bloats a cell here.
+
 | Work item | Type | Status | Date | Notes |
 |---|---|---|---|---|
-| Phase 0 (scaffolding) | phase | [pending / ✓] | [YYYY-MM-DD] | [link to round report or commit range] |
+| Phase 0 (scaffolding) | phase | [pending / ✓] | [YYYY-MM-DD] | [one line: plan link + key pointers] |
 | Phase 1 | phase | [pending / in progress / ✓] | | |
 | ... | | | | |
 
-`Type` accepts: `phase` (discrete numbered phases — greenfield, migrations) | `feature` | `maintenance` | `migration` | `refactor` | `perf` | `bugfix`. `Work item` accepts `Phase N` or a slug (e.g. `billing-portal`, `q1-perf-pass`). Each row corresponds to one `IMPLEMENTATION_PLAN_*.md`.
+`Type` accepts: `phase` (discrete numbered phases — greenfield, migrations) | `feature` | `maintenance` | `migration` | `refactor` | `perf` | `bugfix`. `Work item` accepts `Phase N` or a slug (e.g. `billing-portal`, `q1-perf-pass`). Each row corresponds to one `IMPLEMENTATION_PLAN_*.md` and, once the item closes, to one `## <work item>` section in [`docs/WORK_LOG.md`](docs/WORK_LOG.md).
 
 ## Updating this file
 
-This file is **living** for project facts only. Every phase reveals new project-specific conventions — add them under the relevant section. Every phase completes — update the work tracker.
+This file is **living** for project facts only. Every phase reveals new project-specific conventions — add them under the relevant section. Every phase completes — update the work tracker (keep rows one-line; the closing item's full narrative goes to `docs/WORK_LOG.md`).
 
 Two rules:
 
@@ -97,13 +100,13 @@ Modern SDI projects may have both `AGENTS.md` and `CLAUDE.md` with the same cust
 
 ## What this skill fills in
 
-`sdi-next-plan` does not regenerate the full fact sheet — it only adds a new row to the `Work tracker` section after generating an `IMPLEMENTATION_PLAN_*.md`. The pattern:
+`sdi-next-plan` does not regenerate the full fact sheet — it only adds a new **one-line index row** to the `Work tracker` section after generating an `IMPLEMENTATION_PLAN_*.md`. The pattern:
 
 ```markdown
 | billing-portal | feature | pending — plan generated | 2026-04-25 | docs/IMPLEMENTATION_PLAN_billing-portal.md |
 ```
 
-Mark the previous work item as ✓ if it isn't already.
+Mark the previous work item as ✓ if it isn't already. `sdi-next-plan` does **not** write `docs/WORK_LOG.md` — the closing item's verbose narrative section is written by `sdi-mode` at end-of-phase housekeeping (Step 8), not at next-plan time.
 
 The full template above is included for reference so the skill can recognize the structure when reading `AGENTS.md` / `CLAUDE.md` and reason about what fields exist.
 

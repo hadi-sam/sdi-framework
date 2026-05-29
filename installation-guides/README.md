@@ -69,7 +69,8 @@ Most tools support file-edit restrictions per mode/agent. Recommended restrictio
 | `docs/DECISIONS.md` | Append-only |
 | `docs/KNOWN_ISSUES.md` | Append-only lifecycle catalog; update status/blast radius, never delete resolved entries |
 | `docs/MEMORY.md` and `docs/memory/*.md` | Append dated state; don't rewrite history except typo/link fixes |
-| `AGENTS.md` / `CLAUDE.md` (root) | Update project facts during phases, but propose changes explicitly to user. If both exist, keep them in sync. Never inject discipline rules. |
+| `docs/WORK_LOG.md` | Append one `## <work item>` section at each work item's close; don't rewrite earlier sections except typo/link fixes |
+| `AGENTS.md` / `CLAUDE.md` (root) | Update project facts during phases, but propose changes explicitly to user. Keep the **Work tracker** rows one-line (narrative lives in `WORK_LOG.md`). If both exist, keep them in sync. Never inject discipline rules. |
 
 The exact mechanism varies by tool; each guide shows how.
 

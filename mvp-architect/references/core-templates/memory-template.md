@@ -29,7 +29,7 @@ Index of `docs/memory/` daily entries. Newest first.
 ## Worked on today
 
 - Ran mvp-architect Phase 0-C for [Product Name].
-- Generated initial SDI bundle: README, PRD, ARCHITECTURE, ROADMAP, PROJECT_STRUCTURE, [DESIGN_SYSTEM if UI], IMPLEMENTATION_PLAN_PHASE_1, DECISIONS, KNOWN_ISSUES, MEMORY, AGENTS.md, and CLAUDE.md.
+- Generated initial SDI bundle: README, PRD, ARCHITECTURE, ROADMAP, PROJECT_STRUCTURE, [DESIGN_SYSTEM if UI], IMPLEMENTATION_PLAN_PHASE_1, DECISIONS, KNOWN_ISSUES, MEMORY, WORK_LOG, AGENTS.md, and CLAUDE.md.
 - Prepared kickoff prompt for Phase 1 implementation.
 
 ## Blockers
