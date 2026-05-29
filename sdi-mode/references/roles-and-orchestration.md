@@ -71,6 +71,8 @@ After dedup + classification, the PM acts **per finding** — obvious fixes are 
 
 This is the same per-finding Decision Bundle flow as `auto-review-mode.md`, with the one role difference: a code fix routes to a fix-Engineer instead of an inline edit.
 
+**Every PM pause for the user** — a `needs-decision`/`judgment-required` finding, a blocker, a user-gated checkpoint, a cap/convergence stop, or finishing and going idle — is delivered through the host's **structured ask tool** (`AskUserQuestion` under Claude Code), never as plain prose, so the pause is explicit and reliably surfaced (see [`../SKILL.md`](../SKILL.md) §"Pausing for the user"). Only the PM asks the user; Engineers and reviewers report to the PM.
+
 ## PM-direct checkpoints & user gates
 
 - **CP1 (Foundation/audit):** the PM does it directly — read/grep/analyze, no Engineer. **User-gated** — pause after the audit for the user to resolve blockers and answer open questions.
