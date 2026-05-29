@@ -40,6 +40,7 @@ Before starting the implementation loop, verify the repo has the artifacts this 
 | `docs/DECISIONS.md` | Step 6 (decisions log) | expected in new bundles; if missing in an older bundle, create the empty scaffold from `references/decisions-log-format.md` before the first decision entry |
 | `docs/KNOWN_ISSUES.md` | known bugs/debt/security gaps that may affect scope | expected in new bundles; if missing in an older bundle, create the scaffold from `references/known-issues-discipline.md` before the first round report |
 | `docs/MEMORY.md` + `docs/memory/YYYY-MM-DD.md` | Step 1 (where the work is now) | expected in new bundles; if missing in an older bundle, create the index and today's entry from `references/memory-discipline.md` at first round end |
+| `docs/WORK_LOG.md` | Step 8 (per-item narrative at close) | expected in new bundles; if missing in an older bundle, create the scaffold from `references/memory-discipline.md` §WORK_LOG when the first work item closes |
 
 **Decision tree:**
 
@@ -149,18 +150,18 @@ At the end of each round, deliver a structured report. Read `references/round-re
 
 At user-gated checkpoints, stop and wait for explicit user go. At auto-reviewed checkpoints, a merged PASS closes the gate; still post the report and next suggested round so the user can interject before the next round starts.
 
-### Step 4.5: Auto-review (default for Checkpoints 2/3/4 + CP5 comprehensive)
+### Step 4.5: Auto-review (default for Checkpoints 2/3/4/5)
 
-**Auto-review fires automatically at the end of every round in Checkpoints 2, 3, and 4** (per-round review). **CP5 also gets auto-review comprehensive** (phase-wide diff, 1 attempt only, escalation-only — no fix loop). CP1 stays user-gated.
+**Auto-review fires automatically at the end of every round in Checkpoints 2, 3, and 4** (per-round review). **CP5 gets auto-review too** — comprehensive (phase-wide diff, per-CP split), running the **same up-to-5-attempt fix loop**; on PASS it stops before opening the PR, and after 5 attempts still FAIL it escalates to the user. CP1 stays user-gated.
 
-The flow: **review → dedup → present Decision Bundle → decide** (auto-apply obvious fixes OR pause for user input on `needs-decision` / `judgment-required` findings).
+The flow: **review → dedup → present Decision Bundle → act per finding** (auto-apply every obvious fix and, if no decisions remain, fire the next round; surface any `needs-decision` / `judgment-required` finding with options + a recommendation and pause).
 
 Verification is delegated to a **reviewer ensemble**:
 
-- **Attempts 1-2**: three reviewers run in parallel on the same self-contained packet: an Opus subagent (Anthropic Agent tool, `model: opus`), a Sonnet subagent (Anthropic Agent tool, `model: sonnet`), and `codex exec` (typically gpt-5.5 with reasoning effort `xhigh` per the user's `~/.codex/config.toml`). Sonnet stays in attempt 2 because fix commits introduce new code that merits full ensemble review.
-- **Attempts 3+**: Opus subagent + `codex exec` run in parallel. Sonnet drops at this point for cost/time; Opus + Codex preserve diversity.
+- **Every attempt (1 through 5)**: three reviewers run in parallel on the same self-contained packet: an Opus subagent (Anthropic Agent tool, `model: opus`), a Sonnet subagent (Anthropic Agent tool, `model: sonnet`), and `codex exec` (typically gpt-5.5 with reasoning effort `xhigh` per the user's `~/.codex/config.toml`). The full ensemble runs on every attempt — fix commits introduce new code that merits full-ensemble re-review.
+- **If Codex is unavailable on any attempt** (can't invoke, timeout, unusable output): substitute a **Haiku subagent** (Anthropic Agent tool, `model: haiku`) in its place, keeping the ensemble three-strong (Opus + Sonnet + Haiku).
 
-This 3/3/2+ reviewer schedule is the default unless the user explicitly asks for a different schedule.
+This three-reviewers-every-attempt schedule is the default unless the user explicitly asks for a different schedule.
 
 Foundation (Checkpoint 1) stays user-gated regardless. Within an auto-eligible checkpoint, the round still escalates immediately when any of the always-escalate triggers below fires.
 
@@ -187,17 +188,17 @@ Each reviewer receives the same packet (diff + plan §s + gate checklist + per-g
 - ESCALATE if any reviewer returned ESCALATE.
 - When a reviewer fails to run or times out, apply reviewer fallback before merging the surviving verdicts.
 
-Attempts 1-2 normally merge Opus + Sonnet + Codex. Attempts 3+ normally merge Opus + Codex.
+Every attempt normally merges Opus + Sonnet + Codex (or Opus + Sonnet + Haiku when Codex was unavailable).
 
 **Per-round commit convention — split A + B:** each round produces **two commits** instead of one: commit A (`round X/CN: <summary>`) carries code-only, commit B (`round X/CN report: at HEAD <SHA-A>`) carries the report-only paper trail referencing A's SHA. Fix attempts mirror the pattern: `round X/CN fix N` (code) + `round X/CN fix N report: at HEAD <SHA>` (paper trail). This eliminates the chicken-egg drift where a single combined commit's report references the commit's own SHA before that SHA exists.
 
 **ESCALATE is not FAIL.** FAIL means the failure is mechanically fixable — apply the fix via the Decision Bundle flow, commit, retry up to the cap. ESCALATE means the user must judge — surface as `judgment-required` in the Bundle, do **not** auto-apply. The most common ESCALATE trigger is a class-5 finding (DECISIONS-worthy choice without flag), and the right response is to write the DECISIONS entry *with the user*, not silently before retrying.
 
-**Reviewer fallback**: if one reviewer fails to run or times out on a multi-reviewer attempt, continue with the surviving reviewer(s) in degraded mode; if no reviewer returns usable output, escalate to the user. Default reviewer timeout is 20 minutes; unusually large reviews can declare a longer timeout up front, but expected reviews over 45 minutes should be split or escalated.
+**Reviewer fallback**: if **Codex** fails to run or times out, substitute a Haiku subagent in its place (keeps the ensemble at three reviewers); if Opus or Sonnet fails, continue with the surviving reviewer(s) in degraded mode; if no reviewer returns usable output, escalate to the user. Default reviewer timeout is 20 minutes; unusually large reviews can declare a longer timeout up front, but expected reviews over 45 minutes should be split or escalated.
 
 **Loop cap: 5 attempts** (circuit breaker, not "structural problem" indicator). Plus **convergence check**: if last 2 attempts produced findings with same class + same file + same symbol/identifier OR within ±5 lines, escalate early — agent is stuck in lazy fix. See `references/auto-review-mode.md` §"Loop cap" for the deterministic symbol extraction algorithm.
 
-Auto-review history is appended to the round report verbatim (three reviewers on attempts 1-2, two on attempts 3+ unless degraded or user-overridden) so the user can spot-check.
+Auto-review history is appended to the round report verbatim (three reviewers on every attempt — Opus + Sonnet + Codex, or Opus + Sonnet + Haiku when Codex was unavailable — unless degraded or user-overridden) so the user can spot-check.
 
 **Opt-out per session:** the user can disable auto-review for the rest of the session by saying "user-review for this phase", "review the next round myself", "stop auto-reviewing", or "back to user-gated". Re-enable with "auto-review again". Session-scoped — every new session starts default-on.
 
@@ -267,6 +268,7 @@ When all rounds of a phase are complete, do a final round specifically for house
 - Update `PROJECT_STRUCTURE.md` with any new directories or files.
 - Update `DESIGN_SYSTEM.md` if tokens/conventions drifted from the doc (only for projects with UI).
 - Update `AGENTS.md` and `CLAUDE.md` if both exist and the phase revealed conventions worth recording for future phases (helper names, file paths, edge cases). Keep the fact sheets in sync unless the user explicitly keeps only one.
+- Close the work item in the tracker and the log: write the item's verbose narrative as a new `## <work item>` section in `docs/WORK_LOG.md` (what was built, checkpoints/rounds, review outcomes, test deltas, cross-refs to DECISIONS / KI / PRs), and reduce its `AGENTS.md` / `CLAUDE.md` **Work tracker** row to a single line (status + pointers). Detail goes to WORK_LOG and the canonical artifacts, never into the tracker cell. Keep the section's `Type`/`Status`/`Date` matching the tracker row.
 - Update `KNOWN_ISSUES.md`: add newly discovered out-of-scope issues, mark fixed issues `Resolved (commit, date)`, and update blast radius/status for partially mitigated issues.
 - Mark divergences in `§Known divergences` of the plan as resolved.
 - Sweep `docs/memory/`: convert any unresolved `Open questions` or `Notable observations` into DECISIONS entries, KNOWN_ISSUES entries, or plan revision notes; mark the phase as closed in today's daily entry.
@@ -285,7 +287,7 @@ This is often skipped ("we'll clean up later"). Don't. Docs that drift become us
 - Stack identification (initially partial; you complete it as you discover real repo state)
 - Document map (where PRD, ARCHITECTURE, etc. live)
 - Project-specific conventions (helper names, directory layout exceptions, test setup)
-- Work tracker
+- Work tracker — a one-line index per work item (status + pointers); the verbose per-item narrative lives in `docs/WORK_LOG.md`, written at close
 
 These files do **not** carry the SDI discipline. The discipline lives here, in this skill (Claude Code / Codex) or in the configured custom mode (Roo Code / Kilo Code / OpenCode). Keep them strictly factual — never inject behavioral instructions like "audit before coding" or "stop at checkpoints" into them; those propagate from the skill/mode, not from the project.
 
@@ -294,7 +296,7 @@ These files do **not** carry the SDI discipline. The discipline lives here, in t
 ## What this mode is not
 
 - **Not a code reviewer.** Your job is to implement with discipline. The user reviews your work. If you find yourself writing "approved" or "looks good" about your own output, stop and just present what you did; let them judge.
-- **Not an auto-approver.** At Checkpoint 1, don't proceed without explicit user go-ahead. At Checkpoints 2/3/4, auto-review (attempts 1-2: Opus subagent + Sonnet subagent + codex exec; attempts 3+: Opus subagent + codex exec) is the default — Decision Bundle dedups + classifies findings, only auto-applies when ALL are obvious-fix. CP5 gets comprehensive review (phase-wide, escalation-only, no fix loop). Always-escalate triggers (including DECISIONS-worthy choices and KNOWN_ISSUES entry/status changes) and user opt-out keep the user gate intact when needed. "Silence = continue" is never right at user-gated checkpoints.
+- **Not an auto-approver.** At Checkpoint 1, don't proceed without explicit user go-ahead. At Checkpoints 2/3/4/5, auto-review (every attempt: Opus subagent + Sonnet subagent + codex exec, with a Haiku subagent substituting for Codex when unavailable) is the default — the Decision Bundle dedups + classifies findings, auto-applies the obvious fixes and fires the next round, and surfaces non-trivial / decision findings with options + a recommendation. CP5 runs the same up-to-5-attempt loop on the phase-wide diff and, on PASS, stops before opening the PR. Always-escalate triggers (including DECISIONS-worthy choices and KNOWN_ISSUES entry/status changes) and user opt-out keep the user gate intact when needed. "Silence = continue" is never right at user-gated checkpoints.
 - **Not a speculation engine.** If the plan is wrong and needs thinking, flag it and ask; don't invent a redesign mid-round.
 
 ## Tone
@@ -311,9 +313,9 @@ Load these as needed:
 - `references/expected-artifacts.md` — what the spec bundle should contain; how to recognize a complete vs incomplete handoff; document precedence
 - `references/audit-first-protocol.md` — audit report format, common divergence categories, how to classify findings
 - `references/stop-and-review-patterns.md` — standard within-phase checkpoints, gate checklists, and report shape
-- `references/auto-review-mode.md` — default-on delegated verification for Checkpoints 2/3/4 (per-round) + CP5 comprehensive (phase-wide, escalation-only) via reviewer ensemble (attempts 1-2: Opus subagent + Sonnet subagent + codex exec; attempts 3+: Opus subagent + codex exec). Covers Decision Bundle dedup/classification flow, cap 5 + convergence check, escalation triggers, opt-out per session, verdict-merging rules, reviewer fallback, split-commit per-round convention (A code + B report), and verify-before-claim discipline (check K)
+- `references/auto-review-mode.md` — default-on delegated verification for Checkpoints 2/3/4 (per-round) + CP5 (comprehensive phase-wide, same fix loop, PASS stops before PR) via a reviewer ensemble (every attempt: Opus subagent + Sonnet subagent + codex exec; a Haiku subagent substitutes for Codex when unavailable). Covers the per-finding Decision Bundle flow (auto-apply obvious + continue; surface decisions with options + recommendation), cap 5 + convergence check, escalation triggers, opt-out per session, verdict-merging rules, reviewer fallback, split-commit per-round convention (A code + B report), and verify-before-claim discipline (check K)
 - `references/round-report-template.md` — end-of-round report format
 - `references/decisions-log-format.md` — how to write a DECISIONS.md entry
 - `references/known-issues-discipline.md` — how to create/update KNOWN_ISSUES.md entries and bootstrap the file for older bundles
-- `references/memory-discipline.md` — daily memory under `docs/memory/`, indexed by `docs/MEMORY.md`
+- `references/memory-discipline.md` — daily memory under `docs/memory/`, indexed by `docs/MEMORY.md`; also the per-work-item narrative in `docs/WORK_LOG.md` (indexed one-line-per-item by the Work tracker) and how the four knowledge surfaces differ
 - `references/revision-notes-format.md` — how to add `r2`, `r3` notes to plans when reality diverges

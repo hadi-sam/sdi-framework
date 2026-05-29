@@ -1,6 +1,6 @@
 ---
 name: mvp-architect
-description: Plan a product from a rough idea to an initial spec bundle (PRD, ARCHITECTURE, ROADMAP, PROJECT_STRUCTURE, IMPLEMENTATION_PLAN, DECISIONS, KNOWN_ISSUES, MEMORY, AGENTS.md, CLAUDE.md). Covers 8 project types (web SaaS, landing page, dashboard, web API, mobile, data pipeline, AI agent/MCP, automation) via Phase 0 router, with optional AI/LLM modifier. USE when starting greenfield work — "I have an idea for X", "want to start a project", "help me scope a product", "need a PRD for Y", "we want to build Z from scratch". DO NOT USE for mid-implementation review (use sdi-review), planning the next work item after a phase closes (use sdi-next-plan), executing implementation (use sdi-mode), or onboarding existing code without an SDI bundle (use convert-to-sdi).
+description: Plan a product from a rough idea to an initial spec bundle (PRD, ARCHITECTURE, ROADMAP, PROJECT_STRUCTURE, IMPLEMENTATION_PLAN, DECISIONS, KNOWN_ISSUES, MEMORY, WORK_LOG, AGENTS.md, CLAUDE.md). Covers 8 project types (web SaaS, landing page, dashboard, web API, mobile, data pipeline, AI agent/MCP, automation) via Phase 0 router, with optional AI/LLM modifier. USE when starting greenfield work — "I have an idea for X", "want to start a project", "help me scope a product", "need a PRD for Y", "we want to build Z from scratch". DO NOT USE for mid-implementation review (use sdi-review), planning the next work item after a phase closes (use sdi-next-plan), executing implementation (use sdi-mode), or onboarding existing code without an SDI bundle (use convert-to-sdi).
 ---
 
 # MVP Architect
@@ -142,6 +142,7 @@ Read `references/artifact-bundle.md` for the canonical set of artifacts, their o
 - DECISIONS → `references/core-templates/decisions-template.md` (empty scaffold; do not invent decisions for a greenfield project)
 - KNOWN_ISSUES → `references/core-templates/known-issues-template.md` (empty scaffold; do not invent issues for a greenfield project)
 - MEMORY → `references/core-templates/memory-template.md` (index + today's Phase C handoff entry)
+- WORK_LOG → `references/core-templates/work-log-template.md` (header + Phase C section; verbose counterpart to the one-line Work tracker)
 - AGENTS.md + CLAUDE.md → `references/agents-template.md` (same customized content in both files)
 - README → `references/core-templates/readme-template.md`
 

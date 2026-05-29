@@ -20,11 +20,11 @@ These are typical — adapt to the specific phase.
 
 ### Auto-review eligibility
 
-**Auto-review is the default for Checkpoints 2, 3, and 4** (per-round review) **and CP5** (comprehensive phase-wide review, escalation-only). Verification is delegated to a different-model reviewer ensemble unless the user asks for a different schedule: attempts 1-2 run Opus subagent + Sonnet subagent + `codex exec` (typically gpt-5.5 with reasoning effort `xhigh`) in parallel; attempts 3+ run Opus subagent + `codex exec` in parallel. Different models find partially-disjoint bugs; the union catches more than any one reviewer alone. The checkpoint gate is closed by a structured Decision Bundle (per `auto-review-mode.md` §"Decision Bundle format") that classifies findings as obvious-fix (auto-apply eligible), needs-decision (user input), or judgment-required (never auto-applied). The user can opt out per session — see `auto-review-mode.md`.
+**Auto-review is the default for Checkpoints 2, 3, 4, and 5** (CPs 2-4 per-round; CP5 comprehensive phase-wide). Verification is delegated to a different-model reviewer ensemble unless the user asks for a different schedule: **every attempt (1-5)** runs Opus subagent + Sonnet subagent + `codex exec` (typically gpt-5.5 with reasoning effort `xhigh`) in parallel; if Codex is unavailable, a Haiku subagent substitutes for it. Different models find partially-disjoint bugs; the union catches more than any one reviewer alone. The checkpoint gate is closed by a structured Decision Bundle (per `auto-review-mode.md` §"Decision Bundle format"): obvious-fix findings are auto-applied (and the next round fires when no decisions remain), needs-decision and judgment-required findings are presented with options + a recommendation (the latter never auto-applied). The user can opt out per session — see `auto-review-mode.md`.
 
 **Checkpoint 1 (Foundation) stays user-gated regardless** — audit findings routinely trigger always-escalate (DECISIONS material divergences, KI entries, blockers), making auto-review CP1-eligibility a near no-op. User gates the audit directly.
 
-**Checkpoint 5 (Housekeeping) has comprehensive auto-review — escalation-only.** Reviewers look at the entire phase (diff between `PHASE_BASE_SHA` and `HEAD`), per-CP packet split by default. FAIL/ESCALATE never auto-applies a fix; user decides next steps. See `auto-review-mode.md` §"CP5 comprehensive review".
+**Checkpoint 5 (Housekeeping) has comprehensive auto-review** running the **same up-to-5-attempt fix loop** as CPs 2-4. Reviewers look at the entire phase (diff between `PHASE_BASE_SHA` and `HEAD`), per-CP packet split by default. Obvious fixes auto-apply and the review re-runs; structural findings classify as needs-decision/judgment-required and are presented for the user. On PASS, stop **before opening the PR**; after 5 attempts still FAIL, escalate for the user to decide. See `auto-review-mode.md` §"CP5 comprehensive review".
 
 Any round that produces a `DECISIONS.md` entry, adds/updates a `KNOWN_ISSUES.md` entry, hits any blocker, any emergency deviation, any plan revision, and any always-escalate trigger from `auto-review-mode.md` also stays user-gated even within an eligible checkpoint.
 
@@ -120,13 +120,14 @@ Each checkpoint header below carries an eligibility tag. Auto-eligible checkpoin
 
 ---
 
-### Checkpoint 5: Housekeeping (end of phase) **(auto-review comprehensive — escalation-only)**
+### Checkpoint 5: Housekeeping (end of phase) **(auto-review comprehensive — same fix loop; PASS stops before PR)**
 
 **Deliver:**
 - Acceptance criteria mapped to evidence (test file + line, or smoke step).
 - Updated `PROJECT_STRUCTURE.md` if layout changed.
 - Updated `DESIGN_SYSTEM.md` if tokens or components drifted (UI types only).
 - Updated `AGENTS.md` / `CLAUDE.md` with newly discovered project conventions; if both exist, kept them in sync.
+- Closing work item's verbose narrative written as a `## <work item>` section in `docs/WORK_LOG.md`; its Work tracker row reduced to one line (status + pointers).
 - `DECISIONS.md` entries complete (all decisions taken during the phase recorded).
 - `KNOWN_ISSUES.md` sweep complete (new issues cataloged; fixed issues marked resolved with commit/date; scheduled issues linked to work item).
 - Manual smoke test run and results documented.
@@ -144,9 +145,10 @@ Each checkpoint header below carries an eligibility tag. Auto-eligible checkpoin
 - [ ] Typecheck passes
 - [ ] All unit + integration test suites pass
 - [ ] Manual smoke test of the main acceptance criterion completed live and documented
-- [ ] Phase tracker in `AGENTS.md` / `CLAUDE.md` updated to ✓ with date
+- [ ] Phase tracker in `AGENTS.md` / `CLAUDE.md` updated to ✓ with date, row kept to one line
+- [ ] Closing work item's narrative added as a `## <work item>` section in `docs/WORK_LOG.md` (`Type` / `Status` / `Date` matching the tracker row)
 - [ ] Today's `docs/memory/YYYY-MM-DD.md` entry marks the phase as closed
-- [ ] CP5 comprehensive review run (auto-review default) — Decision Bundle posted, findings escalated to user; user resolved all findings (applied via user-gated housekeeping fix rounds, accepted as KNOWN_ISSUES entries, or opened follow-up work items). OR user opted out and reviewed manually.
+- [ ] CP5 comprehensive review run (auto-review default) — up-to-5-attempt fix loop on the phase-wide diff; obvious fixes auto-applied, decision findings presented with options + recommendation. Ended in PASS (then stop **before** opening the PR) OR, after 5 attempts still FAIL, escalated for the user to decide (continue manually, accept remaining findings as KNOWN_ISSUES, or open a follow-up work item). OR user opted out and reviewed manually.
 
 ---
 

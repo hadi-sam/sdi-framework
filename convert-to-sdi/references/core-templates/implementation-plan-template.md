@@ -188,9 +188,9 @@ Skip checkpoints that don't apply (e.g. drop Checkpoint 4 if there is no UI). **
 **Phase-specific gates:**
 - [ ] [optional]
 
-### Checkpoint 5 — Housekeeping **(auto-review comprehensive — escalation-only)**
+### Checkpoint 5 — Housekeeping **(auto-review comprehensive — same fix loop; PASS stops before PR)**
 
-**Covers:** §10 Acceptance Criteria mapping, §12 Decisions Log materialization, §13 Known divergences resolution, known-issues lifecycle updates, doc updates (`PROJECT_STRUCTURE`, `AGENTS.md` / `CLAUDE.md`).
+**Covers:** §10 Acceptance Criteria mapping, §12 Decisions Log materialization, §13 Known divergences resolution, known-issues lifecycle updates, doc updates (`PROJECT_STRUCTURE`, `AGENTS.md` / `CLAUDE.md`), work-item close in `WORK_LOG.md` + Work tracker.
 
 **Standard gates:**
 - [ ] Every acceptance criterion in the current `IMPLEMENTATION_PLAN_*.md` §Acceptance Criteria has linked evidence
@@ -204,9 +204,10 @@ Skip checkpoints that don't apply (e.g. drop Checkpoint 4 if there is no UI). **
 - [ ] Typecheck passes
 - [ ] All unit + integration test suites pass
 - [ ] Manual smoke test of the main acceptance criterion completed live and documented
-- [ ] Phase tracker in `AGENTS.md` / `CLAUDE.md` updated to ✓ with date
+- [ ] Phase tracker in `AGENTS.md` / `CLAUDE.md` updated to ✓ with date, row kept to one line
+- [ ] Closing work item's narrative added as a `## <work item>` section in `docs/WORK_LOG.md` (`Type` / `Status` / `Date` matching the tracker row)
 - [ ] Today's `docs/memory/YYYY-MM-DD.md` entry marks the phase as closed
-- [ ] CP5 comprehensive review run (auto-review default) — phase-wide diff (`git diff PHASE_BASE_SHA..HEAD`), per-CP packet split by default. Decision Bundle posted; findings escalated to user (no fix loop). User resolved all findings (via user-gated housekeeping fix rounds, accepted as KNOWN_ISSUES entries, or opened follow-up work items). OR user opted out and reviewed manually.
+- [ ] CP5 comprehensive review run (auto-review default) — phase-wide diff (`git diff PHASE_BASE_SHA..HEAD`), per-CP packet split by default; up-to-5-attempt fix loop (obvious fixes auto-applied, decision findings presented with options + recommendation). Ended in PASS → stop **before** opening the PR; OR after 5 attempts still FAIL, escalated for the user to decide (continue manually, accept remaining findings as KNOWN_ISSUES, or open a follow-up work item). OR user opted out and reviewed manually.
 
 **Phase-specific gates:**
 - [ ] [optional]
@@ -253,7 +254,7 @@ Record at end of phase:
 - **API contracts (when applicable) should include every status code.** If your contract table has 3 rows, you're missing error cases.
 - **§11 Implementation checkpoints maps work to the sdi-mode discipline.** Both the canonical gates (mirrored from sdi-mode for self-containment) and phase-specific slots appear inline. Only add phase-specific gates when the phase has constraints unique to it; don't restate the standard gates.
 
-> **Maintenance note (for framework maintainers, not for inclusion in generated plans):** §11's standard gates are mirrored from the sdi-mode skill's `stop-and-review-patterns.md`. All three planning skills (`mvp-architect`, `convert-to-sdi`, `sdi-next-plan`) carry their own copy on purpose so a generated plan can be reviewed without sdi-mode installed. When the canonical gates change, update all three copies (`mvp-architect/references/core-templates/implementation-plan-template.md`, `convert-to-sdi/references/core-templates/implementation-plan-template.md`, and `sdi-next-plan/references/core-templates/implementation-plan-template.md`) to match. Same convention as `agents-template.md`.
+> **Maintenance note (for framework maintainers, not for inclusion in generated plans):** §11's standard gates are mirrored from the sdi-mode skill's `stop-and-review-patterns.md`. All three planning skills (`mvp-architect`, `convert-to-sdi`, `sdi-next-plan`) carry their own copy on purpose so a generated plan can be reviewed without sdi-mode installed. When the canonical gates change, update all three copies (`mvp-architect/references/core-templates/implementation-plan-template.md`, `convert-to-sdi/references/core-templates/implementation-plan-template.md`, and `sdi-next-plan/references/core-templates/implementation-plan-template.md`) so the §11 gates stay identical. Same convention as `agents-template.md`. **One intentional divergence:** §2's "load only the context needed" guidance is role-specific and is *not* expected to match across the three — `sdi-next-plan` points to the target project's live `docs/PROJECT_STRUCTURE.md` / `docs/DESIGN_SYSTEM.md` (it plans against an existing repo), while `mvp-architect` and `convert-to-sdi` point to their bundled type templates (they generate the bundle). Keep §11 in sync; leave §2 role-appropriate.
 - **§12 Decisions Log is a checklist for end-of-phase housekeeping.** Each becomes a real DECISIONS.md entry at phase close.
 - **§13 is where the plan is honest about its own limitations.** Usually empty at initial draft; populated during audit.
 

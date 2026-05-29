@@ -140,7 +140,7 @@ Any existing `AGENTS.md` or `CLAUDE.md` is therefore either: (a) already a fact 
    - The `Project context` block with values detected by Phase 0 + confirmed by Phase 1 + values pulled from buckets above.
    - The `Document map` reflecting actual `docs/` content (including any custom files preserved per the matrix).
    - `Project-specific conventions > Stack details / File / directory conventions / Convention exceptions` populated with everything bucket-classified as "fact".
-   - The `Work tracker` with a single retroactive row marking the conversion ("Converted to SDI on YYYY-MM-DD; first work item TBD").
+   - The `Work tracker` as a one-line index with a single retroactive row marking the conversion ("Converted to SDI on YYYY-MM-DD; first work item TBD"). If the existing file already had a work tracker with verbose multi-line `Notes` cells, slim each row to one line and move the narrative into the matching `## <work item>` section of the newly generated `docs/WORK_LOG.md` (per `artifact-generation-rules.md`) — surface this move in the diff (step 4) so the user sees nothing was lost.
    - Any external artifact references (Strategy D outcomes for other artifacts) appended as an `External artifact references` block.
 4. **Show a three-way diff to the user**:
    - **Preserved** — sections/lines copied verbatim from the existing file (which canonical section each landed in).

@@ -10,7 +10,7 @@ Stack-agnostic. Single-developer friendly. Designed for IDE-based AI coding tool
 
 | Skill | Purpose | Use when |
 | --- | --- | --- |
-| `mvp-architect` | Turn an idea into the initial spec bundle (PRD, ARCHITECTURE, ROADMAP, PROJECT_STRUCTURE, IMPLEMENTATION_PLAN_PHASE_1, DECISIONS, KNOWN_ISSUES, MEMORY, AGENTS/CLAUDE.md). | Starting greenfield. |
+| `mvp-architect` | Turn an idea into the initial spec bundle (PRD, ARCHITECTURE, ROADMAP, PROJECT_STRUCTURE, IMPLEMENTATION_PLAN_PHASE_1, DECISIONS, KNOWN_ISSUES, MEMORY, WORK_LOG, AGENTS/CLAUDE.md). | Starting greenfield. |
 | `convert-to-sdi` | Adopt SDI on a project that already has code. Documents reality without editing source. | Joining a legacy project or formalizing an in-flight one. |
 | `sdi-mode` | Implement against specs: audit-first, checkpoint gates, decisions, known issues, memory, auto-review on mid-phase checkpoints. | Writing code from an SDI plan. |
 | `sdi-review` | SDI-aware lens for reviewing plans, rounds, fork decisions, and bugs. Runs in whatever agent you invoke. | Mid-implementation second pair of eyes. |
@@ -69,18 +69,18 @@ These live in `sdi-mode/SKILL.md` and load on demand. They are never copied into
 
 1. **Audit the plan against the repo before coding.** The repo wins when it disagrees with the plan; the plan gets a revision note.
 2. **Stop at explicit checkpoints with binary gates.** Each gate must pass before the round closes.
-3. **Maintain decisions and memory separately.** Durable rationale in `docs/DECISIONS.md`; dated work state in `docs/memory/YYYY-MM-DD.md`.
+3. **Maintain decisions and memory separately.** Durable rationale in `docs/DECISIONS.md`; dated work state in `docs/memory/YYYY-MM-DD.md`; per-work-item narrative in `docs/WORK_LOG.md`, indexed one-line-per-item by the Work tracker in `AGENTS.md` / `CLAUDE.md`.
 4. **Maintain known issues separately.** `docs/KNOWN_ISSUES.md` with append-only lifecycle status.
 5. **Respect document precedence.** Live repo > `AGENTS.md` / `CLAUDE.md` > `PRD` > `ARCHITECTURE` > `ROADMAP` > `PROJECT_STRUCTURE` > `IMPLEMENTATION_PLAN` > `DESIGN_SYSTEM` > `README`. `DECISIONS` patches authority; `KNOWN_ISSUES` catalogs wrongness; `docs/memory/` is breadcrumbs, not source of truth.
 
 ## Generated Artifacts
 
-After `mvp-architect` or `convert-to-sdi`, a project typically has, under `docs/`: `PRD.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `PROJECT_STRUCTURE.md`, `IMPLEMENTATION_PLAN_*.md`, `KNOWN_ISSUES.md`, `DECISIONS.md`, `MEMORY.md` (+ `memory/YYYY-MM-DD.md`), and `DESIGN_SYSTEM.md` (UI projects only). Plus `AGENTS.md` / `CLAUDE.md` at repo root carrying the same project facts.
+After `mvp-architect` or `convert-to-sdi`, a project typically has, under `docs/`: `PRD.md`, `ARCHITECTURE.md`, `ROADMAP.md`, `PROJECT_STRUCTURE.md`, `IMPLEMENTATION_PLAN_*.md`, `KNOWN_ISSUES.md`, `DECISIONS.md`, `MEMORY.md` (+ `memory/YYYY-MM-DD.md`), `WORK_LOG.md`, and `DESIGN_SYSTEM.md` (UI projects only). Plus `AGENTS.md` / `CLAUDE.md` at repo root carrying the same project facts (including the one-line Work tracker that indexes `WORK_LOG.md`).
 
 ## What SDI Is Not
 
 - **Not a code reviewer.** `sdi-mode` implements with discipline; the human still reviews.
-- **Not an auto-approver.** Foundation (CP1) stays user-gated. Mid-phase checkpoints get per-round auto-review; CP5 housekeeping gets phase-wide escalation-only review. Findings are deduped into a Decision Bundle and only all-obvious-fix bundles auto-apply. Always-escalate triggers (DECISIONS-worthy choices, KNOWN_ISSUES status changes, schema migrations with data-loss risk, new external deps, security-relevant changes, plan revisions, PRD/ARCHITECTURE deviations) keep the round user-gated even when auto-review is on.
+- **Not an auto-approver.** Foundation (CP1) stays user-gated. Mid-phase checkpoints get per-round auto-review; CP5 housekeeping gets phase-wide auto-review running the same up-to-5-attempt fix loop and, on PASS, stops before opening the PR. Findings are deduped into a Decision Bundle: obvious fixes auto-apply and the loop continues, while non-trivial / decision findings are surfaced with options + a recommendation. Every attempt runs three reviewers (Opus + Sonnet + Codex; a Haiku subagent substitutes for Codex if it's unavailable). Always-escalate triggers (DECISIONS-worthy choices, KNOWN_ISSUES status changes, schema migrations with data-loss risk, new external deps, security-relevant changes, plan revisions, PRD/ARCHITECTURE deviations) keep the round user-gated even when auto-review is on.
 - **Not a refactor agent.** `convert-to-sdi` documents reality; it never edits source.
 - **Not scope-from-scratch for in-flight projects.** Use `sdi-next-plan`.
 - **Not bureaucracy.** Friction should earn its keep by improving clarity, quality, or auditability.

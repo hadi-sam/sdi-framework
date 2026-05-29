@@ -28,13 +28,15 @@ The standard set of artifacts produced at the end of Phase C. Each has a specifi
 
 10. **MEMORY.md** + **memory/YYYY-MM-DD.md** — datable execution memory. Generated from `references/core-templates/memory-template.md` with an index and today's Phase C handoff entry. This records that the bundle was created and what the next implementation step is.
 
-11. **AGENTS.md** and **CLAUDE.md** *(at repo root, not in `docs/`)* — project-specific **fact sheets** for the SDI workflow. Both are generated from the same customized `references/agents-template.md` content with the project's type, AI modifier flag, stack, and known conventions. They carry only project facts (stack, doc map, conventions, work tracker) — **never** the SDI discipline itself. The discipline lives in the `sdi-mode` skill (Claude Code / Codex) or the configured `sdi-mode` custom mode (Roo Code / Kilo Code / OpenCode). Generate both so the user can keep whichever file(s) their coding agents read.
+11. **WORK_LOG.md** — verbose per-work-item narrative. Generated from `references/core-templates/work-log-template.md` as a near-empty living doc (header + Phase C section). It is the verbose counterpart to the one-line **Work tracker** in `AGENTS.md` / `CLAUDE.md`: the tracker is the index, `WORK_LOG.md` is the story. It grows one `## <work item>` section per work item, written at close. Not loaded every session and not the canonical source of detail — it consolidates and points into the plan, `DECISIONS.md`, `KNOWN_ISSUES.md`, and `docs/memory/`.
+
+12. **AGENTS.md** and **CLAUDE.md** *(at repo root, not in `docs/`)* — project-specific **fact sheets** for the SDI workflow. Both are generated from the same customized `references/agents-template.md` content with the project's type, AI modifier flag, stack, and known conventions. They carry only project facts (stack, doc map, conventions, work tracker) — **never** the SDI discipline itself. The discipline lives in the `sdi-mode` skill (Claude Code / Codex) or the configured `sdi-mode` custom mode (Roo Code / Kilo Code / OpenCode). Generate both so the user can keep whichever file(s) their coding agents read.
 
 ## Conditional generation
 
 | Artifact | Always generate? | Notes |
 |---|---|---|
-| README, PRD, ARCHITECTURE, ROADMAP, PROJECT_STRUCTURE, IMPLEMENTATION_PLAN_PHASE_1, DECISIONS, KNOWN_ISSUES, MEMORY, AGENTS.md, CLAUDE.md | Yes | Universal |
+| README, PRD, ARCHITECTURE, ROADMAP, PROJECT_STRUCTURE, IMPLEMENTATION_PLAN_PHASE_1, DECISIONS, KNOWN_ISSUES, MEMORY, WORK_LOG, AGENTS.md, CLAUDE.md | Yes | Universal |
 | DESIGN_SYSTEM | Only if UI | Skip for api-service, data-pipeline, automation-workflow, ai-agent (without UI) |
 | AI-modifier additions | Only if modifier active | Adds sections to ARCHITECTURE, PROJECT_STRUCTURE, DESIGN_SYSTEM, IMPLEMENTATION_PLAN_PHASE_1 |
 
@@ -43,10 +45,10 @@ The standard set of artifacts produced at the end of Phase C. Each has a specifi
 Generate in this order — each builds on the previous:
 
 ```
-PRD → ARCHITECTURE → ROADMAP → PROJECT_STRUCTURE → DESIGN_SYSTEM (if UI) → IMPLEMENTATION_PLAN_PHASE_1 → DECISIONS → KNOWN_ISSUES → MEMORY → AGENTS.md + CLAUDE.md → README
+PRD → ARCHITECTURE → ROADMAP → PROJECT_STRUCTURE → DESIGN_SYSTEM (if UI) → IMPLEMENTATION_PLAN_PHASE_1 → DECISIONS → KNOWN_ISSUES → MEMORY → WORK_LOG → AGENTS.md + CLAUDE.md → README
 ```
 
-README is last because it's an index — it can't index documents that don't exist yet. DECISIONS and KNOWN_ISSUES are generated near-last because they need no planning input beyond product name and date. MEMORY follows them so the first daily entry can point at the initialized logs and the Phase 1 handoff. AGENTS.md and CLAUDE.md are generated near-last because they benefit from knowing the stack/structure decisions from PROJECT_STRUCTURE and the Phase 1 prerequisites from IMPLEMENTATION_PLAN.
+README is last because it's an index — it can't index documents that don't exist yet. DECISIONS and KNOWN_ISSUES are generated near-last because they need no planning input beyond product name and date. MEMORY follows them so the first daily entry can point at the initialized logs and the Phase 1 handoff. WORK_LOG follows MEMORY: it ships with only the header and the Phase C section, and the Work tracker in AGENTS.md / CLAUDE.md is its one-line index. AGENTS.md and CLAUDE.md are generated near-last because they benefit from knowing the stack/structure decisions from PROJECT_STRUCTURE and the Phase 1 prerequisites from IMPLEMENTATION_PLAN.
 
 ## Relationships
 
@@ -59,6 +61,7 @@ README is last because it's an index — it can't index documents that don't exi
 - **DECISIONS** is the durable "why did we choose this?" log. It starts empty in greenfield projects and later receives numbered entries for non-obvious implementation choices, accepted trade-offs, deferrals, and material plan-vs-repo divergences.
 - **KNOWN_ISSUES** is the durable "what we know is wrong" catalog. It starts empty in greenfield projects and later receives `KI-NNN` entries for out-of-scope bugs, security gaps, tech debt, and deferred fixes discovered during audits, implementation, reviews, or incidents.
 - **MEMORY** is the dated breadcrumb trail. It starts with the Phase C handoff entry and later gets one entry per meaningful working day.
+- **WORK_LOG** is the verbose per-work-item narrative. It starts with the Phase C section and gets one `## <work item>` section appended at each work item's close. The Work tracker in AGENTS.md / CLAUDE.md is its one-line index; the narrative that used to bloat the tracker's Notes cells lives here, pointing into DECISIONS / KNOWN_ISSUES / the plan / memory rather than duplicating them.
 - **AGENTS.md / CLAUDE.md** sit at repo root and contain the same project fact sheet — they tell coding agents the project's stack, where to find docs, what conventions apply, and which work items are tracked. They evolve as the project proceeds (the coding agent enriches them with discovered repo conventions). The discipline (how to operate) lives in the `sdi-mode` skill or custom mode, not in these files.
 - **README** indexes everything for human readers.
 
@@ -105,6 +108,7 @@ The artifacts are decision records, not encyclopedias. Rules of thumb:
 - **DECISIONS**: ~30–70 lines when empty. It grows append-only as decisions are made.
 - **KNOWN_ISSUES**: ~80–140 lines when empty. It grows append-only as issues are discovered.
 - **MEMORY**: ~25–60 lines at birth (`MEMORY.md` index + one daily entry). It grows one dated entry per meaningful working day.
+- **WORK_LOG**: ~20–40 lines at birth (header + Phase C section). It grows one `## <work item>` section per work item (typically 5–30 lines each), written at close. No hard cap — it is the archive — but each section consolidates and points into the canonical artifacts rather than transcribing them.
 - **AGENTS.md / CLAUDE.md**: ~80–160 lines each. Same project facts only (type, stack, doc map, conventions, work tracker).
 - **README**: ~30–80 lines. Strictly an index.
 

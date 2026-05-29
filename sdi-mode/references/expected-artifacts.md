@@ -14,6 +14,7 @@ At minimum, you should find under `docs/` (or equivalent):
 - `DECISIONS.md` — append-only paper trail of non-obvious choices. New bundles create it even when empty.
 - `KNOWN_ISSUES.md` — append-only catalog of known bugs, security gaps, technical debt, and deferred fixes. New bundles create it even when empty.
 - `docs/MEMORY.md` + `docs/memory/YYYY-MM-DD.md` — datable session memory. New bundles create an index and initial handoff entry.
+- `WORK_LOG.md` — verbose per-work-item narrative; the **Work tracker** in `AGENTS.md` / `CLAUDE.md` is its one-line index. New bundles create it with a header + setup section; it grows one section per work item at close. Read on demand, not every session.
 - `IMPLEMENTATION_PLAN_*.md` — detailed spec for the current work item. The framework treats `IMPLEMENTATION_PLAN_*.md` uniformly: `PHASE_N` for discrete phases (greenfield, structured migrations) or `<slug>` for free-form work (features, maintenance batches in ongoing projects).
 
 At repo root:
@@ -86,6 +87,10 @@ Create it from `known-issues-discipline.md` before the first round report. Older
 
 New bundles should include `docs/MEMORY.md` and an initial dated handoff entry. If either is missing in an older bundle, create the index and today's entry from `memory-discipline.md` at the end of the first working session. Do not fabricate past daily entries.
 
+### WORK_LOG.md doesn't exist
+
+New bundles should include `docs/WORK_LOG.md` as the verbose counterpart to the one-line Work tracker. If it is missing in an older bundle, create the scaffold from `memory-discipline.md` §"What goes in `WORK_LOG.md`" when the first work item closes (Step 8 housekeeping), and at that point slim any verbose Work tracker `Notes` cells into per-item sections. Don't fabricate narratives for items that closed before the file existed — start from the next close, optionally backfilling from existing memory/DECISIONS/KI if the user asks.
+
 ### AGENTS.md / CLAUDE.md missing, sparse, or divergent
 
 If one fact file exists but only has the bare template (placeholders unfilled), expect to fill in stack and conventions during the audit and propose updates for user approval. If both files are missing entirely, surface it: "There's no AGENTS.md or CLAUDE.md at the repo root. Modern SDI expects at least one project fact sheet. For an existing repo, run `convert-to-sdi`; for a greenfield project, generate it from `mvp-architect` Phase C before implementation."
@@ -105,6 +110,8 @@ If `AGENTS.md` or `CLAUDE.md` exists but contains discipline rules (8-step list,
 9. **Relevant repo files** — the schemas, helpers, and modules the phase will touch.
 
 This is ~15–30 minutes of reading before you start coding. Don't skip it.
+
+`docs/WORK_LOG.md` is deliberately **not** in this list. It's the verbose archive — read it on demand when you need the full history of a past work item (e.g. the current phase touches code an earlier item built), not before every phase. The Work tracker in `AGENTS.md` / `CLAUDE.md` is the index that tells you which `WORK_LOG.md` section to open.
 
 ## What the planner artifacts mean (interpretation guide)
 
@@ -142,6 +149,7 @@ The hierarchy below is from highest authority (top) to lowest (bottom). When two
 | – | **DECISIONS.md** | *Patches and exceptions*, not authority. See note below. |
 | – | **KNOWN_ISSUES.md** | *Known wrongness catalog*, not authority. See note below. |
 | – | **docs/memory/YYYY-MM-DD.md** | *Breadcrumb trail*, not authority. See note below. |
+| – | **WORK_LOG.md** | *Verbose per-item history*, not authority. Consolidates closed-item narratives and points into the artifacts above; if it disagrees with them, they win. |
 
 ### DECISIONS.md is overlay, not override
 

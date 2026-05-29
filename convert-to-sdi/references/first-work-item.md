@@ -82,11 +82,13 @@ Target same as Phase C / `sdi-next-plan` plans: 400–600 lines. For a small bug
 
 ## Update the work tracker
 
-After the plan is generated, add the row to the `Work tracker` in `AGENTS.md` and `CLAUDE.md` when both exist:
+After the plan is generated, add a one-line index row to the `Work tracker` in `AGENTS.md` and `CLAUDE.md` when both exist:
 
 ```markdown
 | [name] | [type] | pending — plan generated | YYYY-MM-DD | docs/IMPLEMENTATION_PLAN_[name].md |
 ```
+
+Keep the row to one line. The verbose narrative for this item is written to `docs/WORK_LOG.md` (a new `## <work item>` section) when it **closes** — at sdi-mode Step 8 housekeeping — not now.
 
 Update today's `docs/memory/YYYY-MM-DD.md` to mention the plan was generated and the user is about to start work.
 

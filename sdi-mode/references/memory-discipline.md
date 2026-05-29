@@ -1,6 +1,6 @@
 # Memory Discipline
 
-Spec-driven projects accumulate three distinct kinds of knowledge during implementation:
+Spec-driven projects accumulate four distinct kinds of knowledge during implementation:
 
 1. **Atemporal decisions** — non-obvious choices that hold until something changes them (library X over Y, deferred feature, accepted trade-off). These live in `DECISIONS.md`, append-only, numbered.
 
@@ -8,7 +8,9 @@ Spec-driven projects accumulate three distinct kinds of knowledge during impleme
 
 3. **Datable session memory** — what was actually worked on, when, blockers active, next step, open questions still pending. These live in dated files under `docs/memory/`, indexed by `docs/MEMORY.md`.
 
-Mixing these into a single `DECISIONS.md` or memory file is a common failure pattern: durable rationale, known bugs, and daily status blur together, and none of them stay searchable. Splitting them keeps each file useful.
+4. **Per-work-item narrative** — the consolidated story of each *completed* work item: what was built, the checkpoints/rounds, review outcomes, test-count deltas, cross-references. This lives in `docs/WORK_LOG.md`, one `## <work item>` section per item, written at close. The **Work tracker** in `AGENTS.md` / `CLAUDE.md` is its one-line index.
+
+Mixing these into a single file is a common failure pattern: durable rationale, known bugs, daily status, and per-item history blur together, and none stay searchable. Splitting them keeps each file useful — and keeps the Work tracker (read every session) from bloating into a wall of narrative.
 
 ## File layout
 
@@ -16,12 +18,15 @@ Mixing these into a single `DECISIONS.md` or memory file is a common failure pat
 docs/
 ├── DECISIONS.md              # atemporal, append-only, numbered
 ├── KNOWN_ISSUES.md           # append-only issue/debt lifecycle catalog
+├── WORK_LOG.md               # verbose per-work-item narrative; one ## section per item, at close
 ├── MEMORY.md                 # index — one line per dated entry
 └── memory/
     ├── 2026-04-25.md         # one file per working day
     ├── 2026-04-26.md
     └── ...
 ```
+
+(The Work tracker in `AGENTS.md` / `CLAUDE.md` at the repo root is the one-line index into `WORK_LOG.md` — see "What goes in `WORK_LOG.md`" below.)
 
 `docs/memory/` and `docs/MEMORY.md` are the default. If a project deliberately keeps canonical docs at the repo root, keep `MEMORY.md` and `memory/` next to `DECISIONS.md` and `KNOWN_ISSUES.md` for symmetry.
 
@@ -114,6 +119,20 @@ Index of `docs/memory/` daily entries. Newest first. Links inside `docs/MEMORY.m
 
 `docs/MEMORY.md` itself stays under ~200 lines (with truncation when older entries roll off into archives if needed). It's a finder, not the full content.
 
+## What goes in `WORK_LOG.md`
+
+The consolidated narrative of each **completed work item** — one `## <work item>` section, written at end-of-phase housekeeping (sdi-mode Step 8), in the same order as the Work tracker rows (chronological, newest appended at the end). Each section holds what used to bloat the tracker's `Notes` cell:
+
+- What was built (modules, behavior), the checkpoints/rounds, adversarial-review outcomes.
+- Test-count deltas, smoke results, PR links, fix commit SHAs.
+- Cross-references: `DECISIONS #N`, `KI-NNN`, plan revision notes — pointing into them, not pasting their content.
+
+**Per-item and consolidated-at-close**, not per-day. That is the difference from `docs/memory/`: memory is the running daily breadcrumb ("today I closed omie-integration; see WORK_LOG"); the `WORK_LOG.md` section is the durable, consolidated story of that item, written once it closes.
+
+**Not the canonical source of detail, and not loaded every session.** The authoritative record stays in the plan, `DECISIONS.md`, `KNOWN_ISSUES.md`, and `docs/memory/`; `WORK_LOG.md` consolidates and points into them. It is read on demand, not in the standard pre-phase reading order. Keep each section's `Type` / `Status` / `Date` matching its Work tracker row so the index and the narrative never disagree.
+
+Format and seed structure: `../../mvp-architect/references/core-templates/work-log-template.md`.
+
 ## When to write a memory entry
 
 Write a daily memory entry **at the end of each working session** on the project:
@@ -131,6 +150,7 @@ If a working day produces no meaningful events (all spent on review of someone e
 
 - **Decisions** — those go in `DECISIONS.md`.
 - **Known bugs/debt/security gaps with evidence** — those go in `KNOWN_ISSUES.md`.
+- **Consolidated per-work-item narrative** — the full story of a closed item goes in `WORK_LOG.md` (one section per item), not duplicated into daily memory. Memory just points: "omie-integration closed; see WORK_LOG".
 - **Plan changes** — those go as revision notes in the plan itself.
 - **Detailed code commentary** — the code and round report cover that.
 - **Apologies, hedging, or self-narration** — be matter-of-fact.
