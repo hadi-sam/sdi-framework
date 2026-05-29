@@ -2,7 +2,7 @@
 
 > **Spec-Driven Implementation** — a workflow for using coding agents on software projects, from rough idea to shipped feature.
 
-SDI is opinionated about *how* work is done, not *what* the product becomes. Five skills cover the lifecycle: scope a greenfield product, onboard an existing codebase, implement against specs, review work, plan the next round.
+SDI is opinionated about *how* work is done, not *what* the product becomes. Five skills cover the lifecycle: scope a greenfield product, onboard an existing codebase, orchestrate implementation against specs, review work, plan the next round.
 
 Stack-agnostic. Single-developer friendly. Designed for IDE-based AI coding tools.
 
@@ -16,7 +16,7 @@ Stack-agnostic. Single-developer friendly. Designed for IDE-based AI coding tool
 | `sdi-review` | SDI-aware review coordinator for plans, rounds, fork decisions, and bugs. Dispatches a reviewer ensemble (Opus + Sonnet + Codex) and runs the autonomous fix loop; reviewers get the prompt, never the skill. | Mid-implementation second pair of eyes. |
 | `sdi-next-plan` | Generate the next `IMPLEMENTATION_PLAN_*.md` after a phase or feature closes. | Between work items in an ongoing project. |
 
-`mvp-architect`, `convert-to-sdi`, and `sdi-next-plan` produce planning artifacts. `sdi-review` reviews them. `sdi-mode` carries the execution discipline. The project's `AGENTS.md` / `CLAUDE.md` carry only project facts (stack, doc map, conventions).
+`mvp-architect`, `convert-to-sdi`, and `sdi-next-plan` produce planning artifacts. `sdi-review` reviews them. `sdi-mode` orchestrates execution — the PM dispatches Engineers and a reviewer ensemble (see [Execution model](#execution-model)). The project's `AGENTS.md` / `CLAUDE.md` carry only project facts (stack, doc map, conventions).
 
 ## Quick Start
 
@@ -43,7 +43,7 @@ Install the five skills as either project- or user-scoped:
 
 Skills auto-invoke from their descriptions. Restart Codex after adding skills.
 
-For `sdi-mode` auto-review, the `codex` CLI must be on PATH with a reviewer model configured in `~/.codex/config.toml` (recommended: `gpt-5.5` with reasoning effort `xhigh`). See [`sdi-mode/references/auto-review-mode.md`](sdi-mode/references/auto-review-mode.md) for the full reviewer-ensemble protocol and Decision Bundle flow.
+`sdi-mode` dispatches its **Engineer and Reviewer subagents** through the host's Agent tool — the Opus/Sonnet reviewers and the Opus Engineers run as subagents (Claude Code provides this). For `sdi-mode` auto-review, the `codex` CLI must additionally be on PATH with a reviewer model configured in `~/.codex/config.toml` (recommended: `gpt-5.5` with reasoning effort `xhigh`); if Codex is unavailable a Haiku subagent substitutes for it. See [`sdi-mode/references/roles-and-orchestration.md`](sdi-mode/references/roles-and-orchestration.md) for the execution roles and [`sdi-mode/references/auto-review-mode.md`](sdi-mode/references/auto-review-mode.md) for the full reviewer-ensemble protocol and Decision Bundle flow.
 
 ### Roo Code, Kilo Code, OpenCode
 
@@ -72,6 +72,18 @@ These live in `sdi-mode/SKILL.md` and load on demand. They are never copied into
 3. **Maintain decisions and memory separately.** Durable rationale in `docs/DECISIONS.md`; dated work state in `docs/memory/YYYY-MM-DD.md`; per-work-item narrative in `docs/WORK_LOG.md`, indexed one-line-per-item by the Work tracker in `AGENTS.md` / `CLAUDE.md`.
 4. **Maintain known issues separately.** `docs/KNOWN_ISSUES.md` with append-only lifecycle status.
 5. **Respect document precedence.** Live repo > `AGENTS.md` / `CLAUDE.md` > `PRD` > `ARCHITECTURE` > `ROADMAP` > `PROJECT_STRUCTURE` > `IMPLEMENTATION_PLAN` > `DESIGN_SYSTEM` > `README`. `DECISIONS` patches authority; `KNOWN_ISSUES` catalogs wrongness; `docs/memory/` is breadcrumbs, not source of truth.
+
+## Execution model
+
+`sdi-mode` runs as a **multi-agent** loop, not a single agent writing code. Three roles:
+
+- **PM / orchestrator** (the main session) — runs the audit, writes briefs, dispatches subagents, reconciles verdicts, and owns the entire paper trail. Never writes or reviews code itself.
+- **Engineer** (dispatched subagent, always Opus; 1–3 in parallel by PM judgment, isolated worktrees when parallel) — writes the code and runs the build/tests; never touches the paper trail.
+- **Reviewer** (dispatched subagent, three in parallel) — adversarially reviews the round's diff and returns a verdict; strictly read-only.
+
+Mid-phase checkpoints are **auto-reviewed by default**: a model-diverse ensemble (Opus + Sonnet + Codex, with a Haiku subagent substituting for Codex when it's unavailable) reviews each round, findings are deduped into a Decision Bundle (obvious fixes auto-applied — code via a fix-Engineer, docs by the PM — and decisions surfaced with a recommendation), up to a 5-attempt fix loop with a convergence check. CP1 (foundation) stays user-gated; CP5 (housekeeping) closes on review PASS → user-run smoke → PM-opened PR. The user can opt out per session (the PM then runs the checkpoint user-gated).
+
+Full spec: [`sdi-mode/references/roles-and-orchestration.md`](sdi-mode/references/roles-and-orchestration.md) (roles + tool scoping, Engineer fan-out, the prompt-not-skill reviewer dispatch, brief templates) and [`sdi-mode/references/auto-review-mode.md`](sdi-mode/references/auto-review-mode.md) (the reviewer-ensemble mechanics it reuses). The same ensemble is also available user-invoked through `sdi-review`.
 
 ## Generated Artifacts
 
