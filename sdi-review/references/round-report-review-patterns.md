@@ -1,6 +1,6 @@
 # Round report review patterns
 
-Patterns for `sdi-review` Modes 2, 3, 4 (round report review, fork decision, bug found). The agent loaded with `sdi-review` runs these reviews itself.
+Patterns for `sdi-review` Modes 2, 3, 4 (round report review, fork decision, bug found). The **coordinator** drives these; for **Mode 2** it dispatches the ensemble (Opus + Sonnet + Codex; Haiku if Codex fails) with the filled adversarial prompt — reviewers never load `sdi-review`. **Mode 2 does not auto-apply code fixes** — the implementer (`sdi-mode`) owns code: present obvious code fixes as recommendations, and decisions as options + a recommendation. **Modes 3 and 4 are advisory single passes**, not fix loops.
 
 > **For review of an implementation plan document, use `plan-review-protocol.md` — same agent, different framework (deeper artifact reading, plan-specific checks).**
 

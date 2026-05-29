@@ -13,7 +13,7 @@ Stack-agnostic. Single-developer friendly. Designed for IDE-based AI coding tool
 | `mvp-architect` | Turn an idea into the initial spec bundle (PRD, ARCHITECTURE, ROADMAP, PROJECT_STRUCTURE, IMPLEMENTATION_PLAN_PHASE_1, DECISIONS, KNOWN_ISSUES, MEMORY, WORK_LOG, AGENTS/CLAUDE.md). | Starting greenfield. |
 | `convert-to-sdi` | Adopt SDI on a project that already has code. Documents reality without editing source. | Joining a legacy project or formalizing an in-flight one. |
 | `sdi-mode` | Implement against specs: audit-first, checkpoint gates, decisions, known issues, memory, auto-review on mid-phase checkpoints. | Writing code from an SDI plan. |
-| `sdi-review` | SDI-aware lens for reviewing plans, rounds, fork decisions, and bugs. Runs in whatever agent you invoke. | Mid-implementation second pair of eyes. |
+| `sdi-review` | SDI-aware review coordinator for plans, rounds, fork decisions, and bugs. Dispatches a reviewer ensemble (Opus + Sonnet + Codex) and runs the autonomous fix loop; reviewers get the prompt, never the skill. | Mid-implementation second pair of eyes. |
 | `sdi-next-plan` | Generate the next `IMPLEMENTATION_PLAN_*.md` after a phase or feature closes. | Between work items in an ongoing project. |
 
 `mvp-architect`, `convert-to-sdi`, and `sdi-next-plan` produce planning artifacts. `sdi-review` reviews them. `sdi-mode` carries the execution discipline. The project's `AGENTS.md` / `CLAUDE.md` carry only project facts (stack, doc map, conventions).

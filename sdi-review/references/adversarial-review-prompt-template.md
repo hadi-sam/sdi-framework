@@ -1,8 +1,8 @@
-# Manual adversarial review prompt template
+# Adversarial review prompt template
 
-A self-contained adversarial review prompt for ad-hoc use — when you want a second pair of eyes on a plan, a doc, a branch, a function, or a sketch, outside the SDI auto-review loop.
+The self-contained adversarial prompt that `sdi-review`'s **coordinator hands each dispatched reviewer** (Opus / Sonnet / Codex / Haiku). It is what a reviewer receives — **never the `sdi-review` skill itself**; a reviewer that loads the skill would re-coordinate (dispatch its own reviewers) instead of reviewing. The same prompt is also usable **ad-hoc/manually** — when you want a second pair of eyes on a plan, a doc, a branch, a function, or a sketch.
 
-Adapted from `sdi-mode/references/auto-review-mode.md` §"Adversarial review prompt template", with SDI-specific scaffolding (round report, BASE_SHA, plan sections, prior findings, PASS/FAIL/ESCALATE for an orchestrator) stripped and replaced with manual placeholders.
+Adapted from `sdi-mode/references/auto-review-mode.md` §"Adversarial review prompt template", with the implementer-loop scaffolding (round report, BASE_SHA, plan sections, prior findings) stripped and replaced with manual placeholders the coordinator fills before dispatching.
 
 ## How to use
 
@@ -74,6 +74,7 @@ E. Unhappy paths. Bad input, retries, concurrent calls, partial failure, timeout
 F. High-blast-radius risk. Auth/tenant isolation and trust boundaries; data loss, duplication, or irreversible state changes; rollback safety, retries, partial failure, idempotency gaps; ordering assumptions and re-entrancy; version skew, schema drift, migration hazards; observability gaps that hide failure or block recovery.
 G. Vague claims. "Tests pass", "performant", "secure", "scalable", "easy to extend" without evidence — flag and say what would constitute proof.
 H. Scope risk. Is the target trying to do too much in one step? Is there a piece that should be its own decision or its own change?
+I. SDI plan-vs-bundle (only when [TARGET] is an SDI implementation plan). Does the plan contradict a `DECISIONS.md` entry? Does it misreference or fail to status-gate a `KI-NNN` from `KNOWN_ISSUES.md`? Does it violate PRD/ARCHITECTURE precedence (PRD and ARCHITECTURE win over the plan)? Is each round's output evidenceable from THAT round's deliverable, not a downstream one?
 K. Verify-before-claim audit. For every concrete reference in `[TARGET]` — method, class, hook, file:line, precedent ("mirrors pattern of X"), count ("N sites to change") — Grep/Read and confirm it exists in the shape claimed. Invented / fictitious citations are class-3 (missing prerequisite); shape mismatches are class-1 (internal inconsistency). Especially watch for assertions like "(already exists in code)" / "(method available)" / "(N sites)" without Grep evidence immediately before the assertion.
 
 ## Bug classes (use to organize findings)
@@ -153,4 +154,4 @@ The `- < file` pattern is load-bearing: the `-` argument tells codex to read pro
 
 ---
 
-Or pass the filled prompt to an Agent subagent (Anthropic Agent tool, `model: opus`, `subagent_type: general-purpose`) as the `prompt` argument — no stdin gymnastics needed; the subagent runtime handles input. The output is the review report.
+Or pass the filled prompt to an Agent subagent (Anthropic Agent tool, `subagent_type: general-purpose`, `model: opus` / `sonnet` / `haiku`) as the `prompt` argument — no stdin gymnastics needed; the subagent runtime handles input. The output is the review report. The coordinator dispatches one such subagent per ensemble reviewer, in parallel — Opus + Sonnet via the Agent tool, Codex via the `codex exec` block above (or a Haiku subagent if Codex is down). **Pass the filled prompt, never the skill.**
