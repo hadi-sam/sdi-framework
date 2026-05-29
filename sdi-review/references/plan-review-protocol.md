@@ -1,12 +1,12 @@
 # Plan review protocol
 
-Framework for reviewing an SDI implementation plan. The agent loaded with `sdi-review` runs the review itself by following the steps and checks below. No delegation — you are the reviewer.
+Framework for reviewing an SDI implementation plan — the **check framework** the coordinator and the reviewers it dispatches apply against the plan (what to read, what to verify, the bug classes, the output format). The coordinator runs the autonomous loop from `SKILL.md` (dispatch Opus + Sonnet + Codex with the adversarial prompt, dedup, apply obvious fixes to the plan doc, re-dispatch up to 5 rounds, escalate decisions). A dispatched reviewer applies these checks against the plan and returns findings; **a reviewer never loads `sdi-review`** — it gets the filled adversarial prompt.
 
 This file is loaded by `sdi-review` for **Mode 1: plan review**. Other modes use `round-report-review-patterns.md`.
 
 ## Why this exists
 
-A plan written by the same agent that scoped it tends to overstate readiness — the planner is not adversarial but wants to ship. An external review applies adversarial pressure: cross-checks every concrete claim against the repo, every choice against `DECISIONS.md`, every known issue against `KNOWN_ISSUES.md`, and every gate against evidenceability. The user typically runs this review across multiple sessions/models (e.g., Opus + Codex independently) to combine perspectives — each session loads this skill and runs the framework below.
+A plan written by the same agent that scoped it tends to overstate readiness — the planner is not adversarial but wants to ship. An external review applies adversarial pressure: cross-checks every concrete claim against the repo, every choice against `DECISIONS.md`, every known issue against `KNOWN_ISSUES.md`, and every gate against evidenceability. The coordinator combines perspectives by dispatching the ensemble (Opus + Sonnet + Codex; Haiku if Codex fails) — partially-disjoint blind spots, so the union catches more than any one model alone.
 
 ## When this is used
 
@@ -100,15 +100,15 @@ After writing the findings-first report (above format):
 2. Surface the report to the user in the conversation — don't make them open the file to read it. Lead with: "Saved to `docs/reviews/plan-review-NN.md`. Findings: N. Verdict: PASS/FAIL/ESCALATE. Top issues: [the 2-3 most material]."
 3. Wait for user direction — accept findings, revise plan, request second pass.
 
-## Iteration (second pass)
+## Iteration (the loop's later rounds)
 
-When the user revises the plan in response to first-pass findings and asks for re-review:
+The autonomous loop in `SKILL.md` handles iteration: after round 1, the coordinator applies obvious fixes to the plan and dispatches round 2, and so on. On each later round:
 
-1. The planner agent (separate from this review session) edits the plan based on findings + user feedback.
-2. Re-run this protocol with the second-pass branch active: also read `docs/reviews/plan-review-01.md` (step 8), and apply check J (resolution of prior findings).
-3. Save output as `docs/reviews/plan-review-02.md`.
+1. Obvious-fix findings are applied to the plan **by the coordinator** (the plan is a doc — in scope); non-trivial / decision findings are resolved by the user (or the planner agent) before the next round.
+2. Re-run this protocol with the second-pass branch active: also read the prior round's `docs/reviews/plan-review-(NN-1).md` (the second-pass step in "Steps you must perform"), and apply check K (resolution of prior findings).
+3. Save each round's output as `docs/reviews/plan-review-NN.md` (`01`, `02`, ...).
 
-Cap iterations at 3 by convention. If the plan still has issues at pass 3, the structural problem isn't a review problem — escalate to the user.
+Cap at **5 rounds** + the convergence check (per `SKILL.md` and `auto-review-mode.md`). If the plan still has class 1-6 issues at the cap, the structural problem isn't a review problem — escalate to the user.
 
 ## Common pitfalls
 
@@ -119,8 +119,8 @@ Cap iterations at 3 by convention. If the plan still has issues at pass 3, the s
 - **Inventing findings to look thorough.** If everything checks out, output zero findings and PASS. The discipline is honest verdicts, not productivity theater.
 - **Skipping the saved artifact.** The saved file IS the audit trail. Future sessions read it; without it, the review is conversational only and disappears at session end.
 
-## Note on running this in another model
+## Model diversity
 
-The user may invoke this skill from a separate Codex session, a separate Opus session, or any other model. Each loads this skill and runs the same framework. The output (`docs/reviews/plan-review-NN.md`) is the same regardless of model — what differs is the model's blind spots. Combining 2-3 independent reviews of the same plan typically catches more than any single one alone.
+The coordinator dispatches Opus + Sonnet + Codex (Haiku if Codex fails) every round — each reviewer gets the filled adversarial prompt and runs it against the plan, returning findings + verdict. **Dispatched reviewers can't read this protocol file** (it lives in the skill, not the project repo), so the adversarial prompt is **self-contained**: its general checks (A–H, K) plus the SDI plan-vs-bundle check (item I — plan-vs-DECISIONS, plan-vs-KNOWN_ISSUES, PRD/ARCHITECTURE precedence, round-structure soundness) cover the checks listed above. This protocol is the **coordinator's** reference — for interpreting findings, deduping, and second-pass resolution (check K). What differs between reviewers is their blind spots; the union catches more than any single model. The coordinator dedups and reconciles per `SKILL.md`.
 
-If the user asks "how do I run a Codex review", point them to the Codex CLI documentation; this skill doesn't orchestrate that. The user's separate Codex session loads this skill the same way you did.
+A user may also open a fully separate session in another tool and load `sdi-review` there as an independent second coordinator — their choice. But the reviewers a coordinator dispatches always receive the filled adversarial prompt, **never this skill**.
