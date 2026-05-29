@@ -2,6 +2,8 @@
 
 The self-contained adversarial prompt that `sdi-review`'s **coordinator hands each dispatched reviewer** (Opus / Sonnet / Codex / Haiku). It is what a reviewer receives — **never the `sdi-review` skill itself**; a reviewer that loads the skill would re-coordinate (dispatch its own reviewers) instead of reviewing. The same prompt is also usable **ad-hoc/manually** — when you want a second pair of eyes on a plan, a doc, a branch, a function, or a sketch.
 
+The `sdi-mode` **PM/orchestrator** dispatches reviewers the same way (see `sdi-mode/references/roles-and-orchestration.md`): for a **plan or standalone target** it fills *this* template; for a **round/diff target** it fills the embedded template in `sdi-mode/references/auto-review-mode.md`. Either way the dispatched reviewer gets the **filled prompt, never a skill** — the prompt-not-skill rule, from both sides.
+
 Adapted from `sdi-mode/references/auto-review-mode.md` §"Adversarial review prompt template", with the implementer-loop scaffolding (round report, BASE_SHA, plan sections, prior findings) stripped and replaced with manual placeholders the coordinator fills before dispatching.
 
 ## How to use
@@ -118,7 +120,7 @@ Do NOT edit any files. Your response is the review report itself.
 
 ## When NOT to use this
 
-- **Mid-implementation auto-review for an SDI round.** Use the orchestrated prompt in `sdi-mode/references/auto-review-mode.md` instead — it's wired to BASE_SHA, the round report, and the FAIL/ESCALATE loop the implementer expects.
+- **Mid-implementation auto-review for an SDI round.** Use the orchestrated prompt in `sdi-mode/references/auto-review-mode.md` instead — it's wired to BASE_SHA, the round report, and the FAIL/ESCALATE loop the `sdi-mode` PM/orchestrator expects.
 - **Greenfield product scoping or fresh idea capture.** Use `mvp-architect` — adversarial review on something that doesn't exist yet is theater.
 - **A code-style or convention nit pass.** This prompt's calibration explicitly suppresses style findings. Use a different reviewer or a linter.
 - **You want validation, not interrogation.** This prompt is biased toward finding problems. If you want a balanced "what's good and what's bad" read, ask for that explicitly in a different prompt.

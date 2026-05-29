@@ -12,7 +12,7 @@ This skill is the **playbook for the review coordinator** — the single agent t
 > **Who loads this skill — read this first.**
 > Only the **coordinator** (the agent the user invoked) loads `sdi-review`. When the coordinator dispatches reviewers, it hands each one the **self-contained adversarial prompt** from [`references/adversarial-review-prompt-template.md`](references/adversarial-review-prompt-template.md) — **never this skill**. A subagent that loads `sdi-review` would try to *re-coordinate* (dispatch its own reviewers) instead of reviewing, causing recursion and wasted context. The skill is the conductor's score; a dispatched reviewer gets the sheet music (the filled prompt), reads its target, and returns findings + verdict.
 >
-> This mirrors `sdi-mode`'s auto-review, where the implementer dispatches reviewers with a prompt and never tells them to load a skill.
+> This mirrors `sdi-mode`'s auto-review, where the PM/orchestrator dispatches reviewers with a prompt and never tells them to load a skill.
 
 ## The review loop (autonomous, up to 5 rounds)
 
@@ -22,14 +22,14 @@ The coordinator runs this loop for artifact reviews, same shape as `sdi-mode`'s 
 2. **Merge verdicts, dedup findings, classify per finding** — `obvious-fix` / `needs-decision` / `judgment-required`, same rules as `auto-review-mode.md`.
 3. **Act per finding** (this is the autonomy):
    - **Obvious/trivial fix the coordinator may apply** — *only* a planning/review artifact: the plan under review, `docs/reviews/`, or `KNOWN_ISSUES.md`. Re-verify via Grep/Read, apply it, then **dispatch the next round**.
-   - **Obvious fix to source code** — **never apply it.** The coordinator reviews; it does not implement. Present it with a recommendation for the user / the `sdi-mode` implementer to apply. (Reviewer/implementer separation is deliberate.)
+   - **Obvious fix to source code** — **never apply it.** The coordinator reviews; it does not implement. Present it with a recommendation for the user or `sdi-mode` to apply. (Reviewer/implementer separation is deliberate.)
    - **Non-trivial or decision finding** (class-5 DECISIONS-worthy, scope/architecture conflict, divergent reviewers, anything needing user judgment) — present **options + a recommendation** and stop for the user.
-4. **Continue vs stop:** if a round produced only coordinator-appliable obvious fixes and nothing to escalate → auto-continue to the next round. If anything needs the user or the implementer → stop and present (the applied fixes are kept; the loop resumes after the user/implementer responds).
+4. **Continue vs stop:** if a round produced only coordinator-appliable obvious fixes and nothing to escalate → auto-continue to the next round. If anything needs the user or `sdi-mode` → stop and present (the applied fixes are kept; the loop resumes after the user or `sdi-mode` responds).
 5. **Cap: 5 rounds** + convergence check (same finding persisting across two rounds → escalate early), same as `auto-review-mode.md`.
 
 Net effect:
 - A **plan review** iterates autonomously — the ensemble hammers the plan, obvious fixes land in the plan doc, decisions surface to you — until PASS or the 5-round cap.
-- A **round (code) review** dispatches the ensemble for a strong read but does **not** auto-apply code: it presents findings + recommendations and escalates, because the implementer (`sdi-mode`), not the reviewer, owns the code.
+- A **round (code) review** dispatches the ensemble for a strong read but does **not** auto-apply code: it presents findings + recommendations and escalates, because `sdi-mode` (its Engineers, dispatched by the PM), not the reviewer, owns the code.
 
 The user can opt out (run a single pass, review manually) at any time — say so and the coordinator does one round and stops.
 
@@ -58,7 +58,7 @@ Triggered when the user brings a completed implementation round for review:
 - "round B done, what do you think?"
 - "anything wrong with this round?"
 
-Action: dispatch the ensemble against the round (report end-to-end + diff + relevant plan §s), using `references/round-report-review-patterns.md` §"Round X review" as the check framework. Return findings first, graded blocker / non-blocker / nice-to-have, ending with `VERDICT: PASS / FAIL / ESCALATE`. **Do not auto-apply code fixes** — present obvious code fixes as recommendations for the `sdi-mode` implementer, and decisions as options + a recommendation. (Code findings during implementation are normally handled by `sdi-mode`'s own auto-review; an `sdi-review` round pass is an extra, independent read.)
+Action: dispatch the ensemble against the round (report end-to-end + diff + relevant plan §s), using `references/round-report-review-patterns.md` §"Round X review" as the check framework. Return findings first, graded blocker / non-blocker / nice-to-have, ending with `VERDICT: PASS / FAIL / ESCALATE`. **Do not auto-apply code fixes** — present obvious code fixes as recommendations for `sdi-mode` to apply, and decisions as options + a recommendation. (Code findings during implementation are normally handled by `sdi-mode`'s own auto-review; an `sdi-review` round pass is an extra, independent read.)
 
 ### Mode 3 — Fork decision
 
@@ -77,7 +77,7 @@ Triggered mid-round when the agent (or user) finds something that breaks an assu
 - "agent says X doesn't match the repo"
 - "the implementer caught a divergence"
 
-Action (advisory — single pass, not a fix loop): acknowledge fairly (if the plan was wrong, own it), decide fix direction (plan update? DECISIONS entry? revision note?), ensure paper trail. A plan-level fix may be applied to the plan doc; a code-level fix is the implementer's. See `references/round-report-review-patterns.md` §"Bug found".
+Action (advisory — single pass, not a fix loop): acknowledge fairly (if the plan was wrong, own it), decide fix direction (plan update? DECISIONS entry? revision note?), ensure paper trail. A plan-level fix may be applied to the plan doc; a code-level fix is `sdi-mode`'s. See `references/round-report-review-patterns.md` §"Bug found".
 
 ## How to drive a review
 
@@ -89,7 +89,7 @@ Regardless of mode, the **coordinator** owns these steps — running the ensembl
 4. **End with verdict** — PASS / FAIL / ESCALATE per the mode's rules.
 5. **Save the artifact** to `docs/reviews/` (Mode 1: `plan-review-NN.md`; Mode 2: discussion with the user, optional `docs/reviews/round-XN-review.md` if persistent record matters). The repo gets the audit trail; the user reads the live response.
 
-The coordinator **never edits source code** — that's the implementer's job (`sdi-mode`). It MAY edit planning/review artifacts when applying an obvious fix during a plan review: the plan under review, files under `docs/reviews/`, and (when the review uncovers an out-of-scope known issue with concrete evidence) `docs/KNOWN_ISSUES.md`. For code findings it returns recommendations, not edits; otherwise include a ready-to-paste KI entry in the report.
+The coordinator **never edits source code** — that's `sdi-mode`'s job (its Engineers, dispatched by the PM). It MAY edit planning/review artifacts when applying an obvious fix during a plan review: the plan under review, files under `docs/reviews/`, and (when the review uncovers an out-of-scope known issue with concrete evidence) `docs/KNOWN_ISSUES.md`. For code findings it returns recommendations, not edits; otherwise include a ready-to-paste KI entry in the report.
 
 ## Tone in review
 
@@ -117,7 +117,7 @@ The coordinator **never edits source code** — that's the implementer's job (`s
 
 A user *may* still open a fully separate session in another tool and load `sdi-review` there to act as an independent second coordinator — that's a deliberate user choice. But within one coordination run, **dispatched reviewers receive the prompt, never the skill** (see the guardrail at the top).
 
-For mid-round implementation reviews that fire automatically as part of `sdi-mode`'s Checkpoint gate, see [`sdi-mode/references/auto-review-mode.md`](../sdi-mode/references/auto-review-mode.md) — same loop and ensemble, but triggered by `sdi-mode` (the implementer) rather than user-invoked through this skill.
+For mid-round implementation reviews that fire automatically as part of `sdi-mode`'s checkpoint gate, see [`sdi-mode/references/auto-review-mode.md`](../sdi-mode/references/auto-review-mode.md) and [`sdi-mode/references/roles-and-orchestration.md`](../sdi-mode/references/roles-and-orchestration.md) — same loop and ensemble, but triggered by the `sdi-mode` **PM/orchestrator** rather than user-invoked through this skill. There too, the PM hands each dispatched reviewer the **filled adversarial prompt, never a skill** — the same prompt-not-skill rule as the guardrail at the top of this file.
 
 ## When to pull planning back open
 

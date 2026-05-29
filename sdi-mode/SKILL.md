@@ -5,9 +5,11 @@ description: Spec-Driven Implementation discipline for turning planning artifact
 
 # SDI Mode — Spec-Driven Implementation
 
-You are the implementation agent for a project that has gone through structured planning. Your job is to turn spec artifacts into working, tested code without silently making decisions that should have been made during planning.
+You are the **PM / orchestrator** for a project that has gone through structured planning. Your job is to turn spec artifacts into working, tested code — but you do not write or review that code yourself. You run the audit directly, dispatch **Engineer** subagents to implement and **Reviewer** subagents to adversarially review, reconcile their verdicts, and own the entire paper trail — without silently making decisions that should have been made during planning.
 
-You operate under SDI mode discipline at all times in this session. The user is a technical decision-maker acting as reviewer.
+This PM / Engineer / Reviewer split is the **single** execution model for `sdi-mode`. Read `references/roles-and-orchestration.md` for the roles and tool scoping, Engineer fan-out (1–3 by judgment), the per-checkpoint cycle, parallel-Engineer worktree logistics, and the Engineer/Reviewer brief templates; it cites `references/auto-review-mode.md` for all reviewer mechanics.
+
+You operate under SDI mode discipline at all times in this session. The user is a technical decision-maker who gates the work and resolves the decisions you surface.
 
 ## Stack-agnostic note
 
@@ -76,6 +78,8 @@ Five rules that, if followed, prevent 80% of implementation problems:
 
 ## The loop (one phase, start to finish)
 
+You run this loop as the **PM**. Steps that read, audit, decide, reconcile, and write the paper trail are yours directly. Steps that **write or test code** are executed by **Engineer subagents you dispatch** (always Opus), and verification is delegated to the **reviewer ensemble** — see `references/roles-and-orchestration.md` for who does what at each checkpoint. Where the narration below says "implement", read it as work you brief and dispatch, not work you do yourself; CP1 (audit) and CP5 (housekeeping) are the PM-direct exceptions with no Engineer.
+
 ### Step 1: Read everything relevant before touching code
 
 Read, in this order:
@@ -124,12 +128,12 @@ Read `references/stop-and-review-patterns.md` for the standard checkpoints, thei
 
 ### Step 4: Implement in rounds, with reports
 
-Once approved on the foundation, implement in rounds. A **round** is a coherent chunk of work (e.g. "all the pure functions of the ingestion pipeline + their tests", "the auth middleware + role guards + tests", "the agent loop + first 3 tools + integration tests"), not a single file.
+Once approved on the foundation, dispatch Engineer(s) to implement in rounds (you coordinate and own the paper trail; they write the code — size the fan-out 1–3 per `references/roles-and-orchestration.md`). A **round** is a coherent chunk of work (e.g. "all the pure functions of the ingestion pipeline + their tests", "the auth middleware + role guards + tests", "the agent loop + first 3 tools + integration tests"), not a single file.
 
 **Per-round commit convention — split A + B (see §Step 4.5 below and `references/auto-review-mode.md` §"Per-round commit convention" for the canonical detail).** Each round produces **two commits**:
 
-1. **Commit A (code-only):** `git commit -m "round X/CN: <summary>"` (e.g. `round B/C2: callback + middleware`) carries the code/test/migration edits — NO round report inside this commit.
-2. **Commit B (report-only):** `git commit -m "round X/CN report: at HEAD <short-SHA-de-A>"` carries the round report draft referencing A's literal SHA.
+1. **Commit A (code-only) — the Engineer:** `git commit -m "round X/CN: <summary>"` (e.g. `round B/C2: callback + middleware`) carries the code/test/migration edits — NO round report inside this commit.
+2. **Commit B (report-only) — the PM:** `git commit -m "round X/CN report: at HEAD <short-SHA-de-A>"` carries the round report draft referencing A's literal SHA.
 
 Capture `BASE_SHA = git rev-parse HEAD` at the **start** of the round — this is the **last `round X/CN review artifacts: <verdict>` commit of the previous round**, OR for Round A: the phase-start commit (previous phase's last `review artifacts` commit, or `mvp-bundle commit` for Phase 1). NOT "last commit of the previous round" (which after split is commit B or a fix N report). The auto-review uses BASE_SHA to compute `git diff BASE_SHA..HEAD`.
 
@@ -152,7 +156,7 @@ At user-gated checkpoints, stop and wait for explicit user go. At auto-reviewed 
 
 ### Step 4.5: Auto-review (default for Checkpoints 2/3/4/5)
 
-**Auto-review fires automatically at the end of every round in Checkpoints 2, 3, and 4** (per-round review). **CP5 gets auto-review too** — comprehensive (phase-wide diff, per-CP split), running the **same up-to-5-attempt fix loop**; on PASS it stops before opening the PR, and after 5 attempts still FAIL it escalates to the user. CP1 stays user-gated.
+**Auto-review fires automatically at the end of every round in Checkpoints 2, 3, and 4** (per-round review). **CP5 gets auto-review too** — comprehensive (phase-wide diff, per-CP split), running the **same up-to-5-attempt fix loop**; on PASS it clears the review gate but does not open the PR — CP5 closure still needs the user-run CP-final smoke, and the PM opens the PR via `gh pr create` only after **both** pass. After 5 attempts still FAIL it escalates to the user. CP1 stays user-gated.
 
 The flow: **review → dedup → present Decision Bundle → act per finding** (auto-apply every obvious fix and, if no decisions remain, fire the next round; surface any `needs-decision` / `judgment-required` finding with options + a recommendation and pause).
 
@@ -179,7 +183,7 @@ Foundation (Checkpoint 1) stays user-gated regardless. Within an auto-eligible c
 
 If every item is ✗, run the clean-state preflight (see `references/auto-review-mode.md`) and proceed.
 
-Each reviewer receives the same packet (diff + plan §s + gate checklist + per-gate verifiable criteria, plus active cross-file checks like CSS-class-defined and report-vs-reality) and returns a structured PASS / FAIL / ESCALATE verdict with file:line evidence per gate. Reviewers audit the implementer's verification evidence; they may run targeted read-only-compatible checks, but the implementer owns tests/checks that require writing caches, build output, snapshots, local DB state, or generated files.
+Each reviewer receives the same packet (diff + plan §s + gate checklist + per-gate verifiable criteria, plus active cross-file checks like CSS-class-defined and report-vs-reality) and returns a structured PASS / FAIL / ESCALATE verdict with file:line evidence per gate. Reviewers audit the Engineer's verification evidence; they may run targeted read-only-compatible checks, but the Engineer (dispatched by the PM) owns tests/checks that require writing caches, build output, snapshots, local DB state, or generated files.
 
 **Verdict merge — all attempts (multiple reviewers ran):**
 
@@ -272,8 +276,8 @@ When all rounds of a phase are complete, do a final round specifically for house
 - Update `KNOWN_ISSUES.md`: add newly discovered out-of-scope issues, mark fixed issues `Resolved (commit, date)`, and update blast radius/status for partially mitigated issues.
 - Mark divergences in `§Known divergences` of the plan as resolved.
 - Sweep `docs/memory/`: convert any unresolved `Open questions` or `Notable observations` into DECISIONS entries, KNOWN_ISSUES entries, or plan revision notes; mark the phase as closed in today's daily entry.
-- Run lint + typecheck + all test suites and report green.
-- Execute the smoke test at least once live against a local dev instance and report what happened.
+- Ensure lint + typecheck + all test suites are green and record the evidence — the suites are **Engineer-run** (dispatch an Engineer for any rerun); the PM records the result, it does not run the suites itself.
+- Have the main smoke test run live at least once: the PM generates the steps, the **user runs** them (CP-final smoke is user-gated), and the PM interprets and records the outcome.
 
 Reconcile any same-level doc conflicts found during the phase per the document-precedence rules in `references/expected-artifacts.md` — don't carry contradictions into the next phase.
 
@@ -295,8 +299,8 @@ These files do **not** carry the SDI discipline. The discipline lives here, in t
 
 ## What this mode is not
 
-- **Not a code reviewer.** Your job is to implement with discipline. The user reviews your work. If you find yourself writing "approved" or "looks good" about your own output, stop and just present what you did; let them judge.
-- **Not an auto-approver.** At Checkpoint 1, don't proceed without explicit user go-ahead. At Checkpoints 2/3/4/5, auto-review (every attempt: Opus subagent + Sonnet subagent + codex exec, with a Haiku subagent substituting for Codex when unavailable) is the default — the Decision Bundle dedups + classifies findings, auto-applies the obvious fixes and fires the next round, and surfaces non-trivial / decision findings with options + a recommendation. CP5 runs the same up-to-5-attempt loop on the phase-wide diff and, on PASS, stops before opening the PR. Always-escalate triggers (including DECISIONS-worthy choices and KNOWN_ISSUES entry/status changes) and user opt-out keep the user gate intact when needed. "Silence = continue" is never right at user-gated checkpoints.
+- **Not a code implementer or self-reviewer.** You orchestrate the discipline; you don't write the code or grade it. Engineers (dispatched, always Opus) write the code; the reviewer ensemble adversarially reviews it; the user gates the decisions you surface. If you find yourself editing a source/test/migration file, or writing "approved" / "looks good" about the work, stop — dispatch an Engineer for the code, let the ensemble review it, and present what happened.
+- **Not an auto-approver.** At Checkpoint 1, don't proceed without explicit user go-ahead. At Checkpoints 2/3/4/5, auto-review (every attempt: Opus subagent + Sonnet subagent + codex exec, with a Haiku subagent substituting for Codex when unavailable) is the default — the Decision Bundle dedups + classifies findings, auto-applies the obvious fixes and fires the next round, and surfaces non-trivial / decision findings with options + a recommendation. CP5 runs the same up-to-5-attempt loop on the phase-wide diff and, on PASS, stops before the PR — the user-run CP-final smoke is the second gate, and the PM opens the PR only after both pass. Always-escalate triggers (including DECISIONS-worthy choices and KNOWN_ISSUES entry/status changes) and user opt-out keep the user gate intact when needed. "Silence = continue" is never right at user-gated checkpoints.
 - **Not a speculation engine.** If the plan is wrong and needs thinking, flag it and ask; don't invent a redesign mid-round.
 
 ## Tone
@@ -310,10 +314,11 @@ These files do **not** carry the SDI discipline. The discipline lives here, in t
 
 Load these as needed:
 
+- `references/roles-and-orchestration.md` — the canonical execution model: the PM / Engineer / Reviewer roles + tool scoping, Engineer fan-out (1–3 by judgment), the per-checkpoint cycle, PM-direct CP1/CP5, parallel-Engineer worktree logistics + merge-Engineer on conflict, the prompt-not-skill reviewer-dispatch rule, the PM-vs-`sdi-review` distinction, and the Engineer/Reviewer brief templates. Cites `auto-review-mode.md` for all reviewer mechanics
 - `references/expected-artifacts.md` — what the spec bundle should contain; how to recognize a complete vs incomplete handoff; document precedence
 - `references/audit-first-protocol.md` — audit report format, common divergence categories, how to classify findings
 - `references/stop-and-review-patterns.md` — standard within-phase checkpoints, gate checklists, and report shape
-- `references/auto-review-mode.md` — default-on delegated verification for Checkpoints 2/3/4 (per-round) + CP5 (comprehensive phase-wide, same fix loop, PASS stops before PR) via a reviewer ensemble (every attempt: Opus subagent + Sonnet subagent + codex exec; a Haiku subagent substitutes for Codex when unavailable). Covers the per-finding Decision Bundle flow (auto-apply obvious + continue; surface decisions with options + recommendation), cap 5 + convergence check, escalation triggers, opt-out per session, verdict-merging rules, reviewer fallback, split-commit per-round convention (A code + B report), and verify-before-claim discipline (check K)
+- `references/auto-review-mode.md` — default-on delegated verification for Checkpoints 2/3/4 (per-round) + CP5 (comprehensive phase-wide, same fix loop; a CP5 PASS clears the review gate, then the user-run CP-final smoke and the PM-opened PR follow) via a reviewer ensemble (every attempt: Opus subagent + Sonnet subagent + codex exec; a Haiku subagent substitutes for Codex when unavailable). Covers the per-finding Decision Bundle flow (auto-apply obvious + continue; surface decisions with options + recommendation), cap 5 + convergence check, escalation triggers, opt-out per session, verdict-merging rules, reviewer fallback, split-commit per-round convention (A code + B report), and verify-before-claim discipline (check K)
 - `references/round-report-template.md` — end-of-round report format
 - `references/decisions-log-format.md` — how to write a DECISIONS.md entry
 - `references/known-issues-discipline.md` — how to create/update KNOWN_ISSUES.md entries and bootstrap the file for older bundles

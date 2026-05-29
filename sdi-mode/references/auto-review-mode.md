@@ -2,6 +2,8 @@
 
 A workflow extension that delegates checkpoint verification to a **reviewer ensemble** — different-model Opus, Sonnet, and Codex reviewers (a Haiku subagent stands in for Codex when it is unavailable) — escalating to the user only when something needs human judgment. **Default-on** for Checkpoints 2, 3, and 4 (per-round review) and CP5 (comprehensive phase-wide review). All four run the **same up-to-5-attempt fix loop**. CP1 stays user-gated. The user can opt out per session or request a different reviewer schedule.
 
+> **Roles referenced in this file.** **The PM/orchestrator** is the main session — it runs the gate, dispatches reviewers, reconciles verdicts, and owns the paper trail; it never edits code. **The Engineer** is a dispatched Opus subagent — it writes code and runs the build/tests; it never edits the paper trail. An obvious code fix routes to a **fix-Engineer** dispatch (the PM never edits code); an obvious paper-trail fix the PM applies directly. Those roles, their tool scoping, Engineer fan-out, and parallel-Engineer logistics are defined in [`roles-and-orchestration.md`](roles-and-orchestration.md); this file is the reviewer machinery that doc reuses by reference.
+
 ## What this is
 
 Implementation rounds end with structured verdicts from independent reviewers, deduplicated and classified into a **Decision Bundle** acted on **per finding**: obvious/trivial fixes are auto-applied and the next review round fires automatically; non-trivial or decision findings are surfaced with options + a recommendation and pause for the user. Obvious fixes are never blocked behind a coexisting decision finding.
@@ -22,7 +24,7 @@ Goals:
 
 Non-goals:
 - Replacing human review of decisions or issue deferrals. Anything that needs a `DECISIONS.md` entry, or a new/changed `KNOWN_ISSUES.md` entry, escalates.
-- Speeding up the implementer agent itself (auto-review is purely about the gate at the end of each round).
+- Speeding up the Engineer (the dispatched code agent) itself — auto-review is purely about the gate at the end of each round.
 - Working without explicit per-gate criteria. A vague "review this" prompt produces theater.
 
 ## Per-round commit convention
@@ -58,18 +60,18 @@ The reviewers read the code diff via `git diff BASE_SHA..HEAD` — so BASE_SHA s
 
 ## Verification evidence policy
 
-Auto-review audits the implementer's verification evidence; it does not move test ownership to the reviewers.
+Auto-review audits the Engineer's verification evidence (the Engineer is dispatched by the PM and runs the round's checks); it does not move test ownership to the reviewers.
 
-- **The implementer runs the checks required by the round before review.** This includes the relevant unit tests, integration tests, typecheck/lint/build, evals, or manual smoke checks called for by the plan and checkpoint gates.
+- **The Engineer (dispatched by the PM) runs the checks required by the round before review.** This includes the relevant unit tests, integration tests, typecheck/lint/build, evals, or manual smoke checks called for by the plan and checkpoint gates.
 - **The round report records exact evidence.** Include the command, result, test counts, skipped tests/checks, runtime-relevant notes, and any manual smoke evidence. "Tests pass" without command/result/count is not enough.
 - **The reviewer judges sufficiency.** A reviewer may run targeted checks that are compatible with the runtime and sandbox, but is not required to rerun the whole suite. If the report's evidence is absent, vague, contradictory, or too weak for the gate, the reviewer returns `FAIL`.
-- **Codex stays read-only by default.** `codex exec --sandbox read-only` is the default reviewer mode. Checks that require writing caches, build output, snapshots, local DB state, or generated files are the implementer's responsibility and must be evidenced in the report.
+- **Codex stays read-only by default.** `codex exec --sandbox read-only` is the default reviewer mode. Checks that require writing caches, build output, snapshots, local DB state, or generated files are the Engineer's responsibility and must be evidenced in the round report.
 
 The reviewer's job is to verify that the implemented diff, the plan gates, and the reported verification evidence agree. A PASS means the evidence is adequate and no class 1-6 finding was found; it does not mean the reviewer reran every command.
 
 ## Preflight before invoking reviewers
 
-Before building the packet or starting reviewers, the implementer performs a clean-state preflight:
+Before building the packet or starting reviewers, the PM/orchestrator performs a clean-state preflight:
 
 1. Confirm `HEAD` contains **both** the current round's commit A (`round X/CN: <summary>`) and commit B (`round X/CN report: at HEAD <SHA>`), OR the current fix attempt's commits (`round X/CN fix N: <what>` + `round X/CN fix N report: at HEAD <SHA>` per the split-commit convention).
 2. Run a working-tree check such as `git status --short`.
@@ -90,7 +92,7 @@ Do not create a separate worktree by default. A review worktree is an explicit a
 - "back to user-gated"
 - "no auto-review"
 
-When opted-out, the implementer drops back to user-gated for the rest of the session — every checkpoint waits for an explicit user "go".
+When opted-out, the PM does **not** dispatch the reviewer ensemble: it runs the checkpoint **user-gated** for the rest of the session — posting the round report (and the diff) and waiting for the user's explicit "go", with the user reviewing directly. The Engineer-dispatch and paper-trail roles are unchanged; only the gate changes from ensemble-reviewed to user-reviewed. (Opting out swaps the ensemble gate for a user gate — it does not mean an agent quietly stops reviewing, and there is no separate single-agent execution model to fall back to; the PM/Engineer/Reviewer split is the only one.)
 
 **Re-enable per session:** the user says any of:
 - "auto-review again"
@@ -109,7 +111,7 @@ When opted-out, the implementer drops back to user-gated for the rest of the ses
 | 2 — Core domain logic | **Auto-review default-on.** |
 | 3 — Wire up integrations | **Auto-review default-on.** |
 | 4 — UI | **Auto-review default-on.** |
-| 5 — Housekeeping | **Auto-review default-on (comprehensive).** Same up-to-5-attempt fix loop as CPs 2-4. See §"CP5 comprehensive review" below for what's distinct: phase-wide diff + per-CP packet split, and that a PASS stops **before** opening the PR. |
+| 5 — Housekeeping | **Auto-review default-on (comprehensive).** Same up-to-5-attempt fix loop as CPs 2-4. See §"CP5 comprehensive review" below for what's distinct: phase-wide diff + per-CP packet split, and that a PASS clears only the review gate (the user-run CP-final smoke and the PM-opened PR follow). |
 
 Even within a default-on checkpoint, the round escalates immediately when any of the always-escalate triggers below fire.
 
@@ -121,7 +123,7 @@ CP5 review is distinct from CPs 1-4 in **scope**, not in loop mechanics: reviewe
 
 **Fix loop:** CP5 runs the **same up-to-5-attempt fix loop** as CPs 2-4 (see §"The loop" and §"Loop cap"). Obvious fixes are auto-applied and the review re-runs; non-trivial or decision findings are surfaced with options + a recommendation. This is a change from older framework versions where CP5 was a single escalation-only pass — the per-finding autonomy, cap-5, and convergence machinery now apply at CP5 too. The always-escalate triggers and the `judgment-required` classification still stop for the user exactly as at CPs 2-4: structural CP5 findings (rewind and reopen a previous CP, accept as a KI, AC gap) typically classify as `needs-decision`/`judgment-required` and are presented for a decision, **not** auto-patched — so the loop never blindly applies superficial patches to structural problems.
 
-**On PASS — stop before opening the PR.** A CP5 PASS means the phase is housekeeping-clean and ready, but CP5 is the last gate before the work leaves the branch. Do **not** auto-open a PR or merge. Post the final report and stop for the user to open the PR (and run any release steps) themselves.
+**On PASS — clear the review gate, not the PR.** A CP5 comprehensive-review PASS means the phase is housekeeping-clean, but it is **not** the last gate before the work leaves the branch: CP5 closure still requires the **user-run CP-final smoke** (the PM generates the steps, the user runs them, the PM interprets). Do **not** auto-open a PR or merge. Post the final report; the PM opens the PR via `gh pr create` only after **both** the comprehensive review PASSes **and** the smoke passes (any release steps remain the user's).
 
 **After 5 attempts still FAIL (or the convergence check trips):** stop and escalate to the user to decide the next step — typically continue applying fixes manually + re-running, accept remaining findings as `KNOWN_ISSUES.md` entries and close the phase, or open a separate work item if the gap is too large. Same cap + convergence semantics as CPs 2-4 (see §"Loop cap").
 
@@ -132,18 +134,18 @@ CP5 review is distinct from CPs 1-4 in **scope**, not in loop mechanics: reviewe
 
 The packet is computed from `PHASE_BASE_SHA..HEAD` and stays fixed across the CP5 attempts; fix commits applied during the loop are `round Z/CP5 fix N: <what>` (code) + `round Z/CP5 fix N report: at HEAD <SHA>` (paper trail) pairs, and each retry re-reviews the full phase diff including those fixes.
 
-**Whole-phase packet — exception** only when phase-wide diff is small (e.g., maintenance pass with only CP1 + CP5 — CP1 is audit user-gated with no code changes directly attached, so effective diff = CP5 diff) AND reviewer context budget fits. Implementer declares mode in the round report (`packet_mode: per-cp-split` or `whole-phase`).
+**Whole-phase packet — exception** only when phase-wide diff is small (e.g., maintenance pass with only CP1 + CP5 — CP1 is audit user-gated with no code changes directly attached, so effective diff = CP5 diff) AND reviewer context budget fits. The PM declares the packet mode in the round report (`packet_mode: per-cp-split` or `whole-phase`).
 
 ## Always-escalate triggers (override auto-review default)
 
-If any of these occur during the round, the implementer skips auto-review for that round and stops for the user:
+If any of these occur during the round, the PM/orchestrator skips auto-review for that round and stops for the user:
 
 1. **The round produced (or should produce) a `DECISIONS.md` entry.** A material divergence, a deferred feature, a non-obvious trade-off, a deviation from convention — by definition a judgment call. See `decisions-log-format.md` for what qualifies.
 2. **The round discovered or changed a `KNOWN_ISSUES.md` entry.** A new out-of-scope bug/security gap/tech debt item, a severity/blast-radius change, a scheduled fix, a partial mitigation, or a resolved KI should be visible to the user.
 3. **Blocker encountered during implementation.** Anything that prevents finishing the round (missing dependency the user needs to install, contradictory plan content, broken external service).
 4. **Emergency deviation.** Per `stop-and-review-patterns.md` — security bug, data-loss risk, regression of previously-working functionality.
 5. **Schema migration with data-loss risk** (drop column, NOT NULL on existing column without backfill, type change that loses precision). Even if tests pass, the user must approve.
-6. **New external dependency added** beyond what the plan listed. Plan said use library X; the implementer pulled in library Y too. Escalate.
+6. **New external dependency added** beyond what the plan listed. Plan said use library X; an Engineer pulled in library Y too. Escalate.
 7. **Security-relevant change** beyond plan scope (auth helper added/changed, RLS policy modified, secret-handling code touched, CORS or CSP changed).
 8. **Plan revision (`rN`) added during the round.** A revision means reality diverged from plan; the user should see what changed before the next round proceeds.
 9. **PRD or ARCHITECTURE deviation.** If implementing a §2 surface required deviating from the higher-precedence doc, escalate (see `expected-artifacts.md` precedence rules).
@@ -154,7 +156,7 @@ Surface the trigger explicitly when escalating: "Auto-review skipped because [tr
 
 Two related but distinct concepts share the idea of "escalation":
 
-- **Always-escalate triggers** — **pre-review** gate. Conditions that make the implementer SKIP auto-review entirely for the round (DECISIONS entry, KI entry change, blocker, emergency, schema migration, etc.). Listed in §"Always-escalate triggers". The round goes to user-gated review directly; reviewers DO NOT run.
+- **Always-escalate triggers** — **pre-review** gate. Conditions that make the PM/orchestrator SKIP auto-review entirely for the round (DECISIONS entry, KI entry change, blocker, emergency, schema migration, etc.). Listed in §"Always-escalate triggers". The round goes to user-gated review directly; reviewers DO NOT run.
 
 - **Judgment-required category** — **post-review** classification in the Decision Bundle. Findings that reviewers returned with verdict ESCALATE, or findings class 5 / class 7 urgent. Reviewers ran, returned results, and this specific finding needs user input (cannot be auto-applied).
 
@@ -162,7 +164,7 @@ Don't confuse: always-escalate skips auto-review; judgment-required pauses it af
 
 ## The loop
 
-1. Implementer finishes the round and commits the pair: **commit A (code-only)** + **commit B (report-only referencing A's SHA)** per the split-commit convention. Messages: `round X/CN: <summary>` (A) + `round X/CN report: at HEAD <short-SHA-de-A>` (B).
+1. The Engineer(s) finish the round and commit **commit A (code-only)**; the PM writes **commit B (report-only referencing A's SHA)** per the split-commit convention. Messages: `round X/CN: <summary>` (A) + `round X/CN report: at HEAD <short-SHA-de-A>` (B).
 2. If an always-escalate trigger fired, or the user opted out / requested user-gated review, stop for the user.
 3. Run the clean-state preflight (confirming both commit A and commit B exist), and build `.sdi-review-prompt-tmp.txt`.
 4. Run the three reviewers for the attempt in parallel: **Opus subagent + Sonnet subagent + Codex** (or **Opus + Sonnet + Haiku subagent** if Codex is unavailable — see §"Reviewer fallback"). Same on every attempt, 1 through 5.
@@ -172,24 +174,29 @@ Don't confuse: always-escalate skips auto-review; judgment-required pauses it af
 8. **Classify each deduplicated finding** as `obvious-fix`, `needs-decision`, or `judgment-required`:
    - `obvious-fix` = ALL these conditions:
      - Class 1-4, 6, or K (mechanical / contract / missing prereq / vague-claim / convention / fictitious citation).
-     - At least 2 reviewers converge **OR** surviving single reviewer in degraded mode (when others failed — not based on attempt number).
+     - At least 2 reviewers converge **OR** surviving single reviewer in degraded mode (when others failed — not based on attempt number) **OR** a **solo grounded class 2–4/6/K finding the PM cannot grep-refute** (the **strict-solo gate** — see the policy note below; "grounded" = cites specific evidence in the diff, file:line / symbol, not an abstract concern).
      - Reviewer cites specific fix (rename X to Y, add field Z, fix line N) — not "consider refactoring".
      - Fix touches only files in the round's diff (`git diff BASE_SHA..HEAD --name-only`).
    - `needs-decision` = remaining general case:
-     - Findings divergent across reviewers (Opus says X, Codex says Y).
+     - Genuinely divergent reviewers (Opus says X, Codex says Y — they disagree on the fix itself, not merely different line numbers for the same logical bug, which dedup already treats as convergent).
      - Fix requires changing files outside the round.
      - Reviewer only describes problem, doesn't propose concrete fix.
+     - A solo class-1 finding others did not flag and the PM did not confirm by grep (class-1 is outside the strict-solo gate's 2–4/6/K range).
    - `judgment-required` = reviewers returned verdict ESCALATE OR finding is class 5 (DECISIONS-worthy) or class 7 marked urgent:
-     - Always presented to user, NEVER auto-applied regardless of convergence.
+     - Always presented to user, NEVER auto-applied regardless of convergence — this is why the strict-solo gate covers class 2–4/6/K only, never class 5.
      - Preserves ESCALATE-wins-over-FAIL semantics from existing merge rule.
    - **Edge case zero findings after dedup:** if dedup leaves 0 findings in all 3 categories but reviewer verdict remained FAIL (e.g., reviewer wrote vague concerns without specific fix or actionable detail), create 1 synthetic class-5 finding marked `judgment-required` ("vague reviewer concern — needs user clarification: <quote reviewer wording verbatim>") and stop for input. Don't treat as PASS — preserve the FAIL signal. **Why class-5 (not class-4):** class-4 is "vague/unverifiable claim" but is mechanical / FAIL-eligible in the taxonomy; a finding whose only classification is "reviewer couldn't propose a fix" requires user judgment, which is by definition class-5 territory (DECISIONS-worthy / user input required).
+   - **Strict-solo policy note (`DECISIONS.md`-style — the canonical encoding of this gate):** a solo **grounded** finding of class **2–4, 6, or K** that the PM cannot refute with its own grep is a **blocker routed to a fix** (code → fix-Engineer; paper trail → PM edit), not deferred to the user. This is the universal default for this single execution model. *Rationale:* model diversity is load-bearing — in production a lone model-diverse reviewer caught a cross-tenant coupling bug the other two reviewers PASSed, so one grounded reviewer must not be outvoted by silence. *Grounded* = cites specific evidence in the diff (file:line / symbol), not an abstract concern; the PM's grep refutation or confirmation is logged in the round report as evidence. *Exclusions:* a solo **class-5** finding stays `judgment-required` (never auto-applied); **genuinely divergent** reviewers (they disagree on the fix itself, not merely on line numbers) stay `needs-decision`; **class-1** solo findings stay `needs-decision` (outside the 2–4/6/K range). Recorded here as a policy note — **not** a per-run `DECISIONS.md` entry — so it never trips the always-escalate "round produced a DECISIONS entry" trigger.
 9. **Present the Decision Bundle, then act per finding** (see §"Decision Bundle format"). The bundle is always posted for the audit trail; the action is **per-finding, not all-or-nothing**:
-   - **Always auto-apply every `obvious-fix` finding** (re-verifying each via Grep/Read first, per step 10). Commit them as `round X/CN fix N: <what>` (code) + `round X/CN fix N report: at HEAD <SHA>` (paper trail). Obvious fixes never wait — not even when the same bundle also contains decision findings.
+   - **Act on every `obvious-fix` finding now** — obvious fixes never wait, not even when the same bundle also contains decision findings. Route by target:
+     - **Paper-trail artifact** (plan, `docs/reviews/`, DECISIONS, KNOWN_ISSUES, memory) → the **PM applies it directly** (re-verifying via Grep/Read first, per step 10; the PM owns docs).
+     - **Code** → the **PM dispatches a fix-Engineer (Opus) cycle** with the finding(s); the PM never edits code. For a solo finding, the PM first greps to *refute* it (the strict-solo gate check) **before** dispatching — a finding the PM's grep refutes is reclassified `needs-decision`, not dispatched.
+     Commit the fix as `round X/CN fix N: <what>` (code, by the fix-Engineer) + `round X/CN fix N report: at HEAD <SHA>` (paper trail, by the PM). Re-verification of the fix *itself* happens on the **next** reviewer round (the ensemble re-checks it on the new diff), not by an inline grep after the edit.
    - **Then branch on what remains after the obvious fixes:**
      - **No `needs-decision` and no `judgment-required` left** → **fire the next review round automatically** (no user wait unless the user interrupts). This is the autonomous path — it includes the case where every finding was obvious-fix.
      - **Any `needs-decision` or `judgment-required` left** → **stop and present those findings with options + a recommendation each** (`judgment-required` highlighted as "user judgment required — never auto-applied"). The obvious fixes are already applied/committed, so they don't wait behind the decision. The loop resumes — the next round fires — once the user resolves the surfaced findings.
-10. **Apply discipline** during auto-apply: the coding agent re-verifies the reviewer's claim via Grep/Read before editing. Example: reviewer says "rename validateUser to validateMember"; agent greps `validateUser` in the round's diff + greps `validateMember` to confirm target shape before the edit. If Grep contradicts reviewer, escalate that finding as `needs-decision` (don't auto-apply). **Anti-restatement:** when applying a fix for findings like "gate restates spec" (class 6 convention), NEVER add restatement to the gate. Instead, consolidate the reference to "Per §X.Y" + verify §X.Y is correct in the plan.
-11. **Apply failure recovery** during the obvious-fix auto-apply phase, if one or more Edits fail (file moved between reviewer-time and apply-time, conflict, permission, line shifted):
+10. **Apply re-verification discipline** before any fix lands. For a **paper-trail** obvious fix, the **PM** re-verifies the reviewer's claim via Grep/Read before its own edit. For a **code** obvious fix, the **PM's pre-dispatch grep** re-verifies the claim (especially for a solo finding — this is the strict-solo gate check) before dispatching the fix-Engineer, and the **fix-Engineer re-verifies again before editing** per its brief. Example: reviewer says "rename `validateUser` to `validateMember`"; grep `validateUser` in the round's diff + grep `validateMember` to confirm the target shape before the edit. If grep contradicts the reviewer, reclassify that finding as `needs-decision` (don't apply, don't dispatch). **Anti-restatement:** when applying a fix for findings like "gate restates spec" (class 6 convention), NEVER add restatement to the gate. Instead, consolidate the reference to "Per §X.Y" + verify §X.Y is correct in the plan.
+11. **Apply failure recovery** during the obvious-fix apply phase, if one or more fixes fail to land — a PM paper-trail Edit fails, or the dispatched fix-Engineer reports it could not apply a code fix (file moved between reviewer-time and apply-time, conflict, permission, line shifted):
 
     Work-preserving policy (any number of failures):
     - **Apply the ones that succeed** — commit normally as `round X/CN fix N: <summary> (partial — M of N obvious-fixes applied)` (commit A code) + commit B paper trail message `round X/CN fix N report: at HEAD <SHA-A> (partial: M of N applied, K reclassified to needs-decision)`. The commit B message must be self-describing — anyone reading `git log --oneline` understands immediately that it was partial without needing to open commit A.
@@ -199,19 +206,19 @@ Don't confuse: always-escalate skips auto-review; judgment-required pauses it af
 
     If ALL Edits fail (nothing applied), apply doc-only commit rule (consistent with §"Loop cap" §"What counts vs not"): **single commit** `round X/CN fix N: aborted — all N edits failed (paper trail only)` only in the round report file, without separate commit B. This commit is doc-only (touches only `docs/reviews/round-*report.md`) and **does not consume a cap-5 slot**. Escalate entire bundle to user.
 
-    **Interrupt mid-apply:** if user interrupts (Ctrl-C) during auto-apply, agent inspects which Edits were applied (via `git diff` working tree) and reports state honestly — "applied X of N fixes, working tree dirty, no commit yet". User decides whether to commit partial, discard, or continue.
+    **Interrupt mid-apply:** if the user interrupts (Ctrl-C) during the apply phase, the PM inspects which fixes landed (its own paper-trail Edits in the working tree via `git diff`; code fixes via the fix-Engineer's report) and reports state honestly — "applied X of N fixes, working tree dirty, no commit yet". User decides whether to commit partial, discard, or continue.
 
-12. On PASS, append auto-review history + Decision Bundle to the round report, delete `.sdi-review-prompt-tmp.txt`, commit review artifacts, post the report, and propose the next round. **At CP5, a PASS instead means the phase is ready: post the report and stop before opening the PR — do not auto-open a PR or merge.**
+12. On PASS, append auto-review history + Decision Bundle to the round report, delete `.sdi-review-prompt-tmp.txt`, commit review artifacts, post the report, and propose the next round. **At CP5, a PASS clears only the comprehensive-review gate: post the report and stop — do not auto-open a PR or merge. CP5 closure still needs the user-run CP-final smoke; the PM opens the PR via `gh pr create` only after both the review PASSes and the smoke passes.**
 13. On FAIL (with reclassification or apply failure escalation), stop for user input.
 14. After attempt 5 still FAIL, or convergence check triggered, stop for the user with full review history.
 
 BASE_SHA stays fixed across all attempts in a round. Each retry packet includes prior findings and the fix commit(s) that claim to address them.
 
-PASS does not mean "skip the round report" — the implementer still posts the report (with auto-review history attached). It means the user does not have to gate-check explicitly; they can let the next round start, or interject if they want to look closer.
+PASS does not mean "skip the round report" — the PM still posts the report (with auto-review history attached). It means the user does not have to gate-check explicitly; they can let the next round start, or interject if they want to look closer.
 
 ## Decision Bundle format
 
-After dedup + classification, the implementer presents a Decision Bundle:
+After dedup + classification, the PM/orchestrator presents a Decision Bundle:
 
 ```
 ## Auto-review Round X attempt N — Decision Bundle
@@ -235,7 +242,7 @@ After dedup + classification, the implementer presents a Decision Bundle:
 ### Persistent findings (same class + file + symbol OR ±5 lines as prior attempts)
 None this attempt.
 
-**Action (per-finding, automatic):** auto-apply obvious fixes 1+2 now (re-verify each via Grep/Read first), commit `round X/CN fix N: <summary>` (code) + `round X/CN fix N report: at HEAD <SHA>` (paper trail). Findings 3-5 (needs-decision + judgment-required) are presented above with options + a recommendation and **stop for user input** — never auto-applied. Because decisions remain, the loop pauses for user input rather than firing the next round automatically; once the user resolves findings 3-5, the next review round fires (re-reviewing the obvious fixes already applied plus the user's resolution).
+**Action (per-finding, automatic):** finding 1 is a **code** fix → the PM **dispatches a fix-Engineer (Opus)** to apply it (the PM greps to confirm `validateUser`/`validateMember` first); finding 2 is a **paper-trail** fix → the **PM applies it directly** (re-verify via Grep/Read first). Both land as `round X/CN fix N: <summary>` (code, by the fix-Engineer) + `round X/CN fix N report: at HEAD <SHA>` (paper trail, by the PM). Findings 3-5 (needs-decision + judgment-required) are presented above with options + a recommendation and **stop for user input** — never auto-applied. Because decisions remain, the loop pauses for user input rather than firing the next round automatically; once the user resolves findings 3-5, the next review round fires (re-reviewing the obvious fixes already applied plus the user's resolution).
 
 **When a bundle is all obvious-fix** (zero needs-decision + zero judgment-required + ≥1 obvious-fix): apply all fixes and **fire the next review round automatically**, no user wait.
 **When a bundle is all decision** (zero obvious-fix): nothing to auto-apply; present the findings with options + recommendation and stop.
@@ -276,9 +283,9 @@ Reviewer orchestration uses a wall-clock timeout so "still thinking" does not be
 
 - **Default soft timeout:** 20 minutes per reviewer.
 - **Every attempt:** start Opus, Sonnet, and Codex in parallel. If **Codex** specifically times out, treat it as a Codex failure and apply the Haiku substitution from §"Reviewer fallback" (the Haiku subagent runs on the same packet with the same 20-minute budget). If at least one reviewer returns usable output and another exceeds 20 minutes, treat the slow reviewer as timed out, continue with the surviving reviewer(s) via reviewer fallback, and record the timeout in the round report. If all three (after any Haiku substitution) exceed 20 minutes without usable output, `ESCALATE`.
-- **Large-diff exception:** before launching review, the implementer may declare a longer timeout in the round report when the diff is unusually large. If a review is expected to need more than 45 minutes, split the round or escalate instead of silently waiting.
+- **Large-diff exception:** before launching review, the PM may declare a longer timeout in the round report when the diff is unusually large. If a review is expected to need more than 45 minutes, split the round or escalate instead of silently waiting.
 
-Use the host runtime's background-process/subagent timeout mechanism when available. If the runtime cannot enforce timeouts automatically, the implementer must record start time, check elapsed wall-clock time, and apply the policy manually.
+Use the host runtime's background-process/subagent timeout mechanism when available. If the runtime cannot enforce timeouts automatically, the PM must record start time, check elapsed wall-clock time, and apply the policy manually.
 
 ## Building the review packet
 
@@ -304,8 +311,8 @@ Packet checklist before invocation:
 Write/update the round report draft at `[ROUND_REPORT_PATH]` before invoking reviewers. Then write the substituted prompt to `.sdi-review-prompt-tmp.txt` at the repo root (used as stdin to codex; the same file content is passed as the `prompt` parameter to the Opus and Sonnet subagents when scheduled). Add this file to `.gitignore` if it isn't already (it is temporary and recreated per attempt). Delete after the round closes.
 
 The same packet goes to every reviewer scheduled for that attempt — they see identical input. Outputs are captured per reviewer:
-- Opus subagent: returned as the Agent tool's text result; the implementer writes it to `docs/reviews/round-XN-attempt-N-opus.md`.
-- Sonnet subagent: returned as the Agent tool's text result; the implementer writes it to `docs/reviews/round-XN-attempt-N-sonnet.md` when Sonnet is scheduled.
+- Opus subagent: returned as the Agent tool's text result; the PM writes it to `docs/reviews/round-XN-attempt-N-opus.md`.
+- Sonnet subagent: returned as the Agent tool's text result; the PM writes it to `docs/reviews/round-XN-attempt-N-sonnet.md` when Sonnet is scheduled.
 - Codex: written directly via `--output-last-message docs/reviews/round-XN-attempt-N-codex.md`.
 
 These output files ARE committed for audit trail after the auto-review loop closes, together with the final round report.
@@ -398,13 +405,13 @@ VERDICT rules:
 Do NOT edit any files. Your response is the review report itself.
 ```
 
-## Verdict format (what the implementer expects back)
+## Verdict format (what the PM expects back)
 
-Each reviewer returns its review as Markdown text. The implementer parses the last `VERDICT:` line of each:
+Each reviewer returns its review as Markdown text. The PM parses the last `VERDICT:` line of each:
 
 - **PASS** — all gates verified ✓ with citations; no escalation triggers found.
 - **FAIL** — one or more gates ✗, but the failures are fixable mechanically (e.g., contract mismatch, missing test for an edge case the plan listed, observability hook not wired, undefined CSS class).
-- **ESCALATE** — one or more findings require user judgment (DECISIONS-worthy choice without flag, urgent class-7 finding, anything outside the implementer's scope).
+- **ESCALATE** — one or more findings require user judgment (DECISIONS-worthy choice without flag, urgent class-7 finding, anything outside the PM/orchestrator's scope to resolve autonomously).
 
 If the verdict line is missing, malformed, or the output is empty/garbage, treat that reviewer as failed (see §"Reviewer fallback"). Do not reject a short but well-formed PASS response solely because it is brief.
 
@@ -420,12 +427,12 @@ After parsing, apply the merge rules above (PASS only if all reviewers PASS; ESC
   **Symbol extraction algorithm (deterministic, not NLP discretion):**
   1. **First-pass — backtick extraction:** look for tokens between backticks in the finding text (`` `validateUser` ``, `` `IntegrationApiService` ``). If 1+ symbols found between backticks, use them as the symbol set. Match attempt N-1 vs attempt N: non-empty intersection = persistent.
   2. **Second-pass — quoted identifier extraction:** if zero backticks, look for identifiers in quotes (`"validateUser"`, `'validateUser'`). Same match rule.
-  3. **Third-pass — CamelCase / snake_case heuristic:** if zero backticks AND zero quotes, extract tokens matching `/\b[A-Z][a-z]+[A-Z][a-zA-Z0-9]*\b|\b[a-z][a-z0-9_]*_[a-z0-9_]+\b/` (true CamelCase with 2+ caps — e.g., `IntegrationApi`, `getUserByEmail`, `OmieMapper`; OR snake_case with underscore — e.g., `parse_omie_config`). **Single-cap words like `User`, `Save`, `Foo` do NOT match** — avoids false-positive from prose words like `The`, `When`, `Bar` captured as symbols. They fall into the fourth-pass line-range fallback. If multiple matches, use all as the set. **Stopword filter for edge cases where 2+caps merge with prose** (rare; e.g., reviewer wrote `TheRetryPolicy` as a single token): filter out tokens that contain a leading common-prose-word prefix (`The`, `This`, `That`, `When`, `Where`, `If`, `Then`, `And`, `Or`, `But`, `For`, `With`) followed by another capital letter. The single-cap exclusion already handles most prose-word cases; this filter is defensive for the rare merged-word case.
+  3. **Third-pass — CamelCase / snake_case heuristic:** if zero backticks AND zero quotes, extract tokens matching `/\b[A-Z][a-z]+[A-Z][a-zA-Z0-9]*\b|\b[a-z][a-z0-9_]*_[a-z0-9_]+\b/` (true CamelCase with 2+ caps — e.g., `IntegrationApi`, `getUserByEmail`, `OrderMapper`; OR snake_case with underscore — e.g., `parse_remote_config`). **Single-cap words like `User`, `Save`, `Foo` do NOT match** — avoids false-positive from prose words like `The`, `When`, `Bar` captured as symbols. They fall into the fourth-pass line-range fallback. If multiple matches, use all as the set. **Stopword filter for edge cases where 2+caps merge with prose** (rare; e.g., reviewer wrote `TheRetryPolicy` as a single token): filter out tokens that contain a leading common-prose-word prefix (`The`, `This`, `That`, `When`, `Where`, `If`, `Then`, `And`, `Or`, `But`, `For`, `With`) followed by another capital letter. The single-cap exclusion already handles most prose-word cases; this filter is defensive for the rare merged-word case.
   4. **Fallback — line-range match:** if none of the above passes returned symbols, use ±5 lines of the center of the range cited by the reviewer (e.g., "line 42-58" → center 50, persistent if attempt N flags within [45-55]).
 
   **Cross-pass match semantics:** match = intersection of symbol sets between attempts N-1 and N, **independent of which pass extracted each side**. If attempt N-1 came from pass-1 (backticks) with `{validateUser}` and attempt N came from pass-3 (CamelCase) with `{validateUser}`, it's a match (non-empty intersection). If attempt N-1 came from pass-1 and attempt N fell into pass-4 (line range), direct comparison doesn't work — in that case use pass-4 on both sides (re-extract line-range from the attempt N-1 finding too) and match by ±5 lines. **Principle:** always compare sides in equivalent passes when possible; if not, line-range fallback.
 
-  **Reviewer outputs preservation:** convergence check requires that reviewer outputs from attempt N-1 remain accessible in the working tree when the attempt N convergence check runs. The implementer **must NOT delete** `docs/reviews/round-XN-attempt-(N-1)-{opus,sonnet,codex}.md` between attempts. Cleanup only happens at loop close (PASS / ESCALATE / cap), together with the review artifacts commit. Per-attempt outputs stay uncommitted in the working tree during the loop; the preflight already permits these files as an allowed uncommitted exception.
+  **Reviewer outputs preservation:** convergence check requires that reviewer outputs from attempt N-1 remain accessible in the working tree when the attempt N convergence check runs. The PM **must NOT delete** `docs/reviews/round-XN-attempt-(N-1)-{opus,sonnet,codex}.md` between attempts. Cleanup only happens at loop close (PASS / ESCALATE / cap), together with the review artifacts commit. Per-attempt outputs stay uncommitted in the working tree during the loop; the preflight already permits these files as an allowed uncommitted exception.
 
 - **Cap reached (attempt 5 still FAIL):** escalate with message:
   > "Auto-review hit 5 attempts. Loop did not converge — user should review remaining findings and decide to continue manually, open as a separate work item, or accept as KNOWN_ISSUES."
@@ -468,7 +475,7 @@ If the parent session is already running the same model, the subagent still runs
 
 **Default: invoke via the host runtime's Bash tool.** The command below is POSIX-shell syntax — the `<` redirection and line continuations only parse in Bash, not PowerShell. On Windows hosts where Bash is unavailable, fall back to PowerShell calling `cmd /c "<full command on one line>"` so cmd.exe handles the redirection. Do **not** use PowerShell's pipe (`Get-Content prompt.txt | codex exec ...`): on Windows PowerShell 5.1, the codex banner (which is normal stderr) gets wrapped in `NativeCommandError` records that look like exceptions even when codex exits 0. Do **not** use `< file` directly in PowerShell — it's a parser error (`Operador '<' reservado para uso futuro`).
 
-**Validate success by `exit code == 0` AND `--output-last-message` file is non-empty.** Never by stderr. Codex writes its session banner to stderr by design; on Windows machines with PowerShell `ConstrainedLanguage` mode (corporate Group Policy), codex.exe's internal PowerShell calls can also throw `[Console]::OutputEncoding` errors to stderr. Both can coexist with a clean exit 0 and a valid review output file — the agent should not abort the run on stderr noise alone.
+**Validate success by `exit code == 0` AND `--output-last-message` file is non-empty.** Never by stderr. Codex writes its session banner to stderr by design; on Windows machines with PowerShell `ConstrainedLanguage` mode (corporate Group Policy), codex.exe's internal PowerShell calls can also throw `[Console]::OutputEncoding` errors to stderr. Both can coexist with a clean exit 0 and a valid review output file — the PM should not abort the run on stderr noise alone.
 
 **Pre-flight: ensure `docs/reviews/` exists before invoking** — codex exits 0 even when `--output-last-message` can't be written (parent dir missing), so the output file is silently absent. Run `mkdir -p docs/reviews` before the first attempt of any round.
 
@@ -496,7 +503,7 @@ codex exec --ephemeral \
 
 Flag/argument notes:
 - `--ephemeral` — codex doesn't persist this run as a session.
-- `--sandbox read-only` — reviewer runs read-only; the CLI still writes the final message to `--output-last-message`. Do not switch to writable sandbox just to let Codex rerun cache-writing tests; the implementer should run those checks and report evidence before review.
+- `--sandbox read-only` — reviewer runs read-only; the CLI still writes the final message to `--output-last-message`. Do not switch to writable sandbox just to let Codex rerun cache-writing tests; the Engineer should run those checks and report the evidence before review.
 - `--output-last-message <FILE>` — captures only the final agent message in the output file. Skips intermediate stdout noise. Parent dir MUST exist (see pre-flight above).
 - `-C [REPO_ROOT]` — sets codex's working directory. Use this instead of `cd <dir> && codex exec ...` so codex's own working-directory tracking is explicit.
 - `- < <prompt-file>` — the `-` argument explicitly tells codex to read prompt from stdin; the `< file` redirection feeds the file as stdin AND closes naturally on EOF. **This is the load-bearing piece** — never replace this with a positional prompt argument (see two-step rationale above).
@@ -510,7 +517,7 @@ The run typically takes 3–10 minutes with xhigh reasoning on a meaningful roun
 
 ## Parallel orchestration
 
-On each attempt, the implementer fires the scheduled reviewers in parallel and waits for them:
+On each attempt, the PM fires the scheduled reviewers in parallel and waits for them:
 
 1. Write/update `docs/reviews/round-XN-report.md` as the report draft for this attempt, including the Testing evidence.
 2. Run the clean-state preflight. Do not invoke reviewers if uncommitted non-artifact changes remain.
@@ -543,10 +550,10 @@ After the round closes (PASS or escalation), append final auto-review history to
 - **Single-commit round = paper trail drift.** The split-commit convention exists for a reason: report committed inside the code commit causes references to HEAD/SHA to become placeholders that reviewers flag in a loop. Today: commit A (code) and commit B (report) always separated. If the impulse is "consolidate into one commit", resist — the overhead is trivial and the gain is cutting 1-2 attempts of drift per round.
 - **`--amend` on the code commit.** Never use — the SHA changes and commit B (which references that SHA) becomes orphan. If something needs to change in the code commit, create a new `round X/CN fix N` commit and follow the pattern.
 - **Ignoring escalation triggers.** An always-escalate trigger means stop, period. Don't try to pre-resolve it and skip to auto-review; the user must see it.
-- **Skipping the pre-review checklist.** Walk the always-escalate triggers (see SKILL.md §Step 4.5) at the end of every round, before invoking reviewers. Catching a trigger after the reviewers fired wastes a review cycle and produces an ESCALATE the implementer should have surfaced themselves.
+- **Skipping the pre-review checklist.** Walk the always-escalate triggers (see SKILL.md §Step 4.5) at the end of every round, before invoking reviewers. Catching a trigger after the reviewers fired wastes a review cycle and produces an ESCALATE the PM should have surfaced themselves.
 - **Treating ESCALATE as FAIL.** ESCALATE means user judgment is required — stop, surface the findings, wait. Do **not** apply fixes and retry on ESCALATE; that path is only for FAIL. The most common ESCALATE is a class-5 finding (DECISIONS-worthy choice without flag), and writing the DECISIONS entry silently before retrying defeats the purpose of escalation.
 - **Aborting Codex on stderr noise.** Codex writes its session banner to stderr by design. PowerShell may wrap codex stderr in `NativeCommandError` records; corporate ConstrainedLanguage mode may add `[Console]::OutputEncoding` errors. None of those are failures — validate by exit code + `--output-last-message` file presence, not by inspecting stderr text. See §"Invocation — Codex CLI" for the invocation rules.
-- **Letting reviewers edit code.** The review prompt instructs read-only. If a gate failure requires a fix, the implementer makes the fix between attempts.
+- **Letting reviewers edit code.** The review prompt instructs read-only. If a gate failure requires a code fix, the PM dispatches a fix-Engineer (Opus) to make it between attempts; a paper-trail fix the PM applies directly.
 - **Codex CLI assumptions.** The framework assumes `codex` is on PATH and the user has `~/.codex/config.toml` (or `$CODEX_HOME/config.toml`) selecting an appropriate reviewer model. The framework does not configure this. If `codex --version` fails (or Codex fails on an attempt), **substitute a Haiku subagent** per §"Reviewer fallback" so the ensemble stays at three reviewers — Codex is scheduled on every attempt, so this keeps coverage rather than dropping to two. For Windows-specific invocation rules (Bash default, PowerShell `cmd /c` fallback, exit-code-not-stderr validation), see §"Invocation — Codex CLI" above.
 - **Anthropic subagent assumptions.** Full ensemble mode assumes the host runtime supports the Anthropic Agent tool with Opus, Sonnet, and Haiku model selection (Haiku is the Codex substitute). On runtimes without that, the unavailable subagent(s) are skipped via reviewer fallback. If no scheduled reviewer can run, escalate or opt out of auto-review.
 - **`codex review --base/--commit` parser quirk.** The CLI rejects custom `[PROMPT]` when `--base` or `--commit` is set. This protocol uses `codex exec` (not `codex review`) precisely to bypass that limitation. Do not switch to `codex review`.
@@ -562,4 +569,4 @@ Sometimes auto-review is the wrong default for a phase even though it's enabled 
 - **Shipping a release candidate.** Higher stakes; extra human review is worth the friction.
 - **After a series of FAILs.** If multiple recent rounds in this phase needed retries, drop back to user-gated until the issue is understood.
 
-The user can opt out at any point. The implementer should also propose dropping back to user-gated when it sees these patterns: "Three recent rounds needed retries — recommend opting out of auto-review for the rest of this phase. OK?"
+The user can opt out at any point. The PM should also propose dropping back to user-gated when it sees these patterns: "Three recent rounds needed retries — recommend opting out of auto-review for the rest of this phase. OK?"

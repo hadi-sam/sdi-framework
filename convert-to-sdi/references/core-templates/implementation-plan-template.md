@@ -188,7 +188,7 @@ Skip checkpoints that don't apply (e.g. drop Checkpoint 4 if there is no UI). **
 **Phase-specific gates:**
 - [ ] [optional]
 
-### Checkpoint 5 — Housekeeping **(auto-review comprehensive — same fix loop; PASS stops before PR)**
+### Checkpoint 5 — Housekeeping **(auto-review comprehensive — same fix loop; review PASS → user-run smoke → PM opens PR)**
 
 **Covers:** §10 Acceptance Criteria mapping, §12 Decisions Log materialization, §13 Known divergences resolution, known-issues lifecycle updates, doc updates (`PROJECT_STRUCTURE`, `AGENTS.md` / `CLAUDE.md`), work-item close in `WORK_LOG.md` + Work tracker.
 
@@ -202,12 +202,13 @@ Skip checkpoints that don't apply (e.g. drop Checkpoint 4 if there is no UI). **
 - [ ] All revision notes on the plan reference resolved changes
 - [ ] Lint passes
 - [ ] Typecheck passes
-- [ ] All unit + integration test suites pass
-- [ ] Manual smoke test of the main acceptance criterion completed live and documented
+- [ ] All unit + integration test suites pass (Engineer-run evidence; the PM records it, does not run the suites itself)
 - [ ] Phase tracker in `AGENTS.md` / `CLAUDE.md` updated to ✓ with date, row kept to one line
 - [ ] Closing work item's narrative added as a `## <work item>` section in `docs/WORK_LOG.md` (`Type` / `Status` / `Date` matching the tracker row)
 - [ ] Today's `docs/memory/YYYY-MM-DD.md` entry marks the phase as closed
-- [ ] CP5 comprehensive review run (auto-review default) — phase-wide diff (`git diff PHASE_BASE_SHA..HEAD`), per-CP packet split by default; up-to-5-attempt fix loop (obvious fixes auto-applied, decision findings presented with options + recommendation). Ended in PASS → stop **before** opening the PR; OR after 5 attempts still FAIL, escalated for the user to decide (continue manually, accept remaining findings as KNOWN_ISSUES, or open a follow-up work item). OR user opted out and reviewed manually.
+- [ ] CP5 comprehensive review run (auto-review default) — phase-wide diff (`git diff PHASE_BASE_SHA..HEAD`), per-CP packet split by default; up-to-5-attempt fix loop (obvious fixes auto-applied, decision findings presented with options + recommendation). Ended in PASS → **clears the review gate** (the user-run smoke below is the second gate); OR after 5 attempts still FAIL, escalated for the user to decide (continue manually, accept remaining findings as KNOWN_ISSUES, or open a follow-up work item). OR user opted out and reviewed manually.
+- [ ] Manual smoke test (the **CP-final smoke**) of the main acceptance criterion run live **after** the CP5 comprehensive review PASSes — **user-run** (the PM generates the steps, the user runs them, the PM interprets), completed and documented
+- [ ] PR opened by the PM via `gh pr create` only **after both** the CP5 comprehensive review PASSes **and** the CP-final smoke passes (never auto-opened or merged)
 
 **Phase-specific gates:**
 - [ ] [optional]
