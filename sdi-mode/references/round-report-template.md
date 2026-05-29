@@ -44,7 +44,7 @@ Every implementation round ends with a report. Same sections, same order. Users 
 
 ### Auto-review history (default for Checkpoints 2/3/4/5)
 
-[Append one block per attempt. Default schedule unless the user overrides it: **every attempt (1-5)** has THREE reviewers (Opus subagent + Sonnet subagent + Codex; a **Haiku subagent substitutes for Codex** when Codex is unavailable). Note any degraded mode, skipped reviewer, Codex→Haiku substitution, timeout, or user-requested schedule change. The cap is 5 attempts (circuit breaker); a convergence check may escalate earlier if same finding persists across attempts. CP5 uses the same loop on the phase-wide diff, and a PASS stops before opening the PR.
+[Append one block per attempt. Default schedule unless the user overrides it: **every attempt (1-5)** has THREE reviewers (Opus subagent + Sonnet subagent + Codex; a **Haiku subagent substitutes for Codex** when Codex is unavailable). Note any degraded mode, skipped reviewer, Codex→Haiku substitution, timeout, or user-requested schedule change. The cap is 5 attempts (circuit breaker); a convergence check may escalate earlier if same finding persists across attempts. CP5 uses the same loop on the phase-wide diff; a CP5 PASS clears only the review gate — the user-run CP-final smoke and the PM-opened PR follow (see `auto-review-mode.md` §"CP5 comprehensive review").
 
 **Attempt N — merged verdict**: PASS / FAIL / ESCALATE.
   - **Opus subagent verdict**: PASS / FAIL / ESCALATE (or "skipped: <reason>" if it failed to run).
@@ -58,7 +58,7 @@ Every implementation round ends with a report. Same sections, same order. Users 
   - **Prior findings re-checked** (attempts 2+): list the prior findings included in `[PRIOR_REVIEW_FINDINGS]`.
 
 **Decision Bundle (attempt N)** — dedup + classification of merged findings:
-  - **Obvious fixes (auto-apply eligible):** list classified findings (class 1-4, 6, or K with 2+ reviewer convergence OR surviving single reviewer in degraded mode + cited fix + in-round scope).
+  - **Obvious fixes (auto-apply eligible):** list classified findings per the `obvious-fix` conditions in `auto-review-mode.md` §"The loop" step 8 (class 1-4, 6, or K; cited fix; in-round scope; and a convergence condition — 2+ reviewers converge, OR a degraded-mode surviving reviewer, OR a solo grounded class 2–4/6/K the PM can't grep-refute).
   - **Needs decision:** list classified findings (divergent reviewers, fix outside round scope, reviewer didn't propose concrete fix).
   - **Judgment-required (user judgment — never auto-apply):** list classified findings (ESCALATE verdict, class 5 DECISIONS-worthy, class 7 urgent).
   - **Persistent findings (convergence check):** any finding with same class + same file + same symbol/identifier OR ±5 lines as a prior attempt.

@@ -18,6 +18,15 @@ If you're tempted to skip a gate "because it's just one item", that's exactly wh
 
 These are typical — adapt to the specific phase.
 
+### Roles at each checkpoint
+
+`sdi-mode` executes every checkpoint with the PM / Engineer / Reviewer split (see [`roles-and-orchestration.md`](roles-and-orchestration.md)). The gate checklists below are unchanged — what this adds is *who* performs each:
+
+- **CP1 (Foundation/audit)** is **PM-direct and user-gated** — the PM does the read/grep/audit itself (no Engineer) and pauses after the audit.
+- **CP2 / CP3 / CP4** are **Engineer(s) + review** — the PM dispatches 1–3 Engineers (always Opus) to implement the slice(s), confirms the build/tests green from their reported evidence, reconciles, then dispatches the three-reviewer ensemble and reconciles verdicts. An obvious code finding routes to a **fix-Engineer**; an obvious paper-trail finding the PM applies directly.
+- **CP5 (Housekeeping)** is **PM-direct doc work plus two closing gates** — the PM does the doc work itself (no Engineer for CP5's own deliverables), then (a) dispatches the **comprehensive auto-review ensemble** (the same up-to-5-attempt loop, on the phase-wide diff) and (b) has the **live smoke** run as a user gate (the PM generates the steps, the **user runs** them and pastes output, the PM interprets). The PM never runs the suite or the smoke itself — any suite rerun is Engineer-provided evidence.
+- **Opening the PR** is the **PM's** (`gh pr create`), only after **both** the CP5 comprehensive review PASSes **and** the smoke passes.
+
 ### Auto-review eligibility
 
 **Auto-review is the default for Checkpoints 2, 3, 4, and 5** (CPs 2-4 per-round; CP5 comprehensive phase-wide). Verification is delegated to a different-model reviewer ensemble unless the user asks for a different schedule: **every attempt (1-5)** runs Opus subagent + Sonnet subagent + `codex exec` (typically gpt-5.5 with reasoning effort `xhigh`) in parallel; if Codex is unavailable, a Haiku subagent substitutes for it. Different models find partially-disjoint bugs; the union catches more than any one reviewer alone. The checkpoint gate is closed by a structured Decision Bundle (per `auto-review-mode.md` §"Decision Bundle format"): obvious-fix findings are auto-applied (and the next round fires when no decisions remain), needs-decision and judgment-required findings are presented with options + a recommendation (the latter never auto-applied). The user can opt out per session — see `auto-review-mode.md`.
@@ -120,7 +129,7 @@ Each checkpoint header below carries an eligibility tag. Auto-eligible checkpoin
 
 ---
 
-### Checkpoint 5: Housekeeping (end of phase) **(auto-review comprehensive — same fix loop; PASS stops before PR)**
+### Checkpoint 5: Housekeeping (end of phase) **(auto-review comprehensive — same fix loop; review PASS → user-run smoke → PM opens PR)**
 
 **Deliver:**
 - Acceptance criteria mapped to evidence (test file + line, or smoke step).
@@ -143,12 +152,13 @@ Each checkpoint header below carries an eligibility tag. Auto-eligible checkpoin
 - [ ] All revision notes on the plan reference resolved changes
 - [ ] Lint passes
 - [ ] Typecheck passes
-- [ ] All unit + integration test suites pass
-- [ ] Manual smoke test of the main acceptance criterion completed live and documented
+- [ ] All unit + integration test suites pass (Engineer-run evidence; the PM records it, does not run the suites itself)
 - [ ] Phase tracker in `AGENTS.md` / `CLAUDE.md` updated to ✓ with date, row kept to one line
 - [ ] Closing work item's narrative added as a `## <work item>` section in `docs/WORK_LOG.md` (`Type` / `Status` / `Date` matching the tracker row)
 - [ ] Today's `docs/memory/YYYY-MM-DD.md` entry marks the phase as closed
-- [ ] CP5 comprehensive review run (auto-review default) — up-to-5-attempt fix loop on the phase-wide diff; obvious fixes auto-applied, decision findings presented with options + recommendation. Ended in PASS (then stop **before** opening the PR) OR, after 5 attempts still FAIL, escalated for the user to decide (continue manually, accept remaining findings as KNOWN_ISSUES, or open a follow-up work item). OR user opted out and reviewed manually.
+- [ ] CP5 comprehensive review run (auto-review default) — up-to-5-attempt fix loop on the phase-wide diff; obvious fixes auto-applied, decision findings presented with options + recommendation. Ended in PASS (which **clears only the review gate** — the user-run smoke below is the second gate) OR, after 5 attempts still FAIL, escalated for the user to decide (continue manually, accept remaining findings as KNOWN_ISSUES, or open a follow-up work item). OR user opted out and reviewed manually.
+- [ ] Manual smoke test (the **CP-final smoke**) of the main acceptance criterion run live **after** the CP5 comprehensive review PASSes — **user-run** (the PM generates the steps, the user runs them, the PM interprets), completed and documented
+- [ ] PR opened by the PM via `gh pr create` only **after both** the CP5 comprehensive review PASSes **and** the CP-final smoke passes (never auto-opened or merged)
 
 ---
 
