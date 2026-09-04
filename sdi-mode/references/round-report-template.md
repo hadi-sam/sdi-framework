@@ -44,14 +44,14 @@ Every implementation round ends with a report. Same sections, same order. Users 
 
 ### Auto-review history (default for Checkpoints 2/3/4/5)
 
-[Append one block per attempt. Default schedule unless the user overrides it: **every attempt (1-5)** has THREE reviewers (Opus subagent + Sonnet subagent + Codex; a **Haiku subagent substitutes for Codex** when Codex is unavailable). Note any degraded mode, skipped reviewer, Codex→Haiku substitution, timeout, or user-requested schedule change. The cap is 5 attempts (circuit breaker); a convergence check may escalate earlier if same finding persists across attempts. CP5 uses the same loop on the phase-wide diff; a CP5 PASS clears only the review gate — the user-run CP-final smoke and the PM-opened PR follow (see `auto-review-mode.md` §"CP5 comprehensive review").
+[Append one block per attempt. Default schedule unless the user overrides it: **every attempt (1-5)** has THREE reviewers (Opus subagent + Sonnet subagent + Codex; a **user-authorized Haiku subagent substitutes for Codex** when Codex is unavailable). Note any degraded mode, skipped reviewer, **user-authorized** Codex→Haiku substitution (with the authorization itself), timeout, or user-requested schedule change. The cap is 5 attempts (circuit breaker); a convergence check may escalate earlier if same finding persists across attempts. CP5 uses the same loop on the phase-wide diff; a CP5 PASS clears only the review gate — the user-run CP-final smoke and the PM-opened PR follow (see `auto-review-mode.md` §"CP5 comprehensive review").
 
 **Attempt N — merged verdict**: PASS / FAIL / ESCALATE.
   - **Opus subagent verdict**: PASS / FAIL / ESCALATE (or "skipped: <reason>" if it failed to run).
     - Full output verbatim from `docs/reviews/round-XN-attempt-N-opus.md` (findings + verdict line).
   - **Sonnet subagent verdict**: PASS / FAIL / ESCALATE (or "skipped: <reason>").
     - Full output verbatim from `docs/reviews/round-XN-attempt-N-sonnet.md`.
-  - **Codex verdict** (or **Haiku subagent verdict** when Haiku substituted for Codex): PASS / FAIL / ESCALATE (or "skipped: <reason>; haiku substituted").
+  - **Codex verdict** (or **Haiku subagent verdict** when the user authorized the substitution): PASS / FAIL / ESCALATE (or "skipped: <reason>; user chose <authorize haiku / two reviewers / retry later>"). ⚠️ A Haiku verdict without a recorded authorization is a **defect in the report**, not a valid attempt.
     - Full output verbatim from `docs/reviews/round-XN-attempt-N-codex.md` (or `...-haiku.md` for the substitute).
   - **Runtime notes**: degraded mode, timeout, extended timeout declaration, user-requested schedule change, or convergence-check trigger if applicable.
   - **Merge rule applied**: e.g., "Opus PASS + Sonnet FAIL + Codex PASS → FAIL (any FAIL blocks)".
@@ -135,7 +135,9 @@ You've been deep in the code; you have the best sense of what should come next a
 
 ### Auto-review history is not optional when auto-review fired
 
-Auto-review is the default for Checkpoints 2/3/4/5. If it fired, the history must appear in the report — every attempt, every reviewer's verdict, every finding, plus the Decision Bundle classification per attempt, with file:line evidence as the reviewers returned it (verbatim from `docs/reviews/round-XN-attempt-N-{reviewer}.md`). Schedule: every attempt has 3 reviewers (Opus + Sonnet + Codex; a Haiku subagent substitutes for Codex when it is unavailable); fewer only in degraded mode. The user uses this to spot-check the reviewers' calls. Don't summarize ("5 attempts, eventual PASS"); paste the structured output. Omitting or compressing it defeats the purpose of the audit trail.
+**Paper-trail backlog (required section when non-empty).** Findings that were deferred under the paper-trail-only rule go in a section named exactly `## Paper-trail backlog`, one line each: `[class] file:line — what is wrong — which attempt found it`. **Carry it forward at every attempt**, and hand it to CP5 — CP5 is where it is paid, and an empty backlog at CP5 with a non-empty history is a defect, not a saving.
+
+Auto-review is the default for Checkpoints 2/3/4/5. If it fired, the history must appear in the report — every attempt, every reviewer's verdict, every finding, plus the Decision Bundle classification per attempt, with file:line evidence as the reviewers returned it (verbatim from `docs/reviews/round-XN-attempt-N-{reviewer}.md`). Schedule: every attempt has 3 reviewers (Opus + Sonnet + Codex; when Codex is unavailable the agent **asks the user** — a Haiku subagent runs only under recorded authorization); fewer only in degraded mode. The user uses this to spot-check the reviewers' calls. Don't summarize ("5 attempts, eventual PASS"); paste the structured output. Omitting or compressing it defeats the purpose of the audit trail.
 
 If auto-review did not fire (Checkpoint 1, user opt-out, or always-escalate trigger), omit the section entirely.
 

@@ -6,7 +6,7 @@ This is **the** execution model for `sdi-mode`. Turning an `IMPLEMENTATION_PLAN_
 - **Engineer** — a dispatched subagent (always Opus) that implements code and runs the build/tests. **Never touches the paper trail.**
 - **Reviewer** — a dispatched read-only subagent that adversarially reviews the diff and returns findings + a verdict. **It edits no repo files**; the PM persists each reviewer's output to `docs/reviews/` (Agent-tool reviewers return text the PM writes; the Codex CLI writes its own output file via `--output-last-message`).
 
-There is no separate "single agent implements it all" path — this role split *is* how the loop runs, at every checkpoint. The SDI discipline (audit-first, checkpoint gates, DECISIONS/KNOWN_ISSUES/memory/WORK_LOG, document precedence) is unchanged; what this doc makes explicit is **who performs each part**. All reviewer mechanics — the ensemble roster, the loop cap, the Decision Bundle classification, the convergence check, the Codex two-step invocation, the Haiku-for-Codex substitution — live in [`auto-review-mode.md`](auto-review-mode.md) and are **cited, not restated** here.
+There is no separate "single agent implements it all" path — this role split *is* how the loop runs, at every checkpoint. The SDI discipline (audit-first, checkpoint gates, DECISIONS/KNOWN_ISSUES/memory/WORK_LOG, document precedence) is unchanged; what this doc makes explicit is **who performs each part**. All reviewer mechanics — the ensemble roster, the loop cap, the Decision Bundle classification, the convergence check, the Codex two-step invocation, the **ask-the-user rule when Codex is unavailable** — live in [`auto-review-mode.md`](auto-review-mode.md) and are **cited, not restated** here.
 
 ## Roles & tool scoping
 
@@ -112,7 +112,7 @@ Both the PM and the `sdi-review` coordinator apply obvious fixes to planning/rev
 
 ## Reuse contract (what this doc must not restate)
 
-To keep one authoritative copy, this doc **cites, never copies**: the verdict-merge table, the Decision Bundle classification list, the loop cap + convergence algorithm, the CP5 packet rules, the Codex two-step invocation, and the Haiku-for-Codex swap — each lives in `auto-review-mode.md`. The only net-new mechanics defined here are the **role split** (who commits, fix-Engineer routing, parallel-Engineer worktrees, tool scoping) and **PM-direct CP1/CP5**. The **strict-solo-blocker policy note** that this model relies on is recorded once, as a `DECISIONS.md`-style note, in [`auto-review-mode.md`](auto-review-mode.md) §"The loop" step 8.
+To keep one authoritative copy, this doc **cites, never copies**: the verdict-merge table, the Decision Bundle classification list, the loop cap + convergence algorithm, the CP5 packet rules, the Codex two-step invocation, and the **ask-the-user rule when Codex is unavailable** — each lives in `auto-review-mode.md`. The only net-new mechanics defined here are the **role split** (who commits, fix-Engineer routing, parallel-Engineer worktrees, tool scoping) and **PM-direct CP1/CP5**. The **strict-solo-blocker policy note** that this model relies on is recorded once, as a `DECISIONS.md`-style note, in [`auto-review-mode.md`](auto-review-mode.md) §"The loop" step 8.
 
 ---
 
@@ -164,4 +164,4 @@ The Reviewer brief **is the filled adversarial prompt — never a skill.** The P
 - **Round/diff target** → fill [`auto-review-mode.md`](auto-review-mode.md) §"Adversarial review prompt template".
 - **Plan/standalone target** → fill [`sdi-review/references/adversarial-review-prompt-template.md`](../../sdi-review/references/adversarial-review-prompt-template.md).
 
-Dispatch mechanics (parallel Opus + Sonnet via the Agent tool, Codex via the two-step `codex exec` block, Haiku substituting when Codex is down, the per-attempt output files, the timeout policy) are all defined in [`auto-review-mode.md`](auto-review-mode.md) — reuse them. The PM's only per-round work is **substituting the placeholders with concrete values** and dispatching; it must verify no `[PLACEHOLDER]` token survives before sending, because reviewers do not expand placeholders.
+Dispatch mechanics (parallel Opus + Sonnet via the Agent tool, Codex via the two-step `codex exec` block, the ask-the-user rule when Codex is down, the per-attempt output files, the timeout policy) are all defined in [`auto-review-mode.md`](auto-review-mode.md) — reuse them. The PM's only per-round work is **substituting the placeholders with concrete values** and dispatching; it must verify no `[PLACEHOLDER]` token survives before sending, because reviewers do not expand placeholders.

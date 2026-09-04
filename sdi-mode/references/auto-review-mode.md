@@ -1,6 +1,6 @@
 # Auto-Review Mode (default for Checkpoints 2/3/4/5)
 
-A workflow extension that delegates checkpoint verification to a **reviewer ensemble** — different-model Opus, Sonnet, and Codex reviewers (a Haiku subagent stands in for Codex when it is unavailable) — escalating to the user only when something needs human judgment. **Default-on** for Checkpoints 2, 3, and 4 (per-round review) and CP5 (comprehensive phase-wide review). All four run the **same up-to-5-attempt fix loop**. CP1 stays user-gated. The user can opt out per session or request a different reviewer schedule.
+A workflow extension that delegates checkpoint verification to a **reviewer ensemble** — different-model Opus, Sonnet, and Codex reviewers (if Codex is unavailable, **stop and ask the user** — there is no automatic substitute) — escalating to the user only when something needs human judgment. **Default-on** for Checkpoints 2, 3, and 4 (per-round review) and CP5 (comprehensive phase-wide review). All four run the **same up-to-5-attempt fix loop**. CP1 stays user-gated. The user can opt out per session or request a different reviewer schedule.
 
 > **Roles referenced in this file.** **The PM/orchestrator** is the main session — it runs the gate, dispatches reviewers, reconciles verdicts, and owns the paper trail; it never edits code. **The Engineer** is a dispatched Opus subagent — it writes code and runs the build/tests; it never edits the paper trail. An obvious code fix routes to a **fix-Engineer** dispatch (the PM never edits code); an obvious paper-trail fix the PM applies directly. Those roles, their tool scoping, Engineer fan-out, and parallel-Engineer logistics are defined in [`roles-and-orchestration.md`](roles-and-orchestration.md); this file is the reviewer machinery that doc reuses by reference.
 
@@ -9,7 +9,7 @@ A workflow extension that delegates checkpoint verification to a **reviewer ense
 Implementation rounds end with structured verdicts from independent reviewers, deduplicated and classified into a **Decision Bundle** acted on **per finding**: obvious/trivial fixes are auto-applied and the next review round fires automatically; non-trivial or decision findings are surfaced with options + a recommendation and pause for the user. Obvious fixes are never blocked behind a coexisting decision finding.
 
 - **Every attempt (1 through 5)** runs **three reviewers in parallel**: an Opus subagent (via Anthropic Agent tool, `model: opus`), a Sonnet subagent (via Anthropic Agent tool, `model: sonnet`), and a Codex CLI process (`codex exec`, typically gpt-5.5 with reasoning effort `xhigh` per the user's `~/.codex/config.toml`).
-- **If Codex is unavailable on any attempt** (can't be invoked, times out, or returns unusable output), substitute a **Haiku subagent** (via Anthropic Agent tool, `model: haiku`) in its place so the ensemble stays three-strong: Opus + Sonnet + Haiku. See §"Reviewer fallback".
+- **If Codex is unavailable on any attempt** (can't be invoked, times out, or returns unusable output), **STOP and ask the user — never substitute automatically.** Codex being down is usually a rate limit, and it is a **user-visible event**: the user decides what happens next. A **Haiku** substitute is valid **only with the user's explicit authorization on that occasion**. See §"Reviewer fallback".
 
 This three-reviewers-every-attempt schedule is the default unless the user explicitly asks for a different schedule for the session or round. The full ensemble is load-bearing on **every** attempt, not just the first: different models find partially-disjoint bugs, the union catches more than any one reviewer alone, and each retry re-verifies both the original code and the intermediate fixes (fix commits introduce new code, so a reduced retry ensemble would under-review exactly the freshest code).
 
@@ -119,7 +119,7 @@ Even within a default-on checkpoint, the round escalates immediately when any of
 
 CP5 review is distinct from CPs 1-4 in **scope**, not in loop mechanics: reviewers look at the **entire phase** (diff between `PHASE_BASE_SHA` and `HEAD`), not just one round. Findings at CP5 are typically cross-checkpoint regressions, acceptance criteria without evidence, scope drift, or accumulated KNOWN_ISSUES debt — things per-round reviews don't catch.
 
-**Schedule:** Opus + Sonnet + Codex in parallel on every attempt (Haiku substitutes for Codex if unavailable) — same as CPs 2-4.
+**Schedule:** Opus + Sonnet + Codex in parallel on every attempt (if Codex is unavailable, stop and ask the user — no automatic substitute) — same as CPs 2-4.
 
 **Fix loop:** CP5 runs the **same up-to-5-attempt fix loop** as CPs 2-4 (see §"The loop" and §"Loop cap"). Obvious fixes are auto-applied and the review re-runs; non-trivial or decision findings are surfaced with options + a recommendation. This is a change from older framework versions where CP5 was a single escalation-only pass — the per-finding autonomy, cap-5, and convergence machinery now apply at CP5 too. The always-escalate triggers and the `judgment-required` classification still stop for the user exactly as at CPs 2-4: structural CP5 findings (rewind and reopen a previous CP, accept as a KI, AC gap) typically classify as `needs-decision`/`judgment-required` and are presented for a decision, **not** auto-patched — so the loop never blindly applies superficial patches to structural problems.
 
@@ -167,7 +167,7 @@ Don't confuse: always-escalate skips auto-review; judgment-required pauses it af
 1. The Engineer(s) finish the round and commit **commit A (code-only)**; the PM writes **commit B (report-only referencing A's SHA)** per the split-commit convention. Messages: `round X/CN: <summary>` (A) + `round X/CN report: at HEAD <short-SHA-de-A>` (B).
 2. If an always-escalate trigger fired, or the user opted out / requested user-gated review, stop for the user.
 3. Run the clean-state preflight (confirming both commit A and commit B exist), and build `.sdi-review-prompt-tmp.txt`.
-4. Run the three reviewers for the attempt in parallel: **Opus subagent + Sonnet subagent + Codex** (or **Opus + Sonnet + Haiku subagent** if Codex is unavailable — see §"Reviewer fallback"). Same on every attempt, 1 through 5.
+4. Run the three reviewers for the attempt in parallel: **Opus subagent + Sonnet subagent + Codex**. If Codex is unavailable, **stop and ask the user** before running anything in its place — see §"Reviewer fallback". Same on every attempt, 1 through 5.
 5. Apply reviewer timeout/fallback. If no scheduled reviewer produced usable output, stop for the user.
 6. Parse verdicts and merge them (see §"Verdict merging").
 7. **Dedup pass:** read the 3 reviewer outputs (fewer only in degraded mode, when a reviewer failed and no substitute ran) and deduplicate findings using the **same matching algorithm** as the cross-attempt convergence check (see §"Loop cap" §"Symbol extraction algorithm"): same class + same file + same symbol/identifier OR within ±5 lines. Two reviewers flagging "method `validateUser` missing" at line 42 and line 48 in the same file count as one finding (convergent), not two. Prioritize 3-way > 2-way > unique. The `obvious-fix` criterion "at least 2 reviewers converge" reuses this matcher — divergent line numbers for the same logical bug DO count as convergence; divergent symbols or files do NOT.
@@ -271,18 +271,20 @@ If a reviewer cannot be invoked or produces unusable output (binary missing, net
 
 | Situation | Action |
 |---|---|
-| **Codex failed** (any attempt — can't invoke, timeout, unusable output) | **Substitute a Haiku subagent** (Anthropic Agent tool, `model: haiku`) in Codex's place and run it on the same packet, keeping the ensemble three-strong (Opus + Sonnet + Haiku). Note the substitution in the round report ("codex skipped: <reason>; haiku substituted"). Haiku's verdict merges exactly like Codex's would. If the Haiku substitute also cannot run (no Agent tool / model unavailable), fall back to the degraded-survivor rule below. |
+| **Codex failed** (any attempt — can't invoke, timeout, unusable output) | **STOP and ask the user. Never substitute automatically.** Surface the reason (usually a rate limit) and offer: **(a)** authorize a **Haiku** subagent as the third reviewer *for this occasion*, **(b)** proceed with **two** reviewers (Opus + Sonnet) in documented degraded mode, or **(c)** pause and retry Codex later. Record the user's choice in the round report ("codex skipped: <reason>; user chose <a/b/c>"). If they authorize Haiku, run it on the same packet and merge its verdict exactly as Codex's would be, noting "haiku substituted **with user authorization**". |
 | Opus or Sonnet failed, at least one reviewer ok | Continue with the reviewer(s) that ran. Note each skip in the round report ("sonnet skipped: <reason>", "opus subagent skipped: <reason>"). Mark the mode as `degraded` in the auto-review history, but do NOT downgrade surviving verdicts — if the surviving reviewers all returned PASS, treat as PASS. |
-| All scheduled reviewers failed (including the Haiku substitute) | **Escalate to the user.** Surface: "All scheduled reviewers failed: [reasons]. Auto-review unavailable for this round — please review manually, fix the reviewer setup, or specify a different schedule." |
+| All scheduled reviewers failed (including any user-authorized substitute) | **Escalate to the user.** Surface: "All scheduled reviewers failed: [reasons]. Auto-review unavailable for this round — please review manually, fix the reviewer setup, or specify a different schedule." |
 
-The default schedule is Opus + Sonnet + Codex on **every** attempt (1-5). The **Haiku-for-Codex substitution is the one sanctioned automatic model swap** — it keeps the ensemble at three independent reviewers when Codex is down. For any other unavailable reviewer, use the degraded-survivor rule above; do not silently substitute a different model unless the user has requested it or the runtime documents an equivalent reviewer mode in the round report.
+The default schedule is Opus + Sonnet + Codex on **every** attempt (1-5). **There is NO sanctioned automatic model swap.** When a scheduled reviewer is unavailable, either apply the degraded-survivor rule above or ask the user — never silently promote a different model into the ensemble.
+
+⚠️ **Why Codex→Haiku is not automatic.** It used to be, and it cost a user real time and tokens: an agent assumed Codex was down, swapped in Haiku unilaterally, and ran a full round with a reviewer whose findings rarely earn their cost. **A substitute reviewer is a spending decision, and it belongs to the user.** Two consequences: (1) if Codex fails, the user must be **told** — a silent swap hides a rate limit that they may want to wait out; (2) authorization is **per occasion** — "yes, use Haiku this time" does not carry to the next attempt, the next round, or the next work item, unless the user says it does.
 
 ## Reviewer timeouts
 
 Reviewer orchestration uses a wall-clock timeout so "still thinking" does not become an invisible stall.
 
 - **Default soft timeout:** 20 minutes per reviewer.
-- **Every attempt:** start Opus, Sonnet, and Codex in parallel. If **Codex** specifically times out, treat it as a Codex failure and apply the Haiku substitution from §"Reviewer fallback" (the Haiku subagent runs on the same packet with the same 20-minute budget). If at least one reviewer returns usable output and another exceeds 20 minutes, treat the slow reviewer as timed out, continue with the surviving reviewer(s) via reviewer fallback, and record the timeout in the round report. If all three (after any Haiku substitution) exceed 20 minutes without usable output, `ESCALATE`.
+- **Every attempt:** start Opus, Sonnet, and Codex in parallel. If **Codex** specifically times out, treat it as a Codex failure and apply §"Reviewer fallback" — which means **stopping to ask the user**, not swapping a model in. If at least one reviewer returns usable output and another exceeds 20 minutes, treat the slow reviewer as timed out, continue with the surviving reviewer(s) via reviewer fallback, and record the timeout in the round report. If all three (including any user-authorized substitute) exceed 20 minutes without usable output, `ESCALATE`.
 - **Large-diff exception:** before launching review, the PM may declare a longer timeout in the round report when the diff is unusually large. If a review is expected to need more than 45 minutes, split the round or escalate instead of silently waiting.
 
 Use the host runtime's background-process/subagent timeout mechanism when available. If the runtime cannot enforce timeouts automatically, the PM must record start time, check elapsed wall-clock time, and apply the policy manually.
@@ -415,11 +417,36 @@ Each reviewer returns its review as Markdown text. The PM parses the last `VERDI
 
 If the verdict line is missing, malformed, or the output is empty/garbage, treat that reviewer as failed (see §"Reviewer fallback"). Do not reject a short but well-formed PASS response solely because it is brief.
 
-After parsing, apply the merge rules above (PASS only if all reviewers PASS; ESCALATE wins over FAIL), then proceed per the loop.
+After parsing, apply the merge rules above (PASS only if all reviewers PASS; ESCALATE wins over FAIL), **then apply the paper-trail-only override below**, then proceed per the loop.
+
+## Paper-trail-only findings do not fail a round
+
+**The rule.** After dedup, if **every** surviving finding is *paper-trail-only*, the merged verdict is **PASS** — regardless of what the individual reviewers returned. The findings are **not discarded**: they go to the round report's **Paper-trail backlog**, and **CP5 consumes that backlog**.
+
+**Definition — a finding is paper-trail-only when BOTH hold:**
+1. the fix touches **only** documentation artifacts — round reports, `docs/reviews/`, plan docs, `docs/memory/`, `DECISIONS.md`, `KNOWN_ISSUES.md`, `WORK_LOG.md`, `AGENTS.md`/`CLAUDE.md`; **and**
+2. the defect is in the **description**, not in the thing described.
+
+**Three carve-outs. These are NOT paper trail, even though they look like it:**
+
+- **(a) Prose that a live gate reads.** Some repos have tests that parse javadoc/comments (census gates, threshold gates). Editing that prose can turn a gate red, so it is code-adjacent. If a gate reads it, it is a code finding.
+- **(b) A doc finding that reveals a defect in the thing described.** *"The report claims X, the code does Y"* is paper trail **only if the code is right and the report is wrong**. If the code is wrong, it is a class-1 code finding wearing a documentation costume. Decide by measuring the code, not by where the finding's file:line points.
+- **(c) A choice that is still open.** A missing `DECISIONS.md` entry is paper trail when the choice **was already made** and merely isn't written down. It is **ESCALATE** when the choice itself is unresolved and needs the user. ESCALATE always wins over this override.
+
+**The PM classifies, not the reviewer.** Reviewers report findings with class + file:line + evidence; the PM decides paper-trail-only and records the reasoning in the bundle. A reviewer must never be able to buy a PASS by labelling its own finding.
+
+**⚠️ Two places where this rule does NOT apply, for the same reason: the document IS the deliverable there.**
+
+- **Plan review** (`sdi-review` Mode 1). Applying the deferral there would auto-PASS every plan review — the plan is the artifact under construction.
+- **CP5.** CP5's deliverable *is* the paper trail, so paper-trail findings there are blocking and the backlog is what CP5 exists to consume. Without this clause the rule is circular and the backlog never gets paid.
+
+**Why the rule exists — measured, 2026-08-24.** A round closed its mechanism cleanly and then burned three full review attempts and six fixes on documentation. The code-finding curve across the three attempts was **3 → 1 → 0**; the paper-trail curve was **3 → 8 → 11**. Every attempt's findings were mostly in text the *previous fix had just written* — the fixes were generating the next round's findings. Reviews earn their cost by finding defects in the thing being built; documentation churn is real work but it converges in one comprehensive sweep, not in N adversarial rounds.
+
+**What this does not license.** Paper trail still matters — this rule changes **when** it is paid, not **whether**. A backlog entry that never reaches CP5 is a regression of this rule, not a saving. Carry the backlog forward in the round report at every attempt, and treat an empty CP5 backlog with a non-empty history as a defect.
 
 ## Loop cap
 
-- **Maximum 5 review attempts per round** (every attempt: Opus + Sonnet + Codex, with a Haiku subagent substituting for Codex when it is unavailable), unless the user explicitly requests a different schedule. The cap exists as a **circuit breaker** to prevent infinite loops when the agent isn't converging, NOT as a sign of a structural problem. Rounds requiring 5+ attempts are common and legitimate (especially in code that touches multiple areas). This cap and the convergence check apply at CP5 too.
+- **Maximum 5 review attempts per round** (every attempt: Opus + Sonnet + Codex; if Codex is unavailable, ask the user rather than substituting), unless the user explicitly requests a different schedule. The cap exists as a **circuit breaker** to prevent infinite loops when the agent isn't converging, NOT as a sign of a structural problem. Rounds requiring 5+ attempts are common and legitimate (especially in code that touches multiple areas). This cap and the convergence check apply at CP5 too.
 
 - **Convergence check (escalation before the cap):** if the last 2 attempts produced findings with **same class + same file + same symbol/identifier OR within ±5 lines of the previous finding**, the loop is stuck in lazy fix (code shifted but root cause remains). Literal file:line match would be too weak — code moves after fixes. Escalate immediately with message:
   > "Finding {class} in {file} ({symbol/identifier or line}) persisted in attempts N-1 and N despite fix attempt. Lazy fix or root cause misunderstood — requesting input."
@@ -449,7 +476,7 @@ After parsing, apply the merge rules above (PASS only if all reviewers PASS; ESC
 Every auto-reviewed round must include the auto-review history in its round report. See `round-report-template.md` for the exact section shape.
 
 For each attempt:
-- Attempt N — reviewers run (default: `opus + sonnet + codex` on every attempt; `opus + sonnet + haiku` when Codex was unavailable and Haiku substituted; fewer only in documented degraded mode or under a user-overridden schedule) and merged verdict.
+- Attempt N — reviewers run (default: `opus + sonnet + codex` on every attempt; `opus + sonnet + haiku` **only when the user authorized the substitution on that occasion**, and the authorization must be recorded; fewer only in documented degraded mode or under a user-overridden schedule) and merged verdict.
 - Per reviewer: full structured output verbatim from `docs/reviews/round-XN-attempt-N-{reviewer}.md` (findings + verdict line).
 - Decision Bundle (per §"Decision Bundle format"): obvious-fix / needs-decision / judgment-required classification, action taken.
 - Runtime notes: degraded mode, timeout, or extended timeout declaration if applicable.
@@ -459,12 +486,12 @@ Do not summarize ("3 attempts, eventual PASS"). The user uses the history to spo
 
 ## Invocation — Anthropic subagents (Agent tool)
 
-When the host runtime supports it, the Opus and Sonnet subagents — and the Haiku subagent when it substitutes for Codex — run via the Anthropic Agent tool. Use the `general-purpose` subagent type with explicit `model: "opus"`, `model: "sonnet"`, or `model: "haiku"` so the subagent runs the scheduled model regardless of the parent session's model. If the host runtime has no Agent tool or no requested model selection, record "`<model>` subagent unavailable: <reason>" and apply reviewer fallback.
+When the host runtime supports it, the Opus and Sonnet subagents — and a Haiku subagent **if the user has authorized it as the Codex substitute** — run via the Anthropic Agent tool. Use the `general-purpose` subagent type with explicit `model: "opus"`, `model: "sonnet"`, or `model: "haiku"` so the subagent runs the scheduled model regardless of the parent session's model. If the host runtime has no Agent tool or no requested model selection, record "`<model>` subagent unavailable: <reason>" and apply reviewer fallback.
 
 Inputs:
 - `description`: short, e.g. `Round B/C2 attempt 1 review`.
 - `subagent_type`: `general-purpose`.
-- `model`: `opus`, `sonnet`, or `haiku` (Haiku only as the Codex substitute), depending on the scheduled reviewer.
+- `model`: `opus`, `sonnet`, or `haiku` (**Haiku only as a user-authorized Codex substitute** — never chosen by the agent), depending on the scheduled reviewer.
 - `prompt`: the substituted contents of `.sdi-review-prompt-tmp.txt` (the entire adversarial review prompt with placeholders filled in).
 
 The subagent inherits file/Bash tools so it can run `git diff`, read files, and grep the repo as the prompt instructs. The text response is the review report — write it to `docs/reviews/round-XN-attempt-N-{opus,sonnet}.md` for audit trail.
@@ -525,14 +552,14 @@ On each attempt, the PM fires the scheduled reviewers in parallel and waits for 
 4. **Step 1 of two-step codex invocation:** write the substituted prompt to `.sdi-review-prompt-tmp.txt` (heredoc with quoted delimiter, so placeholders don't get expanded by bash) with `[PRIOR_REVIEW_FINDINGS] = "None — first attempt."` on attempt 1, or the union of prior findings plus fix commit(s) on attempts 2+.
 5. Run the packet checklist. Do not invoke reviewers if placeholders remain in `.sdi-review-prompt-tmp.txt` or required paths/sections are missing.
 6. Spawn the scheduled subagents (Agent tool, `run_in_background: true`) and record start time.
-7. **Step 2 of two-step codex invocation:** start `codex exec ... - < .sdi-review-prompt-tmp.txt` as a background Bash command and record start time. NEVER pass the prompt as a positional argument — codex will hang waiting for stdin EOF (see §"Invocation — Codex CLI" for the rationale). **If Codex is unavailable** (e.g. preflight `codex --version` fails) **or fails this attempt**, spawn a Haiku subagent (Agent tool, `model: haiku`) on the same `.sdi-review-prompt-tmp.txt` packet instead, per §"Reviewer fallback" — keep the ensemble at three reviewers.
+7. **Step 2 of two-step codex invocation:** start `codex exec ... - < .sdi-review-prompt-tmp.txt` as a background Bash command and record start time. NEVER pass the prompt as a positional argument — codex will hang waiting for stdin EOF (see §"Invocation — Codex CLI" for the rationale). **If Codex is unavailable** (e.g. preflight `codex --version` fails) **or fails this attempt**, **STOP and ask the user** per §"Reviewer fallback" — do **not** spawn a substitute on your own. Only if they authorize it do you spawn a Haiku subagent (Agent tool, `model: haiku`) on the same `.sdi-review-prompt-tmp.txt` packet, and the authorization goes in the round report.
 8. Wait for scheduled reviewers to complete, applying the 20-minute timeout policy.
 9. Read output files. Parse VERDICT from each usable reviewer output. Apply the merge rules.
 9. If any reviewer failed to produce usable output, apply §"Reviewer fallback".
 
 Default schedule:
 - Every attempt (1-5): Opus subagent + Sonnet subagent + Codex.
-- If Codex is unavailable on an attempt: Opus subagent + Sonnet subagent + Haiku subagent (Haiku substitutes for Codex).
+- If Codex is unavailable on an attempt: **stop and ask the user.** Only with their authorization does the attempt run as Opus subagent + Sonnet subagent + Haiku subagent.
 
 After the round closes (PASS or escalation), append final auto-review history to `docs/reviews/round-XN-report.md`, delete `.sdi-review-prompt-tmp.txt` (it's gitignored and recreated per attempt anyway), and commit the round report + per-attempt output files with `round X/CN review artifacts: <verdict>`. Do NOT delete the per-attempt output files in `docs/reviews/` — those are the audit trail.
 
@@ -554,8 +581,8 @@ After the round closes (PASS or escalation), append final auto-review history to
 - **Treating ESCALATE as FAIL.** ESCALATE means user judgment is required — stop, surface the findings, wait. Do **not** apply fixes and retry on ESCALATE; that path is only for FAIL. The most common ESCALATE is a class-5 finding (DECISIONS-worthy choice without flag), and writing the DECISIONS entry silently before retrying defeats the purpose of escalation.
 - **Aborting Codex on stderr noise.** Codex writes its session banner to stderr by design. PowerShell may wrap codex stderr in `NativeCommandError` records; corporate ConstrainedLanguage mode may add `[Console]::OutputEncoding` errors. None of those are failures — validate by exit code + `--output-last-message` file presence, not by inspecting stderr text. See §"Invocation — Codex CLI" for the invocation rules.
 - **Letting reviewers edit code.** The review prompt instructs read-only. If a gate failure requires a code fix, the PM dispatches a fix-Engineer (Opus) to make it between attempts; a paper-trail fix the PM applies directly.
-- **Codex CLI assumptions.** The framework assumes `codex` is on PATH and the user has `~/.codex/config.toml` (or `$CODEX_HOME/config.toml`) selecting an appropriate reviewer model. The framework does not configure this. If `codex --version` fails (or Codex fails on an attempt), **substitute a Haiku subagent** per §"Reviewer fallback" so the ensemble stays at three reviewers — Codex is scheduled on every attempt, so this keeps coverage rather than dropping to two. For Windows-specific invocation rules (Bash default, PowerShell `cmd /c` fallback, exit-code-not-stderr validation), see §"Invocation — Codex CLI" above.
-- **Anthropic subagent assumptions.** Full ensemble mode assumes the host runtime supports the Anthropic Agent tool with Opus, Sonnet, and Haiku model selection (Haiku is the Codex substitute). On runtimes without that, the unavailable subagent(s) are skipped via reviewer fallback. If no scheduled reviewer can run, escalate or opt out of auto-review.
+- **Codex CLI assumptions.** The framework assumes `codex` is on PATH and the user has `~/.codex/config.toml` (or `$CODEX_HOME/config.toml`) selecting an appropriate reviewer model. The framework does not configure this. If `codex --version` fails (or Codex fails on an attempt), **stop and ask the user** per §"Reviewer fallback" — do **not** substitute a model on your own. Codex is scheduled on every attempt, so its absence is worth the user knowing about; they choose whether to authorize a Haiku substitute, run with two reviewers, or wait out the rate limit. For Windows-specific invocation rules (Bash default, PowerShell `cmd /c` fallback, exit-code-not-stderr validation), see §"Invocation — Codex CLI" above.
+- **Anthropic subagent assumptions.** Full ensemble mode assumes the host runtime supports the Anthropic Agent tool with Opus, Sonnet, and Haiku model selection (Haiku only as a **user-authorized** Codex substitute). On runtimes without that, the unavailable subagent(s) are skipped via reviewer fallback. If no scheduled reviewer can run, escalate or opt out of auto-review.
 - **`codex review --base/--commit` parser quirk.** The CLI rejects custom `[PROMPT]` when `--base` or `--commit` is set. This protocol uses `codex exec` (not `codex review`) precisely to bypass that limitation. Do not switch to `codex review`.
 - **Passing the prompt as a positional argument.** `codex exec ... "$(cat <<EOF ... EOF)"` or `codex exec ... "<inline string>"` hangs forever in any non-TTY shell (Claude Code Bash, CI, background tasks). Codex sees "stdin is piped" and tries to read it to append to the positional prompt; stdin never closes; process hangs with 0 bytes output and 0 session files. Always use the two-step `cat > file` + `- < file` pattern documented in §"Invocation — Codex CLI". If you absolutely must use a positional prompt (e.g., for a one-line smoke test), add `< /dev/null` to close stdin.
 - **Forgetting `mkdir -p docs/reviews` before the first attempt.** Codex exits 0 even when `--output-last-message` writes fail (parent dir missing), so a missing reviewer output file is silently empty/absent. The audit-trail commit then has no Codex content. Pre-flight the directory once per round (or per project, then leave it).

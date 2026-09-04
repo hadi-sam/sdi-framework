@@ -6,7 +6,7 @@ This file is loaded by `sdi-review` for **Mode 1: plan review**. Other modes use
 
 ## Why this exists
 
-A plan written by the same agent that scoped it tends to overstate readiness — the planner is not adversarial but wants to ship. An external review applies adversarial pressure: cross-checks every concrete claim against the repo, every choice against `DECISIONS.md`, every known issue against `KNOWN_ISSUES.md`, and every gate against evidenceability. The coordinator combines perspectives by dispatching the ensemble (Opus + Sonnet + Codex; Haiku if Codex fails) — partially-disjoint blind spots, so the union catches more than any one model alone.
+A plan written by the same agent that scoped it tends to overstate readiness — the planner is not adversarial but wants to ship. An external review applies adversarial pressure: cross-checks every concrete claim against the repo, every choice against `DECISIONS.md`, every known issue against `KNOWN_ISSUES.md`, and every gate against evidenceability. The coordinator combines perspectives by dispatching the ensemble (Opus + Sonnet + Codex; if Codex fails, ask the user before running anything in its place) — partially-disjoint blind spots, so the union catches more than any one model alone.
 
 ## When this is used
 
@@ -90,6 +90,8 @@ End with TWO summary lines:
 - `TOTAL FINDINGS: N. By class: 1=a, 2=b, 3=c, 4=d, 5=e, 6=f, 7=g.`
 - `VERDICT: PASS / FAIL / ESCALATE.`
 
+⚠️ **The paper-trail-only deferral does NOT apply to plan review.** At CP2/3/4 a round whose findings are all documentation-only passes and defers them to CP5 (see `../sdi-mode/references/auto-review-mode.md`). **Here the document IS the deliverable** — applying the deferral would auto-PASS every plan review, which is the opposite of the point. Same reasoning excludes CP5 from it.
+
 **VERDICT rules:** PASS only if zero findings of class 1–6. FAIL if there is at least one mechanically fixable finding in class 1–4 or 6. ESCALATE if there is at least one class-5 finding, a class-7 urgent risk, a scope/architecture conflict, or anything requiring user judgment. Non-urgent class 7 alone can remain PASS if it is only an advisory note.
 
 ## Saving the review
@@ -121,6 +123,6 @@ Cap at **5 rounds** + the convergence check (per `SKILL.md` and `auto-review-mod
 
 ## Model diversity
 
-The coordinator dispatches Opus + Sonnet + Codex (Haiku if Codex fails) every round — each reviewer gets the filled adversarial prompt and runs it against the plan, returning findings + verdict. **Dispatched reviewers can't read this protocol file** (it lives in the skill, not the project repo), so the adversarial prompt is **self-contained**: its general checks (A–H, K) plus the SDI plan-vs-bundle check (item I — plan-vs-DECISIONS, plan-vs-KNOWN_ISSUES, PRD/ARCHITECTURE precedence, round-structure soundness) cover the checks listed above. This protocol is the **coordinator's** reference — for interpreting findings, deduping, and second-pass resolution (check K). What differs between reviewers is their blind spots; the union catches more than any single model. The coordinator dedups and reconciles per `SKILL.md`.
+The coordinator dispatches Opus + Sonnet + Codex every round — and if Codex is unavailable, **stops and asks the user** instead of substituting — each reviewer gets the filled adversarial prompt and runs it against the plan, returning findings + verdict. **Dispatched reviewers can't read this protocol file** (it lives in the skill, not the project repo), so the adversarial prompt is **self-contained**: its general checks (A–H, K) plus the SDI plan-vs-bundle check (item I — plan-vs-DECISIONS, plan-vs-KNOWN_ISSUES, PRD/ARCHITECTURE precedence, round-structure soundness) cover the checks listed above. This protocol is the **coordinator's** reference — for interpreting findings, deduping, and second-pass resolution (check K). What differs between reviewers is their blind spots; the union catches more than any single model. The coordinator dedups and reconciles per `SKILL.md`.
 
 A user may also open a fully separate session in another tool and load `sdi-review` there as an independent second coordinator — their choice. But the reviewers a coordinator dispatches always receive the filled adversarial prompt, **never this skill**.

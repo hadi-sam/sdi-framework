@@ -1,6 +1,6 @@
 # Adversarial review prompt template
 
-The self-contained adversarial prompt that `sdi-review`'s **coordinator hands each dispatched reviewer** (Opus / Sonnet / Codex / Haiku). It is what a reviewer receives — **never the `sdi-review` skill itself**; a reviewer that loads the skill would re-coordinate (dispatch its own reviewers) instead of reviewing. The same prompt is also usable **ad-hoc/manually** — when you want a second pair of eyes on a plan, a doc, a branch, a function, or a sketch.
+The self-contained adversarial prompt that `sdi-review`'s **coordinator hands each dispatched reviewer** (Opus / Sonnet / Codex, or a user-authorized Haiku). It is what a reviewer receives — **never the `sdi-review` skill itself**; a reviewer that loads the skill would re-coordinate (dispatch its own reviewers) instead of reviewing. The same prompt is also usable **ad-hoc/manually** — when you want a second pair of eyes on a plan, a doc, a branch, a function, or a sketch.
 
 The `sdi-mode` **PM/orchestrator** dispatches reviewers the same way (see `sdi-mode/references/roles-and-orchestration.md`): for a **plan or standalone target** it fills *this* template; for a **round/diff target** it fills the embedded template in `sdi-mode/references/auto-review-mode.md`. Either way the dispatched reviewer gets the **filled prompt, never a skill** — the prompt-not-skill rule, from both sides.
 
@@ -109,6 +109,14 @@ End with TWO lines:
 
 **Output format hint:** wrap method/class/symbol references in backticks always (enables convergence-check symbol extraction when this prompt feeds into an automated loop).
 
+**Mark every finding `[code]` or `[docs]`.** `[docs]` = the fix touches **only** documentation (round report, plan, memory, DECISIONS/KNOWN_ISSUES, review artifacts) **and** the defect is in the description, not in the thing described. Everything else is `[code]`.
+
+⚠️ **Three things look like `[docs]` and are `[code]`** — mark them `[code]`: prose that a **live gate parses** (editing it can turn a test red); a documentation finding that reveals a defect in the **thing described** (measure the code before deciding); and a choice that is **still open** rather than merely unwritten.
+
+**Why this matters to you:** when a round's findings are *all* `[docs]`, the round passes and they are deferred to the housekeeping checkpoint — so effort spent hunting typos in a report buys nothing, while a single `[code]` finding is the whole reason the review exists. **Report the `[docs]` ones anyway** (they are collected, not discarded), but **spend your budget on the thing being built.** ⚠️ This deferral does **not** apply when the document under review **is** the deliverable — a plan review, or the housekeeping checkpoint itself. If you were handed a plan or a housekeeping diff, documentation defects are the point.
+
+**The coordinator decides the final classification, not you.** Your mark is an input.
+
 BOTTOM LINE rules:
 - SHIP — zero findings of class 1-6 or K; class 7 only if minor and optional.
 - FIX-THEN-SHIP — at least one class 1-4, 6, or K finding, but all are mechanically fixable without rethinking the approach.
@@ -156,4 +164,4 @@ The `- < file` pattern is load-bearing: the `-` argument tells codex to read pro
 
 ---
 
-Or pass the filled prompt to an Agent subagent (Anthropic Agent tool, `subagent_type: general-purpose`, `model: opus` / `sonnet` / `haiku`) as the `prompt` argument — no stdin gymnastics needed; the subagent runtime handles input. The output is the review report. The coordinator dispatches one such subagent per ensemble reviewer, in parallel — Opus + Sonnet via the Agent tool, Codex via the `codex exec` block above (or a Haiku subagent if Codex is down). **Pass the filled prompt, never the skill.**
+Or pass the filled prompt to an Agent subagent (Anthropic Agent tool, `subagent_type: general-purpose`, `model: opus` / `sonnet` / `haiku` — the last **only under user authorization**) as the `prompt` argument — no stdin gymnastics needed; the subagent runtime handles input. The output is the review report. The coordinator dispatches one such subagent per ensemble reviewer, in parallel — Opus + Sonnet via the Agent tool, Codex via the `codex exec` block above (or a Haiku subagent if Codex is down). **Pass the filled prompt, never the skill.**
