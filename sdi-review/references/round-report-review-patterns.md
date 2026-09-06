@@ -17,15 +17,11 @@ Round report on your desk. Check:
 
 Response shape:
 - Findings first. Do not summarize what works.
-- Specific issues, graded: blocker / non-blocker / nice-to-have.
+- Specific issues, each carrying its mark, graded: blocker / non-blocker / nice-to-have. That grading is **presentation and decides nothing** — the verdict is read off the matrix below.
 - For non-blockers, recommend whether to fix now or defer to hardening.
 - End with `BOTTOM LINE: SHIP | FIX-THEN-SHIP | RETHINK | BLOCK`.
 
-Bottom-line rules:
-- `SHIP` = no blockers and no required changes before the next round.
-- `FIX-THEN-SHIP` = at least one blocker or required mechanical fix before the next round.
-- `RETHINK` = the review surfaced a DECISIONS-worthy choice, scope change, or architecture conflict.
-- `BLOCK` = something urgent to address before any further work on this target.
+**Bottom-line rules (the reviewer's line, and only a proposal), off [`sdi-mode/references/auto-review-mode.md`](../../sdi-mode/references/auto-review-mode.md) §"Marks and the verdict matrix" and never re-derived here:** `SHIP` when no finding fails by that matrix; `FIX-THEN-SHIP` when one does and its fix is mechanical; `RETHINK` for a class-5 finding; `BLOCK` for a class-7 marked urgent. **The round is the coordinator's**, off the same matrix with the mark it assigned.
 
 ## A or B fork
 
