@@ -16,12 +16,14 @@ Planning and review skills (`mvp-architect`, `convert-to-sdi`, `sdi-review`, and
 For tools with a skills path (Claude Code, Codex), `install.sh` at the repo root does the copy:
 
 ```bash
-./install.sh                     # copy the repo over the installed copy, then rewrite the manifest
-./install.sh --check             # compare only; exits 1 if the installed copy has drifted
+./install.sh                     # install what's missing, copy what changed, then rewrite the manifest
+./install.sh --check             # compare only; exits 1 on local drift, and on files not installed yet
 SKILLS_DIR=/some/path ./install.sh   # install somewhere other than ~/.claude/skills
 ```
 
-It compares three states per file — `installed.sha256` (what was installed last time), the installed copy, and the repo. A file edited directly in the installed copy is **local drift**: the run stops and lists it instead of overwriting it silently. A file deleted from the repo is deleted from the installed copy. Without the manifest it refuses to copy at all, because it could not then tell drift from a stale file. Skills the manifest doesn't list are never read or touched.
+It compares three states per file — `installed.sha256` (what was installed last time), the installed copy, and the repo. **The first install is the ordinary path**: a skills directory that has none of the five skills is every file missing and nothing edited, so the run copies all of them and writes the manifest. A file edited directly in the installed copy, or added there, is **local drift**: the run stops and lists it instead of overwriting it silently — a file that is merely absent has no local edit to lose, so it is installed, not reported. A file deleted from the repo is deleted from the installed copy. Without the manifest it refuses to copy at all, because it could not then tell drift from a stale file. Skills the manifest doesn't list are never read or touched.
+
+`--check` never writes. It exits 1 both for drift and for files listed as `missing`, under separate headings and separate closing messages, because only the first means something would be lost.
 
 Copying the five directories by hand still works — you just lose that protection, and the manifest goes stale.
 

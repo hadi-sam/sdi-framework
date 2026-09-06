@@ -47,8 +47,8 @@ When a work item's end-of-phase housekeeping (sdi-mode Step 8) closes the item, 
 
 Rules:
 
-- **Match the tracker.** The section's `Type` / `Status` / `Date` must match the corresponding Work tracker row, so the index and the narrative never disagree. The slug heading must match the row's `Work item`.
-- **Order.** Keep sections in the same order as the tracker rows (chronological); append the newest at the end.
+- **Match the tracker, where the fact sheet has one.** Then the section's `Type` / `Status` / `Date` must match the corresponding Work tracker row, so the index and the narrative never disagree, and the slug heading must match the row's `Work item`. Without a tracker the section still carries its own `Type` / `Status` / `Date` — they are the section's header, not a copy of a row — and the index of work items is the `docs/plans/` folder.
+- **Order.** With a tracker, keep sections in the same order as its rows; without one, keep them chronological. Either way, append the newest at the end.
 - **Cross-reference, don't duplicate.** "DECISIONS #28–#31 written", "KI-049 Resolved (commit, date)", "PR #7 → test" — link/point, don't paste the entries' content.
 - **Write at close, not continuously.** During active rounds, detail lives in round reports, `docs/memory/`, `DECISIONS.md`, and `KNOWN_ISSUES.md`. The `WORK_LOG.md` section is the consolidated story written once the item closes (or updated if the item reopens for a follow-up).
 
@@ -60,7 +60,7 @@ Rules:
 
 | Surface | Holds | Loaded each session? |
 |---|---|---|
-| **Work tracker** (`AGENTS.md` / `CLAUDE.md`) | one-line index per item: status + pointers | yes (part of the fact sheet) |
+| **Work tracker** (`AGENTS.md` / `CLAUDE.md`), where the project has one | one-line index per item: status + pointers | yes (part of the fact sheet) |
 | **`WORK_LOG.md`** | the verbose per-item narrative, written at close | no — read on demand |
 | `DECISIONS.md` | atemporal "why we chose X" | skimmed at audit |
 | `KNOWN_ISSUES.md` | append-only "what we know is wrong" | skimmed at audit |
