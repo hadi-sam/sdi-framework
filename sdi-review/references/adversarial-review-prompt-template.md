@@ -109,13 +109,25 @@ End with TWO lines:
 
 **Output format hint:** wrap method/class/symbol references in backticks always (enables convergence-check symbol extraction when this prompt feeds into an automated loop).
 
-**Mark every finding `[code]` or `[docs]`.** `[docs]` = the fix touches **only** documentation (round report, plan, memory, DECISIONS/KNOWN_ISSUES, review artifacts) **and** the defect is in the description, not in the thing described. Everything else is `[code]`.
+**Mark every finding `[code]`, `[gate]` or `[docs]`. Your mark is a proposal — the coordinator assigns the final one.**
 
-⚠️ **Three things look like `[docs]` and are `[code]`** — mark them `[code]`: prose that a **live gate parses** (editing it can turn a test red); a documentation finding that reveals a defect in the **thing described** (measure the code before deciding); and a choice that is **still open** rather than merely unwritten.
+- `[code]` — the fix touches production code; **or** the description reveals a defect in the thing described, which you decide by measuring the code, not by where the finding points; **or** the text you are reviewing **is the deliverable** of this checkpoint.
+- `[gate]` — the fix touches only a test, gate, lint, CI config, or fixture.
+- `[docs]` — the fix touches only documentation that **describes** code: a round report, a memory entry, a comment, an already-executed plan section.
 
-**Why this matters to you:** when a round's findings are *all* `[docs]`, the round passes and they are deferred to the housekeeping checkpoint — so effort spent hunting typos in a report buys nothing, while a single `[code]` finding is the whole reason the review exists. **Report the `[docs]` ones anyway** (they are collected, not discarded), but **spend your budget on the thing being built.** ⚠️ This deferral does **not** apply when the document under review **is** the deliverable — a plan review, or the housekeeping checkpoint itself. If you were handed a plan or a housekeeping diff, documentation defects are the point.
+Two promotions apply before the mark is final: a `[gate]` finding on a gate **cited by an acceptance criterion** is `[code]` (only a gate no acceptance criterion cites has budget); and `[docs]` is `[code]` **when the text is the deliverable** — a plan review, a checkpoint whose deliverable is documentation, and everything a housekeeping checkpoint delivers, that checkpoint's deliverable being the paper trail itself.
 
-**The coordinator decides the final classification, not you.** Your mark is an input.
+Two traps. **Prose that a live gate parses** is not `[docs]` — some repos have tests that walk the tree and parse comments, so editing that prose can turn a test red. **A choice that is still open** is class 5, not paperwork: a missing decision entry is `[docs]` only when the choice was already made and merely isn't written down.
+
+| Mark / class | Effect on the attempt |
+|---|---|
+| `[code]` of class 1–4, 6, or K | **fails** the attempt |
+| `[gate]` not promoted | fails **one** attempt per round; on the next, a remaining or new one becomes a known-issue entry with a trigger and does not fail |
+| `[docs]` not promoted, and non-urgent class 7 of any mark | never fails; goes to the report's paper-trail backlog and is paid at the housekeeping checkpoint |
+| class 5 | **ESCALATE**, beats everything |
+| class 7 marked urgent | **BLOCK** |
+
+Report the `[docs]` ones anyway — they are collected, not discarded — but spend your budget on the thing being built.
 
 BOTTOM LINE rules:
 - SHIP — zero findings of class 1-6 or K; class 7 only if minor and optional.

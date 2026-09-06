@@ -12,9 +12,7 @@ Examples in this document use placeholders like `[schema directory]`, `[auth/ide
 - User asks you to continue a phase that previously started.
 - User hands you a spec bundle and says "go."
 
-Don't audit when:
-- You're making a single small fix within an already-audited phase.
-- User explicitly asks to skip the audit because time is tight. (Flag the risk, but respect the call.)
+Don't audit when — and only when — **the phase was already audited in this same session** and you are making a single small fix inside it. There is no other exemption: "audit before coding" is not negotiable, and a request to skip it because time is tight is answered by stating the risk and running the audit anyway, or by the user taking the work outside SDI deliberately.
 
 ## The audit report format
 
@@ -114,7 +112,7 @@ Plan uses helper name A; repo has helper name B. Almost always the repo wins.
 Plan wants something in `src/lib/foo/`; repo convention is `src/modules/foo/`. Repo wins, but if the plan has a reason (refactor, etc.), raise it.
 
 ### 3. Resource reference to future phase
-Plan references resource `agents.id` as a relationship target in Phase 1, but the `agents` table is only created in Phase 2. Fix: make the column plain UUID with comment; FK added when the table exists.
+Plan references a resource as a relationship target in this phase, but the resource is only created in a later one. Fix: carry the reference without the constraint, with a comment naming the phase that will add it.
 
 ### 4. Stale dependency assumption
 Plan assumes package X is installed (because ARCHITECTURE.md mentioned it); it was deferred in DECISIONS.md. Audit must check DECISIONS.md, not just ARCHITECTURE.md.
