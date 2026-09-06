@@ -36,7 +36,7 @@ Batch them in one message; the user answers in one reply. Skip any already answe
 1. **The next work item** — confirm against ROADMAP and the recent memory entries, offering both when they disagree.
 2. **Carryovers** — anything from the previous item or `KNOWN_ISSUES.md` needing rework first: blockers, deferred scope, regressions, KIs.
 3. **New constraints** — anything since the ROADMAP that changes the shape: customer feedback, perf data, compliance, integration availability.
-4. **Naming** — `PHASE_N` or `<slug>`, the two forms defined in the plan template's §"Naming convention", which the framework treats uniformly. Prefer `PHASE_N` when the item maps onto the ROADMAP's next phase or had to be split; `<slug>` when it is one of several concurrent or unordered streams.
+4. **Naming** — `PHASE_N` or `<slug>`, the two forms defined in `core-templates/implementation-plan-template.md` §"Naming convention". Prefer `PHASE_N` when the item maps onto the ROADMAP's next phase or had to be split; `<slug>` when it is one of several concurrent or unordered streams.
 
 ## Generation rules
 
