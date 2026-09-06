@@ -100,11 +100,11 @@ Checkpoint 3 review, then propose Round C (UI for Sources + Leads list).
 - Smoke test against [local DB service] uncovered a possible race in dedup; gather evidence next session, then either add `KNOWN_ISSUES.md` entry or dismiss.
 ```
 
-Length: 30–80 lines per day. Longer means you're putting decisions in here that should be in DECISIONS.md.
+**Length** is a ceiling in the project's doc lint (`scripts/docs_bounds.py` where the project has one), measured in lines per day; the number lives there. Longer means you are putting decisions in here that belong in `DECISIONS.md`.
 
 ## What goes in `docs/MEMORY.md`
 
-A flat **index** of dated entries. One line per file, ~150 chars max. Newest at the top.
+A flat **index** of dated entries: one line per file, newest at the top. The per-line character ceiling is in the project's doc lint; the number lives there. The index is **hand-maintained** — nothing generates it — so a new entry means a new line, written the same day.
 
 ```markdown
 # MEMORY
@@ -117,7 +117,7 @@ Index of `docs/memory/` daily entries. Newest first. Links inside `docs/MEMORY.m
 - [2026-04-23](memory/2026-04-23.md) — Phase 0 scaffolding closed; project fact sheet initial fill-in
 ```
 
-`docs/MEMORY.md` itself stays under ~200 lines (with truncation when older entries roll off into archives if needed). It's a finder, not the full content.
+It is a finder, not the content. When it outgrows being scannable, older entries move to an archive file kept verbatim, and the index keeps only what is still worth finding.
 
 ## What goes in `WORK_LOG.md`
 
@@ -129,7 +129,9 @@ The consolidated narrative of each **completed work item** — one `## <work ite
 
 **Per-item and consolidated-at-close**, not per-day. That is the difference from `docs/memory/`: memory is the running daily breadcrumb ("today I closed omie-integration; see WORK_LOG"); the `WORK_LOG.md` section is the durable, consolidated story of that item, written once it closes.
 
-**Not the canonical source of detail, and not loaded every session.** The authoritative record stays in the plan, `DECISIONS.md`, `KNOWN_ISSUES.md`, and `docs/memory/`; `WORK_LOG.md` consolidates and points into them. It is read on demand, not in the standard pre-phase reading order. Keep each section's `Type` / `Status` / `Date` matching its Work tracker row so the index and the narrative never disagree.
+**Size.** Each `## <work item>` section has a byte ceiling in the project's doc lint; the number lives there. What exceeds it does **not** go into another item's section and does not go back into the daily entry: it goes into a **new** section, `## <key> — adendo YYYY-MM-DD`, which is born under the normal ceiling. Overflow from a frozen target never lands on another frozen target.
+
+**Not the canonical source of detail, and not loaded every session.** The authoritative record stays in the plan, `DECISIONS.md`, `KNOWN_ISSUES.md`, and `docs/memory/`; `WORK_LOG.md` consolidates and points into them. It is read on demand, not in the standard pre-phase reading order.
 
 Format and seed structure: `../../mvp-architect/references/core-templates/work-log-template.md`.
 
@@ -142,7 +144,7 @@ Write a daily memory entry **at the end of each working session** on the project
 - After end-of-phase housekeeping closes a phase.
 - Before stopping for the day or handing off context.
 
-If a working day produces multiple meaningful events, **append** to that day's file (don't create a new one). The file represents the day, not a single session.
+If a working day produces multiple meaningful events, **append** to that day's file (don't create a new one) — the file represents the day, not a single session. Appending happens **within the day's ceiling**: when the day would overflow it, the overflow goes into the closing item's `WORK_LOG.md` section, never into a second file for the same date and never past the ceiling. A ceiling that a second file can dodge is not a ceiling.
 
 If a working day produces no meaningful events (all spent on review of someone else's work, no implementation), skip the file. Empty memory is worse than no memory.
 
