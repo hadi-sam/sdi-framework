@@ -1,6 +1,6 @@
 # Plan review protocol
 
-Framework for reviewing an SDI implementation plan — the **check framework** the coordinator and the reviewers it dispatches apply against the plan (what to read, what to verify, the bug classes, the output format). The coordinator runs the autonomous loop from `SKILL.md` (dispatch Opus + Sonnet + Codex with the adversarial prompt, dedup, apply obvious fixes to the plan doc, re-dispatch up to 5 rounds, escalate decisions). A dispatched reviewer applies these checks against the plan and returns findings; **a reviewer never loads `sdi-review`** — it gets the filled adversarial prompt.
+Framework for reviewing an SDI implementation plan — the **check framework** the coordinator and the reviewers it dispatches apply against the plan (what to read, what to verify, the bug classes, the output format). The coordinator runs the autonomous loop from `SKILL.md` (dispatch Opus + Sonnet + Codex with the adversarial prompt, dedup, apply obvious fixes to the plan doc, re-dispatch until PASS or the cap, escalate decisions). A dispatched reviewer applies these checks against the plan and returns findings; **a reviewer never loads `sdi-review`** — it gets the filled adversarial prompt.
 
 This file is loaded by `sdi-review` for **Mode 1: plan review**. Other modes use `round-report-review-patterns.md`.
 
@@ -110,7 +110,7 @@ The autonomous loop in `SKILL.md` handles iteration: after round 1, the coordina
 2. Re-run this protocol with the second-pass branch active: also read the prior round's `docs/reviews/plan-review-(NN-1).md` (the second-pass step in "Steps you must perform"), and apply check K (resolution of prior findings).
 3. Save each round's output as `docs/reviews/plan-review-NN.md` (`01`, `02`, ...).
 
-Cap at **5 rounds** + the convergence check (per `SKILL.md` and `auto-review-mode.md`). If the plan still has class 1-6 issues at the cap, the structural problem isn't a review problem — escalate to the user.
+Cap at **3 rounds** + the convergence check, canonical in [`sdi-mode/references/auto-review-mode.md`](../../sdi-mode/references/auto-review-mode.md) §"Loop cap". Round 3 without PASS is a **mechanical stop**: the coordinator stops and hands the plan back to the user, and only the user authorizes a round 4 — with the authorization and its reason written to `DECISIONS.md` before that round runs. A plan still carrying class 1-6 findings at the cap has a structural problem, not a review problem.
 
 ## Common pitfalls
 
