@@ -4,7 +4,7 @@ Append-only paper trail of non-obvious choices. One short paragraph per entry, n
 
 ## Location and structure
 
-**File**: `docs/DECISIONS.md`, one file and one place. No per-decision file, no `docs/decisions/` directory: an entry too long for it needs cutting, not a new home. Entries are **numbered sequentially**, newest at the bottom, never renumbered, never deleted, and leave the hot file only by being **archived with a stub** (below). Numbers are a **global namespace across live branches**: the next free one is `max(main, every live branch) + 1`, measured at write time, never pre-allocated in a plan.
+**File**: `docs/DECISIONS.md`, one file and one place. No **new** per-decision file or `docs/decisions/` directory: an entry too long for it needs cutting, not a new home; a pre-existing ADR folder follows `convert-to-sdi`'s `existing-artifact-handling.md` §"ADR handling", with `DECISIONS.md` as the index. Entries are **numbered sequentially**, newest at the bottom, never renumbered, never deleted, and leave the hot file only by being **archived with a stub** (below). Numbers are a **global namespace across live branches**: the next free one is `max(main, every live branch) + 1`, measured at write time, never pre-allocated in a plan.
 
 ## Entry format
 
@@ -20,7 +20,7 @@ The **anchor comes immediately before the header**, the header is `### #N — ti
 - **Revisit when**: [optional trigger that would make it wrong. Omit if permanent.]
 ```
 
-`Vigência` takes **one** of `Vigente`, `Supersedida por #N`, `Parcialmente supersedida por #N`, `Arquivada`, and nothing else on the line: whatever qualifies it goes on a line of its own. **Size:** the four content fields **together** fit the per-entry character ceiling of the project's doc lint (`scripts/docs_bounds.py` where there is one; one screen where there isn't) — the number lives in the lint and is repeated in no document.
+`Vigência` takes **one** of `Vigente`, `Supersedida por #N`, `Parcialmente supersedida por #N`, `Arquivada`, and nothing else on the line: whatever qualifies it goes on a line of its own. **Size:** the four content fields **together** fit the per-entry character ceiling of the project's doc lint (`scripts/docs_bounds.py` where there is one; one screen where there isn't).
 
 **Stub** — the second canonical form, written when the entry moves to `DECISIONS_ARCHIVE.md`. Exactly these four contiguous lines:
 
@@ -31,7 +31,7 @@ The **anchor comes immediately before the header**, the header is `### #N — ti
 - **Arquivo**: status Vigente em AAAA-MM-DD, texto completo em [#N](DECISIONS_ARCHIVE.md#N)
 ```
 
-Archiving is **moving with a stub, never deleting** — that is what keeps append-only true while the hot file stays readable. The archiver is the project's script and it is strict: an entry outside either canonical form stops it, by name.
+Archiving is **moving with a stub, never deleting**; the project's archiver stops, by name, an entry outside either canonical form.
 
 ## What becomes an entry
 
