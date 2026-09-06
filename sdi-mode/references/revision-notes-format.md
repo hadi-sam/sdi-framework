@@ -12,7 +12,7 @@ Not for typos or clarifications — just fix those. Not for a new `DECISIONS.md`
 
 ## Format
 
-Notes live at the very top of the plan, above the first `##` section. They stack, newest on top. **Never delete a prior note**, except through the mandatory consolidation in §Limits, which replaces the earlier ones with a single line.
+Notes live at the very top of the plan, above the first `##` section. They stack, newest on top. **Never delete a prior note**, except through the mandatory consolidation in §"Limits", which replaces the earlier ones with a single line.
 
 The header is `(rN, AAAA-MM-DD)` — number **and** date, one form only, no variants:
 

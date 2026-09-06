@@ -53,7 +53,7 @@ esac
 # other skills are neither read nor touched.
 # The sort is LC_ALL=C so that the manifest's order does not depend on the
 # locale of whoever runs the script: a collation difference alone would
-# otherwise rewrite all 108 lines without changing a single hash.
+# otherwise rewrite every line of the manifest without changing a single hash.
 hash_tree() {
   local root="$1" skill
   for skill in "${SKILLS[@]}"; do
