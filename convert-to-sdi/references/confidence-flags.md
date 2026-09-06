@@ -82,18 +82,16 @@ Example in `ARCHITECTURE.md`:
 
 ## How flags appear in DECISIONS.md
 
-DECISIONS entries seeded by convert-to-sdi carry the flag inline:
+DECISIONS entries seeded by convert-to-sdi carry the flag inline, in the canonical form of `sdi-mode/references/decisions-log-format.md` §"Entry format":
 
 ```markdown
+<a id="1"></a>
 ### #1 — Uses Drizzle as the ORM
-
-**Context**: ORM choice for the Postgres layer.
-
-**Decision**: Drizzle.
-
-**Rationale**: ?
-
-**Source**: code analysis — confirm rationale with team.
+- **Vigência**: **Vigente**
+- **Context**: ORM choice for the Postgres layer.
+- **Decision**: Drizzle.
+- **Rationale**: ?
+- **Source**: code analysis — confirm rationale with team.
 ```
 
 The `?` in Rationale is intentional. Future user (or current user, when they remember) replaces it. The `Source` line marks this as a seed entry, not a decision actively reasoned through.

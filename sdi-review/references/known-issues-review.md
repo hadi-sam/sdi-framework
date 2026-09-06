@@ -11,18 +11,7 @@
 
 ## Entry format
 
-```markdown
-## KI-NNN - Short title
-
-- **Discovered:** YYYY-MM-DD, who/what surfaced it (work item / review / incident)
-- **Severity:** P0 (production-down) | P1 (silent data corruption / security) | P2 (degraded UX, scope-limited) | P3 (cleanup, low blast radius)
-- **Blast radius:** who/what is affected and under what conditions
-- **Repro / evidence:** file:line or concrete reproducible scenario
-- **Why deferred:** why it is not fixed now
-- **Fix trigger:** condition that makes the fix urgent (incident, customer report, threshold, audit)
-- **Suggested fix scope:** rough scope and estimate (minutes / hours / days / weeks)
-- **Status:** Open | Scheduled (work item ref) | Partially Mitigated (description) | Resolved (commit ref + date)
-```
+Canonical form — the anchor immediately before the header, `### KI-NNN — title` with the ` — ` separator, `Status` and `Severity` carrying **only** the enum value, and any qualifier on its own `Nota de status` / `Nota de severidade` line — in [`sdi-mode/references/known-issues-discipline.md`](../../sdi-mode/references/known-issues-discipline.md) §"Entry format". This file is a review reference, not a seed: it points at the form instead of keeping a second copy that drifts. A ready-to-paste entry proposed by a review uses that form; an entry-like header outside it is sliced by nobody — neither the project's doc lint nor the archiver.
 
 ## Verdict guidance
 

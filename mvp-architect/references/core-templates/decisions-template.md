@@ -2,6 +2,8 @@
 
 Generate this artifact at `docs/DECISIONS.md` during Phase C. It starts empty for greenfield projects; do not invent decisions at project birth. The first real entry is written when implementation makes or memorializes a non-obvious choice.
 
+Forma canônica em `sdi-mode/references/decisions-log-format.md` §"Entry format"; o bloco abaixo é cópia literal dela e tem de continuar idêntico — a semente precisa carregar a forma, e essa duplicação é declarada, como a do bloco de marcas de `sdi-mode/references/auto-review-mode.md`.
+
 ````markdown
 # DECISIONS
 
@@ -13,23 +15,23 @@ Generate this artifact at `docs/DECISIONS.md` during Phase C. It starts empty fo
 >
 > **When not to create an entry:** obvious choices that match the plan, naming/local implementation details, mechanical plan-vs-repo corrections, or bugs/debt/security gaps by themselves. Known wrongness belongs in `KNOWN_ISSUES.md`; daily state belongs in `MEMORY.md` and `memory/YYYY-MM-DD.md`.
 >
-> **Append-only:** entries are numbered sequentially (`#1`, `#2`, ...). Never delete or renumber. If a decision changes, append a later entry that supersedes the old one.
+> **Append-only:** entries are numbered sequentially (`#1`, `#2`, ...). Never delete or renumber. If a decision changes, append a later entry and set the old one's `Vigência` to `Supersedida por #N`.
 
 ---
 
 ## Format per entry
 
 ```markdown
-### #N - Short title
-
-**Context:** One or two sentences explaining the situation that forced this decision.
-
-**Decision:** One sentence describing what was decided.
-
-**Rationale:** One or two sentences explaining why this option was chosen over alternatives.
-
-**Revisit when:** Optional trigger that would make the decision worth revisiting.
+<a id="N"></a>
+### #N — [short title, one line]
+- **Vigência**: **Vigente**
+- **Context**: [one or two sentences: the situation that forced the decision.]
+- **Decision**: [one sentence: what was decided.]
+- **Rationale**: [one or two sentences: why this option over the alternatives.]
+- **Revisit when**: [optional trigger that would make it wrong. Omit if permanent.]
 ```
+
+The anchor comes immediately before the header, the header is `### #N — title` with the ` — ` separator, and `Vigência` is mandatory: those three shapes are parsed by tooling, so they are literal. `Vigência` takes **one** of `Vigente`, `Supersedida por #N`, `Parcialmente supersedida por #N`, `Arquivada`, and nothing else on the line — whatever qualifies it goes on a line of its own.
 
 ---
 

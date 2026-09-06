@@ -119,20 +119,17 @@ Extract:
 > Append-only paper trail of non-obvious decisions. Initial entries (#1–#N) seeded by convert-to-sdi from code analysis on YYYY-MM-DD; rationale marked `?` and pending team confirmation. Future entries are written normally during work.
 ```
 
-Seed 3–5 entries for **obvious patterns** detected:
+Seed 3–5 entries for **obvious patterns** detected: canonical form in `sdi-mode/references/decisions-log-format.md` §"Entry format" — anchor, `### #N — title`, `Vigência`, fields as list items; keep it identical.
 
 ```markdown
+<a id="1"></a>
 ### #1 — Uses [Drizzle] as the ORM
-
-**Context**: ORM choice for the [Postgres] layer.
-
-**Decision**: [Drizzle].
-
-**Rationale**: ?
-
-**Source**: code analysis — confirm rationale with team.
-
-**Revisit when**: ?
+- **Vigência**: **Vigente**
+- **Context**: ORM choice for the [Postgres] layer.
+- **Decision**: [Drizzle].
+- **Rationale**: ?
+- **Source**: code analysis — confirm rationale with team.
+- **Revisit when**: ?
 ```
 
 Good seed candidates:
