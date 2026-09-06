@@ -26,7 +26,7 @@ Every implementation round ends with a report: same sections, same order, so a u
 
 ### Testing
 
-[The generated block and nothing else — `<!-- test-summary -->…<!-- /test-summary -->` for the suite, `<!-- unittest-summary -->…<!-- /unittest-summary -->` for script tests and declared mutation proofs. A count written by hand outside the block is a lint failure. If the project has no generator, paste the runner's own output and name the command that produced it: the rule is that numbers are copied from a machine, never retyped from memory.]
+[The generated block and nothing else — `<!-- test-summary -->…<!-- /test-summary -->` for the suite, `<!-- unittest-summary -->…<!-- /unittest-summary -->` for script tests and declared mutation proofs. A count written by hand outside the block is a lint failure. A project with no generator pastes the runner's own output in place of the block, naming the command that produced it: numbers are copied from a machine, never retyped.]
 
 ### Auto-review history (default for Checkpoints 2/3/4/5)
 

@@ -22,7 +22,7 @@ The ceiling is in **bytes**, not lines: the limit configured in the project's do
 
 > Detailed spec for this work item. Companion to PRD.md, ARCHITECTURE.md, PROJECT_STRUCTURE.md, DECISIONS.md, and KNOWN_ISSUES.md. Prescriptive where ambiguity would cause rework.
 >
-> **Revision note (rN, YYYY-MM-DD):** [only after an implementation-time audit reshapes the plan; see §"Revision notes" for the bound.]
+> **Revision note (rN, AAAA-MM-DD):** [only after an implementation-time audit reshapes the plan; see §"Revision notes" for the bound.]
 
 ## 0. Pre-requisites
 
@@ -167,11 +167,11 @@ One line per divergence, no restatement of the docs it diverges from.
 
 Notes stack at the top of the plan, newest first, in **one** format:
 
-> **Revision note (rN, YYYY-MM-DD):** plan review-N returned M findings ([verdict]). Applied K fixes; J substantive turned into DECISIONS entries. Details in `docs/reviews/`.
+> **Revision note (rN, AAAA-MM-DD):** plan review-N returned M findings ([verdict]). Applied K fixes; J substantive turned into DECISIONS entries. Details in `docs/reviews/`.
 
-Bounds: **each note ≤ 1 KB**, and **at most 6 notes**. Writing the 7th means first collapsing the previous ones into a single mandatory consolidation line:
+Bounds — the project's docs lint (`scripts/docs_bounds.py`) where it has one, and otherwise **each note ≤ 1 KB** and **at most 6 notes**. Writing the 7th means first collapsing the previous ones into a single mandatory consolidation line:
 
-> **Consolidated r2-r6, YYYY-MM-DD:** N findings resolved; main decisions: [slugs]. Details in `docs/reviews/`.
+> **Consolidated r2-r6, AAAA-MM-DD:** N findings resolved; main decisions: [slugs]. Details in `docs/reviews/`.
 
 Never delete a review file: the plan stays lean because the archive exists.
 
