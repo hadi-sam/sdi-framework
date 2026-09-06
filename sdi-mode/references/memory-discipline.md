@@ -9,7 +9,7 @@ Spec-driven projects accumulate four distinct kinds of knowledge:
 
 Mixing them into one file is a common failure: rationale, bugs, daily status and per-item history blur together and none stay searchable. Splitting them keeps each useful — and keeps whatever is read every session from bloating into a wall of narrative.
 
-The layout is `docs/DECISIONS.md`, `docs/KNOWN_ISSUES.md`, `docs/WORK_LOG.md`, `docs/MEMORY.md` and one file per working day under `docs/memory/`. A project that keeps canonical docs at the repo root keeps these beside `DECISIONS.md` and `KNOWN_ISSUES.md`.
+The layout is `docs/DECISIONS.md`, `docs/KNOWN_ISSUES.md`, `docs/WORK_LOG.md`, `docs/MEMORY.md` and one file per working day under `docs/memory/`. Canonical docs at the repo root are legacy to migrate into `docs/`, not a second layout.
 
 ## What goes in `docs/memory/YYYY-MM-DD.md`
 
