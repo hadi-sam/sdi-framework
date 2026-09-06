@@ -12,7 +12,7 @@ Not for typos or clarifications — just fix those. Not for a new `DECISIONS.md`
 
 ## Format
 
-Notes live at the very top of the plan, above the first `##` section. They stack, newest on top. **Never delete a prior note.**
+Notes live at the very top of the plan, above the first `##` section. They stack, newest on top. **Never delete a prior note**, except through the mandatory consolidation in §Limits, which replaces the earlier ones with a single line.
 
 The header is `(rN, AAAA-MM-DD)` — number **and** date, one form only, no variants:
 
@@ -31,9 +31,9 @@ Each note is a **revision number and trigger**, then a **numbered list of specif
 
 ## Limits
 
-- **At most 6 revision notes in a plan, each within the per-note byte ceiling** in the project's doc lint (`scripts/docs_bounds.py` where the project has one; the numbers live there and are repeated in no document).
-- **On the seventh, consolidation is mandatory**: the earlier notes collapse into a single consolidation line saying what the plan absorbed and over which revisions, and the new note takes its place on top. Consolidating is not deleting — the detail of each change is already in the plan sections it changed, in `DECISIONS.md`, and in the round reports.
-- A plan that keeps needing notes stopped describing the work; propose replanning rather than a seventh note.
+- **The cap on notes and the per-note byte ceiling** are the project's doc lint (`scripts/docs_bounds.py`) where it has one, and otherwise the fallback in [`implementation-plan-template.md`](../../sdi-next-plan/references/core-templates/implementation-plan-template.md) §"Revision notes" — not repeated here.
+- **On the note past the cap, consolidation is mandatory**: the earlier notes collapse into a single consolidation line saying what the plan absorbed and over which revisions, and the new note takes its place on top.
+- A plan that keeps needing notes stopped describing the work; propose replanning rather than another note.
 
 ## Example
 

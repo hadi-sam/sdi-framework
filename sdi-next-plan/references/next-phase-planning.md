@@ -59,7 +59,7 @@ Every symbol, class, hook or path the plan names is confirmed by Grep/Read first
 
 ## Optional ROADMAP update
 
-If later phases shifted because of this item, add a note at the top of `ROADMAP.md` in the form `> **Revision note (rN, YYYY-MM-DD):** <what moved, what stayed>`. Don't rewrite it wholesale — a change that large is a re-scoping conversation: exit this skill and propose returning to `mvp-architect`.
+If later phases shifted because of this item, add a note at the top of `ROADMAP.md` in the form `> **Revision note (rN, AAAA-MM-DD):** <what moved, what stayed>`. Don't rewrite it wholesale — a change that large is a re-scoping conversation: exit this skill and propose returning to `mvp-architect`.
 
 ## Index the new work item
 
