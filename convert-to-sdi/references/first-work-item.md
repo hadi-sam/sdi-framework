@@ -78,7 +78,7 @@ Keep questions concrete. Aim for 2–4 questions max. Each accepts "don't know �
 
 ## Plan length
 
-Target same as Phase C / `sdi-next-plan` plans: 400–600 lines. For a small bugfix or single-file feature, OK to be shorter (200–300). Don't pad.
+The ceiling is the one in `core-templates/implementation-plan-template.md` §"Size and stability" — in **bytes**, from the project's docs lint where it has one. A small bugfix or single-file feature lands well under it. Don't pad.
 
 ## Update the work tracker
 

@@ -104,7 +104,7 @@ The artifacts are decision records, not encyclopedias. Rules of thumb:
 - **ROADMAP**: ~200–300 lines. Phases are tight.
 - **PROJECT_STRUCTURE**: ~250–450 lines (varies by type — landing pages tighter, web SaaS larger).
 - **DESIGN_SYSTEM**: ~250–400 lines.
-- **IMPLEMENTATION_PLAN_PHASE_1**: ~400–600 lines. This one is the most prescriptive; being longer is OK.
+- **IMPLEMENTATION_PLAN_PHASE_1**: the byte ceiling in `core-templates/implementation-plan-template.md` §"Size and stability", never raised by exception. This one is the most prescriptive.
 - **DECISIONS**: ~30–70 lines when empty. It grows append-only as decisions are made.
 - **KNOWN_ISSUES**: ~80–140 lines when empty. It grows append-only as issues are discovered.
 - **MEMORY**: ~25–60 lines at birth (`MEMORY.md` index + one daily entry). It grows one dated entry per meaningful working day.
