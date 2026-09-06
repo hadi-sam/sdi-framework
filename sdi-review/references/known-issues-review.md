@@ -13,8 +13,10 @@
 
 Canonical form — the anchor immediately before the header, `### KI-NNN — title` with the ` — ` separator, `Status` and `Severity` carrying **only** the enum value, and any qualifier on its own `Nota de status` / `Nota de severidade` line — in [`sdi-mode/references/known-issues-discipline.md`](../../sdi-mode/references/known-issues-discipline.md) §"Entry format". This file is a review reference, not a seed: it points at the form instead of keeping a second copy that drifts. A ready-to-paste entry proposed by a review uses that form; an entry-like header outside it is sliced by nobody — neither the project's doc lint nor the archiver.
 
-## Verdict guidance
+## What severity feeds into the verdict
 
-- A plan/round that forgets to update a `KI-NNN` it claims to fix is a normal finding.
-- A newly discovered P0/P1 issue, or any decision to defer a high-severity issue, should usually be `RETHINK`.
-- A P2/P3 out-of-scope issue can be `SHIP` only if it is cataloged in `KNOWN_ISSUES.md` or included as an exact proposed KI entry in the review report.
+These are **inputs to the matrix**, not verdicts: the bottom line is read off [`sdi-mode/references/auto-review-mode.md`](../../sdi-mode/references/auto-review-mode.md) §"Marks and the verdict matrix", never derived here.
+
+- A plan/round that forgets to update a `KI-NNN` it claims to fix is a normal finding, classed like any other.
+- A newly discovered P0/P1 issue, or a decision to defer a high-severity one, is the **urgent** class 7 the matrix routes — mark it urgent and let the matrix decide.
+- A P2/P3 out-of-scope issue is non-urgent class 7: it never fails a round on its own. What the review owes is the entry — already catalogued in `KNOWN_ISSUES.md`, or an exact proposed one in the report.
