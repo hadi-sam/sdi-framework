@@ -2,7 +2,7 @@
 
 Generate this artifact at `docs/DECISIONS.md` during Phase C. It starts empty for greenfield projects; do not invent decisions at project birth. The first real entry is written when implementation makes or memorializes a non-obvious choice.
 
-Forma canônica em `sdi-mode/references/decisions-log-format.md` §"Entry format"; o documento gerado **não** a restata — aponta para ela no cabeçalho e segue §"Location and structure" para a estrutura do arquivo.
+Canonical form in `sdi-mode/references/decisions-log-format.md` §"Entry format"; the generated document does **not** restate it — it points to it in the header and follows §"Location and structure" for the file structure.
 
 ````markdown
 # DECISIONS

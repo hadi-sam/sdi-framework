@@ -2,7 +2,7 @@
 
 Generate this artifact at `docs/KNOWN_ISSUES.md` during Phase C. It starts empty for greenfield projects; do not invent issues at project birth.
 
-Forma canônica em `sdi-mode/references/known-issues-discipline.md` §"Entry format"; o documento gerado **não** a restata — aponta para ela no cabeçalho e fica com o cabeçalho de regras, os dois vocabulários, `## Index` e `## Entries`, como §"Bootstrap, and round behaviour" do mesmo arquivo manda.
+Canonical form in `sdi-mode/references/known-issues-discipline.md` §"Entry format"; the generated document does **not** restate it — it points to it in the header and keeps the rules header, the two vocabularies, `## Index` and `## Entries`, as §"Bootstrap, and round behaviour" of the same file requires.
 
 ````markdown
 # Known Issues & Technical Debt
