@@ -274,7 +274,7 @@ When all rounds of a phase are complete, do a final round specifically for house
 - Update `PROJECT_STRUCTURE.md` with any new directories or files.
 - Update `DESIGN_SYSTEM.md` if tokens/conventions drifted from the doc (only for projects with UI).
 - Update `AGENTS.md` and `CLAUDE.md` if both exist and the phase revealed conventions worth recording for future phases (helper names, file paths, edge cases). Keep the fact sheets in sync unless the user explicitly keeps only one.
-- Close the work item in the tracker and the log: write the item's verbose narrative as a new `## <work item>` section in `docs/WORK_LOG.md` (what was built, checkpoints/rounds, review outcomes, test deltas, cross-refs to DECISIONS / KI / PRs), and reduce its `AGENTS.md` / `CLAUDE.md` **Work tracker** row to a single line (status + pointers). Detail goes to WORK_LOG and the canonical artifacts, never into the tracker cell. Keep the section's `Type`/`Status`/`Date` matching the tracker row.
+- Close the work item in the log: write its verbose narrative as a new `## <work item>` section in `docs/WORK_LOG.md` (what was built, checkpoints/rounds, review outcomes, test deltas, cross-refs to DECISIONS / KI / PRs). If the fact sheet has a Work tracker, update the item's row and keep it to one line (status + pointers), with `Type`/`Status`/`Date` matching the section; if it doesn't, the index is the `docs/plans/` directory and the history is the `WORK_LOG`. Detail always goes to the WORK_LOG and the canonical artifacts, never into a tracker cell.
 - Update `KNOWN_ISSUES.md`: add newly discovered out-of-scope issues, mark fixed issues `Resolved (commit, date)`, and update blast radius/status for partially mitigated issues.
 - Mark divergences in `§Known divergences` of the plan as resolved.
 - Sweep `docs/memory/`: convert any unresolved `Open questions` or `Notable observations` into DECISIONS entries, KNOWN_ISSUES entries, or plan revision notes; mark the phase as closed in today's daily entry.
@@ -293,7 +293,7 @@ This is often skipped ("we'll clean up later"). Don't. Docs that drift become us
 - Stack identification (initially partial; you complete it as you discover real repo state)
 - Document map (where PRD, ARCHITECTURE, etc. live)
 - Project-specific conventions (helper names, directory layout exceptions, test setup)
-- Work tracker — a one-line index per work item (status + pointers); the verbose per-item narrative lives in `docs/WORK_LOG.md`, written at close
+- Optionally a Work tracker — a one-line index per work item (status + pointers). It is not required: without it the index is the `docs/plans/` directory and the history is `docs/WORK_LOG.md`, where the verbose per-item narrative lives either way, written at close
 
 These files do **not** carry the SDI discipline. The discipline lives here, in this skill (Claude Code / Codex) or in the configured custom mode (Roo Code / Kilo Code / OpenCode). Keep them strictly factual — never inject behavioral instructions like "audit before coding" or "stop at checkpoints" into them; those propagate from the skill/mode, not from the project.
 
@@ -336,5 +336,5 @@ Load these as needed:
 - `references/round-report-template.md` — end-of-round report format
 - `references/decisions-log-format.md` — how to write a DECISIONS.md entry
 - `references/known-issues-discipline.md` — how to create/update KNOWN_ISSUES.md entries and bootstrap the file for older bundles
-- `references/memory-discipline.md` — daily memory under `docs/memory/`, indexed by `docs/MEMORY.md`; also the per-work-item narrative in `docs/WORK_LOG.md` (indexed one-line-per-item by the Work tracker) and how the four knowledge surfaces differ
+- `references/memory-discipline.md` — daily memory under `docs/memory/`, indexed by `docs/MEMORY.md`; also the per-work-item narrative in `docs/WORK_LOG.md` and how the four knowledge surfaces differ
 - `references/revision-notes-format.md` — how to add `r2`, `r3` notes to plans when reality diverges

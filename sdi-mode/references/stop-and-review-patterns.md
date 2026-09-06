@@ -138,7 +138,7 @@ Each checkpoint header below carries an eligibility tag. Auto-eligible checkpoin
 - Updated `PROJECT_STRUCTURE.md` if layout changed.
 - Updated `DESIGN_SYSTEM.md` if tokens or components drifted (UI types only).
 - Updated `AGENTS.md` / `CLAUDE.md` with newly discovered project conventions; if both exist, kept them in sync.
-- Closing work item's verbose narrative written as a `## <work item>` section in `docs/WORK_LOG.md`; its Work tracker row reduced to one line (status + pointers).
+- Closing work item's verbose narrative written as a `## <work item>` section in `docs/WORK_LOG.md`. If the fact sheet has a Work tracker, its row is reduced to one line (status + pointers); if it doesn't, the index is the `docs/plans/` directory and the history is the `WORK_LOG`.
 - `DECISIONS.md` entries complete (all decisions taken during the phase recorded).
 - `KNOWN_ISSUES.md` sweep complete (new issues cataloged; fixed issues marked resolved with commit/date; scheduled issues linked to work item).
 - Manual smoke test run and results documented.
@@ -155,8 +155,8 @@ Each checkpoint header below carries an eligibility tag. Auto-eligible checkpoin
 - [ ] Lint passes
 - [ ] Typecheck passes
 - [ ] All unit + integration test suites pass (Engineer-run evidence; the PM records it, does not run the suites itself)
-- [ ] Phase tracker in `AGENTS.md` / `CLAUDE.md` updated to ✓ with date, row kept to one line
-- [ ] Closing work item's narrative added as a `## <work item>` section in `docs/WORK_LOG.md` (`Type` / `Status` / `Date` matching the tracker row)
+- [ ] If the fact sheet has a Work tracker, the item's row updated to ✓ with the date and kept to one line — otherwise skip this gate: the index is `docs/plans/` and the history is the `WORK_LOG`
+- [ ] Closing work item's narrative added as a `## <work item>` section in `docs/WORK_LOG.md` (with `Type` / `Status` / `Date`, matching the tracker row where there is one)
 - [ ] Today's `docs/memory/YYYY-MM-DD.md` entry marks the phase as closed
 - [ ] CP5 comprehensive review run (auto-review default) — fix loop on the phase-wide diff; obvious fixes auto-applied, decision findings presented with options + recommendation. Ended in PASS (which **clears only the review gate** — the user-run smoke below is the second gate) OR reached the cap without a PASS and was handed back for the user to decide. OR user opted out and reviewed manually.
 - [ ] Manual smoke test (the **CP-final smoke**) of the main acceptance criterion run live **after** the CP5 comprehensive review PASSes — **user-run** (the PM generates the steps, the user runs them, the PM interprets), completed and documented

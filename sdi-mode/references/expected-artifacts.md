@@ -14,12 +14,12 @@ At minimum, you should find under `docs/` (or equivalent):
 - `DECISIONS.md` — append-only paper trail of non-obvious choices. New bundles create it even when empty.
 - `KNOWN_ISSUES.md` — append-only catalog of known bugs, security gaps, technical debt, and deferred fixes. New bundles create it even when empty.
 - `docs/MEMORY.md` + `docs/memory/YYYY-MM-DD.md` — datable session memory. New bundles create an index and initial handoff entry.
-- `WORK_LOG.md` — verbose per-work-item narrative; the **Work tracker** in `AGENTS.md` / `CLAUDE.md` is its one-line index. New bundles create it with a header + setup section; it grows one section per work item at close. Read on demand, not every session.
+- `WORK_LOG.md` — verbose per-work-item narrative, one section per item, written at close. Its index is the fact sheet's **Work tracker** where the project has one; where it doesn't, the index is the `docs/plans/` directory. Read on demand, not every session.
 - `IMPLEMENTATION_PLAN_*.md` — detailed spec for the current work item. The framework treats `IMPLEMENTATION_PLAN_*.md` uniformly: `PHASE_N` for discrete phases (greenfield, structured migrations) or `<slug>` for free-form work (features, maintenance batches in ongoing projects).
 
 At repo root:
 
-- `AGENTS.md` and/or `CLAUDE.md` — project-specific fact sheet: stack, document map, conventions, work tracker. New bundles generate both with the same content; the user may keep whichever file(s) their coding agents read. These files do **not** carry the SDI discipline.
+- `AGENTS.md` and/or `CLAUDE.md` — project-specific fact sheet: stack, document map, conventions, and optionally a work tracker. New bundles generate both with the same content; the user may keep whichever file(s) their coding agents read. These files do **not** carry the SDI discipline.
 
 Optionally:
 
@@ -89,7 +89,7 @@ New bundles should include `docs/MEMORY.md` and an initial dated handoff entry. 
 
 ### WORK_LOG.md doesn't exist
 
-New bundles should include `docs/WORK_LOG.md` as the verbose counterpart to the one-line Work tracker. If it is missing in an older bundle, create the scaffold from `memory-discipline.md` §"What goes in `WORK_LOG.md`" when the first work item closes (Step 8 housekeeping), and at that point slim any verbose Work tracker `Notes` cells into per-item sections. Don't fabricate narratives for items that closed before the file existed — start from the next close, optionally backfilling from existing memory/DECISIONS/KI if the user asks.
+New bundles should include `docs/WORK_LOG.md`. If it is missing in an older bundle, create the scaffold from `memory-discipline.md` §"What goes in `WORK_LOG.md`" when the first work item closes (Step 8 housekeeping); if that bundle has a Work tracker with verbose `Notes` cells, slim them into per-item sections at the same time. Don't fabricate narratives for items that closed before the file existed — start from the next close, optionally backfilling from existing memory/DECISIONS/KI if the user asks.
 
 ### AGENTS.md / CLAUDE.md missing, sparse, or divergent
 
@@ -111,7 +111,7 @@ If `AGENTS.md` or `CLAUDE.md` exists but contains discipline rules (8-step list,
 
 This is ~15–30 minutes of reading before you start coding. Don't skip it.
 
-`docs/WORK_LOG.md` is deliberately **not** in this list. It's the verbose archive — read it on demand when you need the full history of a past work item (e.g. the current phase touches code an earlier item built), not before every phase. The Work tracker in `AGENTS.md` / `CLAUDE.md` is the index that tells you which `WORK_LOG.md` section to open.
+`docs/WORK_LOG.md` is deliberately **not** in this list. It's the verbose archive — read it on demand when you need the full history of a past work item (e.g. the current phase touches code an earlier item built), not before every phase. Which section to open is told by the fact sheet's Work tracker where there is one, and by the `docs/plans/` directory where there isn't.
 
 ## What the planner artifacts mean (interpretation guide)
 

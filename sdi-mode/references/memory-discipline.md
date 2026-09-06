@@ -8,9 +8,9 @@ Spec-driven projects accumulate four distinct kinds of knowledge during implemen
 
 3. **Datable session memory** — what was actually worked on, when, blockers active, next step, open questions still pending. These live in dated files under `docs/memory/`, indexed by `docs/MEMORY.md`.
 
-4. **Per-work-item narrative** — the consolidated story of each *completed* work item: what was built, the checkpoints/rounds, review outcomes, test-count deltas, cross-references. This lives in `docs/WORK_LOG.md`, one `## <work item>` section per item, written at close. The **Work tracker** in `AGENTS.md` / `CLAUDE.md` is its one-line index.
+4. **Per-work-item narrative** — the consolidated story of each *completed* work item: what was built, the checkpoints/rounds, review outcomes, test-count deltas, cross-references. This lives in `docs/WORK_LOG.md`, one `## <work item>` section per item, written at close. Its index is the fact sheet's **Work tracker** where the project has one; where it doesn't, the index is the `docs/plans/` directory.
 
-Mixing these into a single file is a common failure pattern: durable rationale, known bugs, daily status, and per-item history blur together, and none stay searchable. Splitting them keeps each file useful — and keeps the Work tracker (read every session) from bloating into a wall of narrative.
+Mixing these into a single file is a common failure pattern: durable rationale, known bugs, daily status, and per-item history blur together, and none stay searchable. Splitting them keeps each file useful — and keeps whatever is read every session from bloating into a wall of narrative.
 
 ## File layout
 
@@ -25,8 +25,6 @@ docs/
     ├── 2026-04-26.md
     └── ...
 ```
-
-(The Work tracker in `AGENTS.md` / `CLAUDE.md` at the repo root is the one-line index into `WORK_LOG.md` — see "What goes in `WORK_LOG.md`" below.)
 
 `docs/memory/` and `docs/MEMORY.md` are the default. If a project deliberately keeps canonical docs at the repo root, keep `MEMORY.md` and `memory/` next to `DECISIONS.md` and `KNOWN_ISSUES.md` for symmetry.
 
@@ -121,7 +119,7 @@ It is a finder, not the content. When it outgrows being scannable, older entries
 
 ## What goes in `WORK_LOG.md`
 
-The consolidated narrative of each **completed work item** — one `## <work item>` section, written at end-of-phase housekeeping (sdi-mode Step 8), in the same order as the Work tracker rows (chronological, newest appended at the end). Each section holds what used to bloat the tracker's `Notes` cell:
+The consolidated narrative of each **completed work item** — one `## <work item>` section, written at end-of-phase housekeeping (sdi-mode Step 8), chronological, newest appended at the end. Each section holds the detail that has no business in a one-line index:
 
 - What was built (modules, behavior), the checkpoints/rounds, adversarial-review outcomes.
 - Test-count deltas, smoke results, PR links, fix commit SHAs.
