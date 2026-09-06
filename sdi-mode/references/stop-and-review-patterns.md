@@ -82,7 +82,7 @@ A round that hits a blocker, an emergency deviation, a plan revision or any othe
 - [ ] Every revision note references a change that landed
 - [ ] Lint, typecheck and all suites pass (Engineer-run evidence; the PM records it, never runs them)
 - [ ] If the fact sheet has a Work tracker, the item's row is ✓ with the date and one line — otherwise skip this gate
-- [ ] Closing item's narrative added as a `## <work item>` section in `docs/WORK_LOG.md`, with `Type` / `Status` / `Date` matching the tracker row where there is one
+- [ ] Closing item's narrative added as a `## <work item>` section in `docs/WORK_LOG.md`, always with `Type` / `Status` / `Date`, matching the tracker row where there is one
 - [ ] Today's memory entry marks the phase closed
 - [ ] CP5 comprehensive review ended in PASS (which **clears only the review gate**), OR reached the cap and was handed back, OR the user opted out and reviewed manually
 - [ ] The **CP-final smoke** of the main acceptance criterion run live **after** that PASS — **user-run**, the PM interpreting — and documented
