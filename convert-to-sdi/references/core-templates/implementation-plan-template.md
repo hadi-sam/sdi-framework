@@ -1,16 +1,18 @@
 # IMPLEMENTATION_PLAN Template (Core)
 
-The coding agent consumes the generated plan directly, so ambiguity here causes rework. This template covers the **universal sections**; type-specific sections live in `project-types/{type}/` and are inserted at the marked locations below.
+The coding agent consumes the generated plan directly, so ambiguity here causes rework. Type-specific sections live in `project-types/{type}/` and are inserted at the marked locations below.
 
 ## Naming convention
 
 The framework treats `IMPLEMENTATION_PLAN_*.md` uniformly. Use `IMPLEMENTATION_PLAN_PHASE_N.md` for discrete numbered phases (greenfield ROADMAPs, structured migrations) and `IMPLEMENTATION_PLAN_<slug>.md` for free-form work (features, bugfixes, maintenance batches, perf passes). Headers below say "Phase N"; substitute the slug when the plan uses one.
 
-## Size
+## Size and stability
 
 The ceiling is in **bytes**, not lines: the limit configured in the project's docs lint (`scripts/docs_bounds.py` where the project carries one), and **60 KB** when the project has no lint. A line cap is not used — one line can hold a whole section, so it bounds nothing.
 
-Over the ceiling means one of three things: revision archeology accumulating (see §"Revision notes"), cross-section restatement (see §"Writing tips"), or more than one work item in one plan — split it.
+**Once approved, the plan is a stable specification.** What grows round by round — findings, divergences, narrative — goes to the round report, to `docs/WORK_LOG.md` and to `docs/reviews/`, never into the plan; §12 and §13 stay one-line slug lists. A plan that outgrows its ceiling is therefore accumulating revision archeology (see §"Revision notes"), restating itself across sections (see §"Writing tips"), or carrying more than one work item.
+
+**A plan written at more than about 80% of the ceiling is already too big for one work item.** `sdi-next-plan` splits it into `PHASE_N` phases, each with its own plan under the ceiling, indexed by a short `BRIEF_<slug>.md` that names the phases and their order. **The ceiling is never raised by exception.**
 
 ## Structure
 
@@ -61,7 +63,7 @@ Load only the context needed for this work item:
 
 ## 4. ...
 
-[More sections as the domain dictates: phone normalization, deduplication, rate limiting, content extraction, embedding indexing.]
+[More sections as the domain dictates.]
 
 ## 5. Rate Limiting / Resource Protection (or equivalent)
 
@@ -157,9 +159,9 @@ One line per divergence, no restatement of the docs it diverges from.
 - **§1 in-scope bullets, §10 criteria and §11 phase-specific gates are one line each**, in the `Per §X.Y, <clause>` form. A summary rots the moment the section it summarizes is revised. The anti-pattern is a gate that re-narrates the requirement, quotes the review findings that produced it, or carries a count.
 - **No counts and no `file:line` anchors in the plan.** Verify-before-claim still holds for the **existence** of a symbol or path — grep before naming it — but the measurement itself (command, number, date) goes to `docs/reviews/`. A number in prose cannot be revalidated and goes stale silently; a recorded command can be re-run.
 - **Type-specific schemas/contracts (§2) should be close to production-ready**, and API contracts should cover error cases, not just the happy path.
-- **§12 is a slug list** consumed at phase close; **§13 is where the plan is honest about its own limitations**, usually empty at first draft.
+- **§13 is where the plan is honest about its own limitations**, usually empty at first draft.
 
-> **Maintenance note (framework maintainers, not for generated plans):** the three copies of this file — `mvp-architect/`, `convert-to-sdi/` and `sdi-next-plan/references/core-templates/implementation-plan-template.md` — are **byte-identical on purpose**, so a generated plan reads the same whichever skill produced it. Change one, copy it over the other two, and diff to confirm.
+> **Maintenance note (framework maintainers, not for generated plans):** the three copies of this file — under `mvp-architect/`, `convert-to-sdi/` and `sdi-next-plan/` — are **byte-identical on purpose**. Change one, copy it over the other two, and diff to confirm.
 
 ## Revision notes
 
@@ -171,14 +173,13 @@ Bounds: **each note ≤ 1 KB**, and **at most 6 notes**. Writing the 7th means f
 
 > **Consolidated r2-r6, YYYY-MM-DD:** N findings resolved; main decisions: [slugs]. Details in `docs/reviews/`.
 
-Which class a finding was, which reviewer said it, which fix landed — that lives in the review files, not here. Never delete a review file; the plan stays lean because the archive exists.
+Never delete a review file: the plan stays lean because the archive exists.
 
 ## Common failure modes
 
-- **Cross-section drift.** The same fact restated in §1, §2, §10, §11, §13 and the kickoff; one gets updated, the others don't. Mitigated by the SSOT rule above.
 - **Too abstract.** A plan that reads like a PRD isn't detailed enough — §2 and §3 carry signature formats, status codes, prompt templates, schema fragments.
 - **Too speculative.** Don't plan phase N+2 here; that's ROADMAP territory.
 - **Missing out-of-scope, or missing acceptance criteria.** §1's deferral list prevents scope creep; §10 is the contract for "when are we done".
 - **Empty §11.** A plan without checkpoint mapping forces the implementer to retrofit the discipline at execution time.
 - **Sections beyond §13 + the kickoff.** Don't create §14. Resolved decisions → §12; surgical mitigations → §11 gates; review trajectory → `docs/reviews/`; operational pre-reqs → §0; lessons learned → memory entries; project-specific operational overrides (deploy command, env vars, build flags) → `AGENTS.md` / `CLAUDE.md`. Excess meta sections are accumulated archeology.
-- **Hybrid pre-impl + post-impl plan.** Once implementation begins, spec sections (§2–§9) are edited only under an explicit `rN` revision note — during the CP1 audit, or in the CP5 sweep. Silent edits break the audit trail: the next reader can't tell the original spec from the corrected one.
+- **Editing the spec after implementation starts.** §2–§9 change only under an explicit `rN` note — in the CP1 audit or the CP5 sweep. A silent edit breaks the audit trail: the next reader can't tell the original spec from the corrected one.
