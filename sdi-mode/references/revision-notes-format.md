@@ -19,11 +19,11 @@ The header is `(rN, AAAA-MM-DD)` — number **and** date, one form only, no vari
 ```markdown
 # Implementation Plan — [Title]
 
-> **Revision note (r3, 2026-04-28):** [trigger — audit / mid-phase discovery / scope change]. [N adjustments]:
+> **Revision note (r3, 2026-04-28):** [trigger — audit / mid-phase discovery / scope change]. adjustments:
 > 1. §X.Y [the specific change, one line].
 > 2. §A.B [the specific change, one line].
 >
-> **Revision note (r2, 2026-04-24):** [trigger]. [N adjustments]:
+> **Revision note (r2, 2026-04-24):** [trigger]. adjustments:
 > 1. …
 ```
 
@@ -37,7 +37,7 @@ Each note is a **revision number and trigger**, then a **numbered list of specif
 
 ## Example
 
-> **Revision note (r2, 2026-04-24):** plan audited against the Phase 0 repo. 3 adjustments:
+> **Revision note (r2, 2026-04-24):** plan audited against the Phase 0 repo. adjustments:
 > 1. §2.1 removed the FK to a table that doesn't exist yet; plain id column instead, FK when the table lands.
 > 2. §2 isolation examples switched from an invented helper to the real one in the repo.
 > 3. §9.2 test-webhook UI switched from a heavy editor dependency to a plain textarea.
