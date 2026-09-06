@@ -70,8 +70,8 @@ Once Step 0 passes, treat it as completed for the rest of the session and procee
 
 Five rules that, if followed, prevent 80% of implementation problems:
 
-1. **Audit the plan against the repo before coding.** The plan was written against assumptions about the repo. Reality diverges. Catch divergences before writing code against them.
-2. **Stop at explicit checkpoints within a phase.** Don't execute a whole phase end-to-end without reporting. Each phase has 2–5 natural checkpoints with binary gate checklists; every gate must pass before the round closes.
+1. **Audit the plan against the repo before coding.** The plan was written against assumptions about the repo. Reality diverges. Catch divergences before writing code against them. The only exemption is a single small fix inside a phase already audited **in this same session**.
+2. **Stop at explicit checkpoints within a phase.** Don't execute a whole phase end-to-end without reporting. A phase runs 2–5 checkpoints in total with binary gate checklists; CP1 and CP5 are always among them, the middle ones adapt, and every gate must pass before the round closes.
 3. **Maintain `docs/DECISIONS.md` (atemporal) and `docs/memory/` (datable) as you go.** Non-obvious choices → numbered DECISIONS entry. End-of-session state → today's `docs/memory/YYYY-MM-DD.md` file. Don't conflate them.
 4. **Maintain `docs/KNOWN_ISSUES.md` for known wrongness.** Pre-existing bugs, security gaps, tech debt, and deferred fixes that don't fit the current scope become `KI-NNN` entries instead of disappearing into plans, reviews, or memory.
 5. **Respect document precedence.** When two docs disagree, the higher-authority one wins (precedence list in `references/expected-artifacts.md`). Lower doc gets a revision note. Live repo state always wins over docs; the project fact file (`AGENTS.md` / `CLAUDE.md`) wins over planning docs; PRD wins over IMPLEMENTATION_PLAN. Don't silently pick whichever is convenient.
@@ -171,8 +171,6 @@ Foundation (Checkpoint 1) stays user-gated regardless. Within an auto-eligible c
 
 **Pre-review checklist — run before invoking reviewers.** If any item is ✓, STOP and escalate to the user; do **not** build the packet, do **not** invoke reviewers. Catching an escalation trigger after the reviewers fired wastes a review cycle and produces an ESCALATE you should have surfaced yourself.
 
-- [ ] Round produced (or should produce) a `DECISIONS.md` entry — non-obvious trade-off, deviation from convention, deferred feature, resolved plan-vs-repo divergence
-- [ ] Round discovered or changed a `KNOWN_ISSUES.md` entry — new out-of-scope bug/debt/security gap, severity/blast-radius change, scheduled fix, partial mitigation, or resolved KI
 - [ ] Blocker hit during implementation (missing dep, contradictory plan content, broken external service)
 - [ ] Emergency deviation (security bug, data-loss risk, regression of working functionality)
 - [ ] Schema migration with data-loss risk (drop column, NOT NULL on existing column without backfill, lossy type change)
@@ -180,6 +178,7 @@ Foundation (Checkpoint 1) stays user-gated regardless. Within an auto-eligible c
 - [ ] Security-relevant change beyond plan scope (auth helper, RLS policy, secret handling, CORS/CSP)
 - [ ] Plan revision (`rN`) added during the round
 - [ ] PRD or ARCHITECTURE deviation required to deliver this round
+- [ ] A product, design, or architecture choice is still **open** — not merely unwritten. (Writing a `DECISIONS.md` or `KNOWN_ISSUES.md` entry for a choice already made does **not** stop the round: record it in `## Decisões desta rodada` and keep going.)
 
 If every item is ✗, run the clean-state preflight (see `references/auto-review-mode.md`) and proceed.
 
@@ -303,7 +302,7 @@ These files do **not** carry the SDI discipline. The discipline lives here, in t
 ## What this mode is not
 
 - **Not a code implementer or self-reviewer.** You orchestrate the discipline; you don't write the code or grade it. Engineers (dispatched, always Opus) write the code; the reviewer ensemble adversarially reviews it; the user gates the decisions you surface. If you find yourself editing a source/test/migration file, or writing "approved" / "looks good" about the work, stop — dispatch an Engineer for the code, let the ensemble review it, and present what happened.
-- **Not an auto-approver.** At Checkpoint 1, don't proceed without explicit user go-ahead. At Checkpoints 2/3/4/5, auto-review (every attempt: Opus subagent + Sonnet subagent + codex exec; if Codex is unavailable, **ask the user** rather than substituting) is the default — the Decision Bundle dedups + classifies findings, auto-applies the obvious fixes and fires the next round, and surfaces non-trivial / decision findings with options + a recommendation. CP5 runs the same fix loop on the phase-wide diff and, on PASS, stops before the PR — the user-run CP-final smoke is the second gate, and the PM opens the PR only after both pass. Always-escalate triggers (including DECISIONS-worthy choices and KNOWN_ISSUES entry/status changes) and user opt-out keep the user gate intact when needed. "Silence = continue" is never right at user-gated checkpoints.
+- **Not an auto-approver.** At Checkpoint 1, don't proceed without explicit user go-ahead. At Checkpoints 2/3/4/5, auto-review (every attempt: Opus subagent + Sonnet subagent + codex exec; if Codex is unavailable, **ask the user** rather than substituting) is the default — the Decision Bundle dedups + classifies findings, auto-applies the obvious fixes and fires the next round, and surfaces non-trivial / decision findings with options + a recommendation. CP5 runs the same fix loop on the phase-wide diff and, on PASS, stops before the PR — the user-run CP-final smoke is the second gate, and the PM opens the PR only after both pass. Always-escalate triggers and user opt-out keep the user gate intact when needed; an entry written for a choice already made is recorded in the round, not escalated. "Silence = continue" is never right at user-gated checkpoints.
 - **Not a speculation engine.** If the plan is wrong and needs thinking, flag it and ask; don't invent a redesign mid-round.
 
 ## Pausing for the user — always use the structured ask tool

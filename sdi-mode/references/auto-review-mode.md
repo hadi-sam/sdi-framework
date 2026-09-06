@@ -140,17 +140,17 @@ The packet is computed from `PHASE_BASE_SHA..HEAD` and stays fixed across the CP
 
 If any of these occur during the round, the PM/orchestrator skips auto-review for that round and stops for the user:
 
-1. **The round produced (or should produce) a `DECISIONS.md` entry.** A material divergence, a deferred feature, a non-obvious trade-off, a deviation from convention — by definition a judgment call. See `decisions-log-format.md` for what qualifies.
-2. **The round discovered or changed a `KNOWN_ISSUES.md` entry.** A new out-of-scope bug/security gap/tech debt item, a severity/blast-radius change, a scheduled fix, a partial mitigation, or a resolved KI should be visible to the user.
-3. **Blocker encountered during implementation.** Anything that prevents finishing the round (missing dependency the user needs to install, contradictory plan content, broken external service).
-4. **Emergency deviation.** Per `stop-and-review-patterns.md` — security bug, data-loss risk, regression of previously-working functionality.
-5. **Schema migration with data-loss risk** (drop column, NOT NULL on existing column without backfill, type change that loses precision). Even if tests pass, the user must approve.
-6. **New external dependency added** beyond what the plan listed. Plan said use library X; an Engineer pulled in library Y too. Escalate.
-7. **Security-relevant change** beyond plan scope (auth helper added/changed, RLS policy modified, secret-handling code touched, CORS or CSP changed).
-8. **Plan revision (`rN`) added during the round.** A revision means reality diverged from plan; the user should see what changed before the next round proceeds.
-9. **PRD or ARCHITECTURE deviation.** If implementing a §2 surface required deviating from the higher-precedence doc, escalate (see `expected-artifacts.md` precedence rules).
+1. **Blocker encountered during implementation.** Anything that prevents finishing the round (missing dependency the user needs to install, contradictory plan content, broken external service).
+2. **Emergency deviation.** Per `stop-and-review-patterns.md` — security bug, data-loss risk, regression of previously-working functionality.
+3. **Schema migration with data-loss risk** (drop column, NOT NULL on existing column without backfill, type change that loses precision). Even if tests pass, the user must approve.
+4. **New external dependency added** beyond what the plan listed. Plan said use library X; an Engineer pulled in library Y too. Escalate.
+5. **Security-relevant change** beyond plan scope (auth helper added/changed, RLS policy modified, secret-handling code touched, CORS or CSP changed).
+6. **Plan revision (`rN`) added during the round.** A revision means reality diverged from plan; the user should see what changed before the next round proceeds.
+7. **PRD or ARCHITECTURE deviation.** If implementing a §2 surface required deviating from the higher-precedence doc, escalate (see `expected-artifacts.md` precedence rules).
 
 Surface the trigger explicitly when escalating: "Auto-review skipped because [trigger]. Stopping for your review."
+
+**Writing a `DECISIONS.md` or `KNOWN_ISSUES.md` entry no longer stops the round.** Those were triggers 1 and 2; the record they existed to guarantee is now the round report's `## Decisões desta rodada` (§"Auto-review history in round report"), which is written **in** the round and repeated in the stop message at every user-gated point. The record is mandatory; the reading is the user's option. What still stops the round at any moment is a **choice of product, design, or architecture that is still open** — that is a class-5 finding, it ESCALATEs by the matrix, and the PM does not take it.
 
 ## Terminology: always-escalate vs judgment-required
 
@@ -172,21 +172,20 @@ Don't confuse: always-escalate skips auto-review; judgment-required pauses it af
 6. Parse verdicts and merge them (see §"Verdict merging").
 7. **Dedup pass:** read the 3 reviewer outputs (fewer only in degraded mode, when a reviewer failed and no substitute ran) and deduplicate findings using the **same matching algorithm** as the cross-attempt convergence check (see §"Loop cap" §"Symbol extraction algorithm"): same class + same file + same symbol/identifier OR within ±5 lines. Two reviewers flagging "method `validateUser` missing" at line 42 and line 48 in the same file count as one finding (convergent), not two. Prioritize 3-way > 2-way > unique. The `obvious-fix` criterion "at least 2 reviewers converge" reuses this matcher — divergent line numbers for the same logical bug DO count as convergence; divergent symbols or files do NOT.
 8. **Classify each deduplicated finding** as `obvious-fix`, `needs-decision`, or `judgment-required`:
-   - `obvious-fix` = ALL these conditions:
-     - Class 1-4, 6, or K (mechanical / contract / missing prereq / vague-claim / convention / fictitious citation).
-     - At least 2 reviewers converge **OR** surviving single reviewer in degraded mode (when others failed — not based on attempt number) **OR** a **solo grounded class 2–4/6/K finding the PM cannot grep-refute** (the **strict-solo gate** — see the policy note below; "grounded" = cites specific evidence in the diff, file:line / symbol, not an abstract concern).
-     - Reviewer cites specific fix (rename X to Y, add field Z, fix line N) — not "consider refactoring".
+   - `obvious-fix` = **a finding that fails the attempt and has a mechanical fix.** All of:
+     - It fails the attempt per §"Marks and the verdict matrix" (so: class 1-4, 6, or K, under a mark that fails).
+     - At least 2 reviewers converge **OR** a surviving single reviewer in degraded mode (when others failed — not based on attempt number) **OR** a **solo grounded finding the PM cannot grep-refute** (the **strict-solo gate** — see the policy note below; "grounded" = cites specific evidence in the diff, file:line / symbol, not an abstract concern).
+     - Reviewer cites a specific fix (rename X to Y, add field Z, fix line N) — not "consider refactoring".
      - Fix touches only files in the round's diff (`git diff BASE_SHA..HEAD --name-only`).
    - `needs-decision` = remaining general case:
      - Genuinely divergent reviewers (Opus says X, Codex says Y — they disagree on the fix itself, not merely different line numbers for the same logical bug, which dedup already treats as convergent).
      - Fix requires changing files outside the round.
      - Reviewer only describes problem, doesn't propose concrete fix.
-     - A solo class-1 finding others did not flag and the PM did not confirm by grep (class-1 is outside the strict-solo gate's 2–4/6/K range).
    - `judgment-required` = reviewers returned verdict ESCALATE OR finding is class 5 (DECISIONS-worthy) or class 7 marked urgent:
-     - Always presented to user, NEVER auto-applied regardless of convergence — this is why the strict-solo gate covers class 2–4/6/K only, never class 5.
+     - Always presented to the user, NEVER auto-applied regardless of convergence — which is why the strict-solo gate never reaches class 5.
      - Preserves ESCALATE-wins-over-FAIL semantics from existing merge rule.
    - **Edge case zero findings after dedup:** if dedup leaves 0 findings in all 3 categories but reviewer verdict remained FAIL (e.g., reviewer wrote vague concerns without specific fix or actionable detail), create 1 synthetic class-5 finding marked `judgment-required` ("vague reviewer concern — needs user clarification: <quote reviewer wording verbatim>") and stop for input. Don't treat as PASS — preserve the FAIL signal. **Why class-5 (not class-4):** class-4 is "vague/unverifiable claim" but is mechanical / FAIL-eligible in the taxonomy; a finding whose only classification is "reviewer couldn't propose a fix" requires user judgment, which is by definition class-5 territory (DECISIONS-worthy / user input required).
-   - **Strict-solo policy note (`DECISIONS.md`-style — the canonical encoding of this gate):** a solo **grounded** finding of class **2–4, 6, or K** that the PM cannot refute with its own grep is a **blocker routed to a fix** (code → fix-Engineer; paper trail → PM edit), not deferred to the user. This is the universal default for this single execution model. *Rationale:* model diversity is load-bearing — in production a lone model-diverse reviewer caught a cross-tenant coupling bug the other two reviewers PASSed, so one grounded reviewer must not be outvoted by silence. *Grounded* = cites specific evidence in the diff (file:line / symbol), not an abstract concern; the PM's grep refutation or confirmation is logged in the round report as evidence. *Exclusions:* a solo **class-5** finding stays `judgment-required` (never auto-applied); **genuinely divergent** reviewers (they disagree on the fix itself, not merely on line numbers) stay `needs-decision`; **class-1** solo findings stay `needs-decision` (outside the 2–4/6/K range). Recorded here as a policy note — **not** a per-run `DECISIONS.md` entry — so it never trips the always-escalate "round produced a DECISIONS entry" trigger.
+   - **Strict-solo policy note (the canonical encoding of this gate):** a solo **grounded** finding that fails the attempt and that the PM cannot refute with its own grep is a **blocker routed to a fix** (code → fix-Engineer; paper trail → PM edit), not deferred to the user. *Rationale:* model diversity is load-bearing — in production a lone model-diverse reviewer caught a cross-tenant coupling bug the other two PASSed, so one grounded reviewer must not be outvoted by silence. *Grounded* = cites specific evidence in the diff (file:line / symbol), not an abstract concern; the PM's grep refutation or confirmation is logged in the round report. *Exclusions:* a solo **class-5** finding stays `judgment-required` (never auto-applied), and **genuinely divergent** reviewers (they disagree on the fix itself, not merely on line numbers) stay `needs-decision`.
 9. **Present the Decision Bundle, then act per finding** (see §"Decision Bundle format"). The bundle is always posted for the audit trail; the action is **per-finding, not all-or-nothing**:
    - **Act on every `obvious-fix` finding now** — obvious fixes never wait, not even when the same bundle also contains decision findings. Route by target:
      - **Paper-trail artifact** (plan, `docs/reviews/`, DECISIONS, KNOWN_ISSUES, memory) → the **PM applies it directly** (re-verifying via Grep/Read first, per step 10; the PM owns docs).
@@ -319,7 +318,7 @@ The same packet goes to every reviewer scheduled for that attempt — they see i
 - Sonnet subagent: returned as the Agent tool's text result; the PM writes it to `docs/reviews/round-XN-attempt-N-sonnet.md` when Sonnet is scheduled.
 - Codex: written directly via `--output-last-message docs/reviews/round-XN-attempt-N-codex.md`.
 
-These output files ARE committed for audit trail after the auto-review loop closes, together with the final round report.
+These output files ARE committed for audit trail after the auto-review loop closes, together with the final round report. **A reviewer edits no file of the repository under review; writing its own report into `docs/reviews/` is not editing** — that is why the Codex CLI's `--output-last-message` is compatible with a read-only reviewer, and why an Agent-tool reviewer returns text the PM writes down instead of writing it itself.
 
 Do **not** include in the packet:
 - Prior conversation context.

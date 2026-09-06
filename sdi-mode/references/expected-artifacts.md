@@ -138,7 +138,7 @@ The hierarchy below is from highest authority (top) to lowest (bottom). When two
 | Priority | Source | Authority |
 |---|---|---|
 | 1 | **Live repo state** (committed code) | Wins over every doc. Reality is the canonical truth. |
-| 2 | **AGENTS.md** / mode metadata | Current project facts and project-specific conventions. Wins over planning docs for stack, paths, helper names, and work tracker because it is updated to reflect actual repo state. |
+| 2 | **AGENTS.md** / mode metadata | **Wins on facts** — stack, paths, helper names, conventions, current project state — because it is kept in step with the repo. It does **not** win on scope: what is in and out of the product is the PRD's, one row down. |
 | 3 | **PRD.md** | What & why. Establishes scope and intent. Higher than how/when because changing it implies a re-scope. |
 | 4 | **ARCHITECTURE.md** | How — stack, type-specific structural model, critical flows. Higher than the rest because it's the technical contract. |
 | 5 | **ROADMAP.md** | When — phases and acceptance criteria. |
@@ -189,7 +189,7 @@ When you find a conflict during the audit (or mid-phase):
 - **Live repo vs ARCHITECTURE.md disagree:** repo wins by definition (priority 1). But ask: did the repo drift accidentally, or was a deliberate decision made that wasn't documented? If accidental drift, ARCHITECTURE wins and you fix the repo. If deliberate, ARCHITECTURE needs update + a `DECISIONS.md` entry.
 - **AGENTS.md / CLAUDE.md vs PROJECT_STRUCTURE.md disagree:** the project fact sheet wins on stack/conventions. If both fact files exist and disagree with each other, stop and resolve that drift first. Then propose updating PROJECT_STRUCTURE during housekeeping so external readers don't get confused.
 - **PRD vs IMPLEMENTATION_PLAN disagree on a feature:** PRD wins. The plan is a translation, not an authority. Either the plan needs revision, or the PRD needs an explicit out-of-scope clause to deprecate the feature — not silent drift.
-- **Two same-level docs disagree** (e.g. ARCHITECTURE vs PROJECT_STRUCTURE on file paths): rare, but it happens. The one tied more directly to running code wins (PROJECT_STRUCTURE in this case). Update the other.
+- **Two docs disagree and one is higher in the table** (e.g. ARCHITECTURE vs PROJECT_STRUCTURE on file paths): the table decides, always — here ARCHITECTURE. If the repo actually follows the lower doc, that is priority 1 (live repo) winning over both, and the fix is to update ARCHITECTURE with a `DECISIONS.md` entry, not to invert the table for this case.
 
 ### What this rule prevents
 

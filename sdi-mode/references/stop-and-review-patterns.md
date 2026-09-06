@@ -16,7 +16,7 @@ If you're tempted to skip a gate "because it's just one item", that's exactly wh
 
 ## Standard checkpoints per phase
 
-These are typical — adapt to the specific phase.
+**CP1 (Foundation) and CP5 (Housekeeping) are fixed and non-negotiable.** What adapts is the middle: CP2 to CP4 are shaped to the phase, and the whole phase runs **2 to 5 checkpoints in total**. A phase with no UI has no CP4; a maintenance pass may be CP1 + CP5 alone. Nothing removes CP1 or CP5.
 
 ### Roles at each checkpoint
 
@@ -24,7 +24,7 @@ These are typical — adapt to the specific phase.
 
 - **CP1 (Foundation/audit)** is **PM-direct and user-gated** — the PM does the read/grep/audit itself (no Engineer) and pauses after the audit.
 - **CP2 / CP3 / CP4** are **Engineer(s) + review** — the PM dispatches 1–3 Engineers (always Opus) to implement the slice(s), confirms the build/tests green from their reported evidence, reconciles, then dispatches the three-reviewer ensemble and reconciles verdicts. An obvious code finding routes to a **fix-Engineer**; an obvious paper-trail finding the PM applies directly.
-- **CP5 (Housekeeping)** is **PM-direct doc work plus two closing gates** — the PM does the doc work itself (no Engineer for CP5's own deliverables), then (a) dispatches the **comprehensive auto-review ensemble** (the same fix loop, on the phase-wide diff) and (b) has the **live smoke** run as a user gate (the PM generates the steps, the **user runs** them and pastes output, the PM interprets). The PM never runs the suite or the smoke itself — any suite rerun is Engineer-provided evidence.
+- **CP5 (Housekeeping)** is **PM-direct doc work plus two closing gates** — the PM writes CP5's own deliverables (no Engineer produces those), then (a) dispatches the **comprehensive auto-review ensemble** (the same fix loop, on the phase-wide diff) and (b) has the **live smoke** run as a user gate. **CP5 does have a fix-Engineer**, for any `[code]` finding the review raises; that is the same routing as every other checkpoint. The PM never runs the suite or the smoke itself.
 - **Opening the PR** is the **PM's** (`gh pr create`), only after **both** the CP5 comprehensive review PASSes **and** the smoke passes.
 
 ### Auto-review eligibility
@@ -37,7 +37,7 @@ These are typical — adapt to the specific phase.
 
 **Checkpoint 5 (Housekeeping) has comprehensive auto-review** running the **same fix loop** as CPs 2-4. Reviewers look at the entire phase (diff between `PHASE_BASE_SHA` and `HEAD`), per-CP packet split by default. Obvious fixes auto-apply and the review re-runs; structural findings classify as needs-decision/judgment-required and are presented for the user. On PASS, stop **before opening the PR**; on the cap without a PASS, stop and hand back for the user to decide — only the user authorizes another attempt, and the `DECISIONS.md` entry is written first (`auto-review-mode.md` §"Loop cap"). See also §"CP5 comprehensive review" there.
 
-Any round that produces a `DECISIONS.md` entry, adds/updates a `KNOWN_ISSUES.md` entry, hits any blocker, any emergency deviation, any plan revision, and any always-escalate trigger from `auto-review-mode.md` also stays user-gated even within an eligible checkpoint.
+Any round that hits a blocker, an emergency deviation, a plan revision, or any other always-escalate trigger from `auto-review-mode.md` stays user-gated even within an eligible checkpoint. **Writing a `DECISIONS.md` or `KNOWN_ISSUES.md` entry does not stop the round** — it is recorded in the round report's `## Decisões desta rodada` and repeated in the stop message at the next user-gated point. A product, design, or architecture choice that is **still open** is a different thing: it is class 5, it ESCALATEs, and the PM does not take it.
 
 Each checkpoint header below carries an eligibility tag. Auto-eligible checkpoints have a single gate that accommodates both default auto-review and opt-out user-gated modes.
 
@@ -104,7 +104,7 @@ Each checkpoint header below carries an eligibility tag. Auto-eligible checkpoin
 - [ ] Integration tests cover the canonical happy path + at least one failure mode per surface
 - [ ] All integration tests pass against a real local instance (not mocks-only)
 - [ ] Observability is wired (logs, metrics, tracing) per `ARCHITECTURE.md` requirements
-- [ ] Manual smoke command attempted (curl/httpie/CLI) and result documented
+- [ ] Manual smoke command (curl/httpie/CLI) **run by the Engineer** and its exact output recorded in the round report — the PM never runs it; the CP-final smoke, and only that one, is run by the user
 - [ ] Round report posted
 - [ ] Auto-review (default) — reviewer ensemble returned merged PASS with all gates ✓ **OR** user opted out and gave explicit go (see `auto-review-mode.md`)
 
@@ -124,7 +124,7 @@ Each checkpoint header below carries an eligibility tag. Auto-eligible checkpoin
 - [ ] Every page/screen in scope is reachable from navigation
 - [ ] Forms validate per the schemas defined in Checkpoint 2
 - [ ] Loading, empty, and error states exist for each data-driven surface
-- [ ] Manual walkthrough of the primary flow completed; screenshots in the round report
+- [ ] Manual walkthrough of the primary flow **run by the Engineer**, with screenshots and result in the round report — the PM never runs it; the CP-final smoke, and only that one, is run by the user
 - [ ] No console errors or accessibility warnings on the primary flow
 - [ ] Round report posted
 - [ ] Auto-review (default) — reviewer ensemble returned merged PASS with all gates ✓ **OR** user opted out and gave explicit go (see `auto-review-mode.md`)
@@ -163,10 +163,6 @@ Each checkpoint header below carries an eligibility tag. Auto-eligible checkpoin
 - [ ] PR opened by the PM via `gh pr create` only **after both** the CP5 comprehensive review PASSes **and** the CP-final smoke passes (never auto-opened or merged)
 
 ---
-
-## Not every phase has 5 checkpoints
-
-Simple phases may have 2–3. Complex phases (lots of integration, many UI surfaces) may have 5–6. Use judgment, but **always include Checkpoint 1 (Foundation) and Checkpoint 5 (Housekeeping)** — those are non-negotiable.
 
 ## What to do at each stop
 
