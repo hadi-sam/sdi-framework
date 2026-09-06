@@ -135,7 +135,7 @@ You've been deep in the code; you have the best sense of what should come next a
 
 ### Auto-review history is not optional when auto-review fired
 
-**Paper-trail backlog (required section when non-empty).** Findings that were deferred under the paper-trail-only rule go in a section named exactly `## Paper-trail backlog`, one line each: `[class] file:line — what is wrong — which attempt found it`. **Carry it forward at every attempt**, and hand it to CP5 — CP5 is where it is paid, and an empty backlog at CP5 with a non-empty history is a defect, not a saving.
+**Paper-trail backlog (required section when non-empty).** Findings deferred by the mark matrix (`auto-review-mode.md` §"Marks and the verdict matrix") go in a section named exactly `## Paper-trail backlog`, one line each: `[mark] [class] file:line — what is wrong — which attempt found it`. **Carry it forward at every attempt**, and hand it to CP5 — CP5 is where it is paid, and an empty backlog at CP5 with a non-empty history is a defect, not a saving.
 
 Auto-review is the default for Checkpoints 2/3/4/5. If it fired, the history must appear in the report — every attempt, every reviewer's verdict, every finding, plus the Decision Bundle classification per attempt, with file:line evidence as the reviewers returned it (verbatim from `docs/reviews/round-XN-attempt-N-{reviewer}.md`). Schedule: every attempt has 3 reviewers (Opus + Sonnet + Codex; when Codex is unavailable the agent **asks the user** — a Haiku subagent runs only under recorded authorization); fewer only in degraded mode. The user uses this to spot-check the reviewers' calls. Don't summarize ("5 attempts, eventual PASS"); paste the structured output. Omitting or compressing it defeats the purpose of the audit trail.
 

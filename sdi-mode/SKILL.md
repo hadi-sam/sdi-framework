@@ -190,14 +190,14 @@ Each reviewer receives the same packet (diff + plan §s + gate checklist + per-g
 - PASS only if every reviewer that ran returned PASS.
 - FAIL if any reviewer returned FAIL and none returned ESCALATE.
 - ESCALATE if any reviewer returned ESCALATE.
-- **Paper-trail-only override**: if, after dedup, **every** surviving finding is paper-trail-only, the verdict is **PASS** regardless of what the reviewers returned — the findings go to the round report's **Paper-trail backlog** and **CP5** consumes it. ESCALATE still wins. ⚠️ **The rule does not apply at CP5**, whose deliverable *is* the paper trail. Definition, the three carve-outs, and the measured rationale: `references/auto-review-mode.md` §"Paper-trail-only findings do not fail a round".
 - When a reviewer fails to run or times out, apply reviewer fallback before merging the surviving verdicts.
+- The table above merges what the reviewers **returned**. The verdict of the **attempt** comes from the mark matrix — see below.
 
 Every attempt normally merges Opus + Sonnet + Codex (or Opus + Sonnet + Haiku **only when the user authorized that substitution**).
 
 **Per-round commit convention — split A + B:** each round produces **two commits** instead of one: commit A (`round X/CN: <summary>`) carries code-only, commit B (`round X/CN report: at HEAD <SHA-A>`) carries the report-only paper trail referencing A's SHA. Fix attempts mirror the pattern: `round X/CN fix N` (code) + `round X/CN fix N report: at HEAD <SHA>` (paper trail). This eliminates the chicken-egg drift where a single combined commit's report references the commit's own SHA before that SHA exists.
 
-**Paper trail does not fail a round.** If every surviving finding only edits documentation, the round is **PASS** and the findings are deferred to CP5 in a named backlog — measured rationale in `auto-review-mode.md`. ⚠️ Three things look like paper trail and are not: prose a **live gate reads**, a doc finding that reveals a defect in the **thing described**, and a choice that is **still open** (that one escalates). The **PM** classifies, never the reviewer.
+**Marks decide the verdict, and the PM assigns the mark.** Every finding is `[code]`, `[gate]` or `[docs]`; the reviewer proposes and the PM decides, so no reviewer can buy a PASS by labelling its own finding. `[code]` of class 1–4/6/K fails the attempt when the PM has **measured its reach**; an unpromoted `[gate]` fails one attempt per round and then becomes a known-issue entry with a trigger; an unpromoted `[docs]` never fails and goes to the report's paper-trail backlog, paid at CP5. Class 5 escalates, urgent class 7 blocks. The definitions, the two promotions, the two traps, the reach axis and the measured rationale are written once in `references/auto-review-mode.md` §"Marks and the verdict matrix" — read it there, it is not restated anywhere else.
 
 **ESCALATE is not FAIL.** FAIL means the failure is mechanically fixable — apply the fix via the Decision Bundle flow, commit, retry up to the cap. ESCALATE means the user must judge — surface as `judgment-required` in the Bundle, do **not** auto-apply. The most common ESCALATE trigger is a class-5 finding (DECISIONS-worthy choice without flag), and the right response is to write the DECISIONS entry *with the user*, not silently before retrying.
 

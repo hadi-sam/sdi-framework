@@ -44,7 +44,7 @@ A **round** is one dispatch of the three reviewers plus the fix it triggers (a f
 
 ## Reconciliation & convergence
 
-The PM runs the **same dedup + classification** as [`auto-review-mode.md`](auto-review-mode.md) §"The loop" (steps 7–8) over the union of the three reviewers' findings, then merges verdicts per [`auto-review-mode.md`](auto-review-mode.md) §"Verdict merging". Do not duplicate those tables here — they are authoritative there. The role-specific decisions on top of that machinery:
+The PM runs the **same dedup + classification** as [`auto-review-mode.md`](auto-review-mode.md) §"The loop" (steps 7–8) over the union of the three reviewers' findings, merges verdicts per §"Verdict merging", and decides the attempt by §"Marks and the verdict matrix" — the PM assigns each finding's mark, the reviewer only proposes. Do not duplicate those tables here — they are authoritative there. The role-specific decisions on top of that machinery:
 
 | Verdict shape | PM action |
 |---|---|

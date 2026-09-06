@@ -265,6 +265,8 @@ Rules in plain language:
 - **ESCALATE wins over FAIL.** If any reviewer escalates, the round escalates — the user must judge.
 - **Findings unionize.** When the merged verdict is FAIL, dedup + classification (per §"The loop" step 7-8) operates on the union of findings from all reviewers on the attempt.
 
+This table merges what the **reviewers returned**. The verdict of the **attempt** then comes from §"Marks and the verdict matrix" and from nothing else: class alone does not decide, the mark does, and the PM assigns it.
+
 ## Reviewer fallback
 
 If a reviewer cannot be invoked or produces unusable output (binary missing, network down, timeout, malformed output, no parseable `VERDICT:` line):
@@ -402,6 +404,26 @@ VERDICT rules:
 - FAIL = at least one finding of class 1–4, 6, or K (mechanically fixable).
 - ESCALATE = at least one finding of class 5, OR class 7 marked urgent, OR anything requiring user judgment.
 
+**Mark every finding `[code]`, `[gate]` or `[docs]`. Your mark is a proposal — the coordinator assigns the final one.**
+
+- `[code]` — the fix touches production code; **or** the description reveals a defect in the thing described, which you decide by measuring the code, not by where the finding points; **or** the text you are reviewing **is the deliverable** of this checkpoint.
+- `[gate]` — the fix touches only a test, gate, lint, CI config, or fixture.
+- `[docs]` — the fix touches only documentation that **describes** code: a round report, a memory entry, a comment, an already-executed plan section.
+
+Two promotions apply before the mark is final: a `[gate]` finding on a gate **cited by an acceptance criterion** is `[code]` (only a gate no acceptance criterion cites has budget); and `[docs]` is `[code]` **when the text is the deliverable** — a plan review, a checkpoint whose deliverable is documentation, and everything a housekeeping checkpoint delivers, that checkpoint's deliverable being the paper trail itself.
+
+Two traps. **Prose that a live gate parses** is not `[docs]` — some repos have tests that walk the tree and parse comments, so editing that prose can turn a test red. **A choice that is still open** is class 5, not paperwork: a missing decision entry is `[docs]` only when the choice was already made and merely isn't written down.
+
+| Mark / class | Effect on the attempt |
+|---|---|
+| `[code]` of class 1–4, 6, or K | **fails** the attempt |
+| `[gate]` not promoted | fails **one** attempt per round; on the next, a remaining or new one becomes a known-issue entry with a trigger and does not fail |
+| `[docs]` not promoted, and non-urgent class 7 of any mark | never fails; goes to the report's paper-trail backlog and is paid at the housekeeping checkpoint |
+| class 5 | **ESCALATE**, beats everything |
+| class 7 marked urgent | **BLOCK** |
+
+Report the `[docs]` ones anyway — they are collected, not discarded — but spend your budget on the thing being built.
+
 **Output format hint:** wrap method/class/symbol references in backticks always (enables symbol-based convergence check in the auto-review loop).
 
 Do NOT edit any files. Your response is the review report itself.
@@ -417,32 +439,41 @@ Each reviewer returns its review as Markdown text. The PM parses the last `VERDI
 
 If the verdict line is missing, malformed, or the output is empty/garbage, treat that reviewer as failed (see §"Reviewer fallback"). Do not reject a short but well-formed PASS response solely because it is brief.
 
-After parsing, apply the merge rules above (PASS only if all reviewers PASS; ESCALATE wins over FAIL), **then apply the paper-trail-only override below**, then proceed per the loop.
+After parsing, apply the merge rules above, then decide the attempt by §"Marks and the verdict matrix", then proceed per the loop.
 
-## Paper-trail-only findings do not fail a round
+## Marks and the verdict matrix
 
-**The rule.** After dedup, if **every** surviving finding is *paper-trail-only*, the merged verdict is **PASS** — regardless of what the individual reviewers returned. The findings are **not discarded**: they go to the round report's **Paper-trail backlog**, and **CP5 consumes that backlog**.
+This is the single place the framework decides what a finding does to an attempt. Convergence, plan review, and CP5 cite it; nothing restates it.
 
-**Definition — a finding is paper-trail-only when BOTH hold:**
-1. the fix touches **only** documentation artifacts — round reports, `docs/reviews/`, plan docs, `docs/memory/`, `DECISIONS.md`, `KNOWN_ISSUES.md`, `WORK_LOG.md`, `AGENTS.md`/`CLAUDE.md`; **and**
-2. the defect is in the **description**, not in the thing described.
+**The PM assigns the mark**, during classification, with the reviewer's evidence as input; the reviewer proposes. A reviewer must never be able to buy a PASS by labelling its own finding. The block between the markers below is **copied verbatim** into the two reviewer prompt templates (the one embedded in this file, and `sdi-review/references/adversarial-review-prompt-template.md`), because a dispatched reviewer cannot read this file.
 
-**Three carve-outs. These are NOT paper trail, even though they look like it:**
+<!-- marks-inline:start -->
+**Mark every finding `[code]`, `[gate]` or `[docs]`. Your mark is a proposal — the coordinator assigns the final one.**
 
-- **(a) Prose that a live gate reads.** Some repos have tests that parse javadoc/comments (census gates, threshold gates). Editing that prose can turn a gate red, so it is code-adjacent. If a gate reads it, it is a code finding.
-- **(b) A doc finding that reveals a defect in the thing described.** *"The report claims X, the code does Y"* is paper trail **only if the code is right and the report is wrong**. If the code is wrong, it is a class-1 code finding wearing a documentation costume. Decide by measuring the code, not by where the finding's file:line points.
-- **(c) A choice that is still open.** A missing `DECISIONS.md` entry is paper trail when the choice **was already made** and merely isn't written down. It is **ESCALATE** when the choice itself is unresolved and needs the user. ESCALATE always wins over this override.
+- `[code]` — the fix touches production code; **or** the description reveals a defect in the thing described, which you decide by measuring the code, not by where the finding points; **or** the text you are reviewing **is the deliverable** of this checkpoint.
+- `[gate]` — the fix touches only a test, gate, lint, CI config, or fixture.
+- `[docs]` — the fix touches only documentation that **describes** code: a round report, a memory entry, a comment, an already-executed plan section.
 
-**The PM classifies, not the reviewer.** Reviewers report findings with class + file:line + evidence; the PM decides paper-trail-only and records the reasoning in the bundle. A reviewer must never be able to buy a PASS by labelling its own finding.
+Two promotions apply before the mark is final: a `[gate]` finding on a gate **cited by an acceptance criterion** is `[code]` (only a gate no acceptance criterion cites has budget); and `[docs]` is `[code]` **when the text is the deliverable** — a plan review, a checkpoint whose deliverable is documentation, and everything a housekeeping checkpoint delivers, that checkpoint's deliverable being the paper trail itself.
 
-**⚠️ Two places where this rule does NOT apply, for the same reason: the document IS the deliverable there.**
+Two traps. **Prose that a live gate parses** is not `[docs]` — some repos have tests that walk the tree and parse comments, so editing that prose can turn a test red. **A choice that is still open** is class 5, not paperwork: a missing decision entry is `[docs]` only when the choice was already made and merely isn't written down.
 
-- **Plan review** (`sdi-review` Mode 1). Applying the deferral there would auto-PASS every plan review — the plan is the artifact under construction.
-- **CP5.** CP5's deliverable *is* the paper trail, so paper-trail findings there are blocking and the backlog is what CP5 exists to consume. Without this clause the rule is circular and the backlog never gets paid.
+| Mark / class | Effect on the attempt |
+|---|---|
+| `[code]` of class 1–4, 6, or K | **fails** the attempt |
+| `[gate]` not promoted | fails **one** attempt per round; on the next, a remaining or new one becomes a known-issue entry with a trigger and does not fail |
+| `[docs]` not promoted, and non-urgent class 7 of any mark | never fails; goes to the report's paper-trail backlog and is paid at the housekeeping checkpoint |
+| class 5 | **ESCALATE**, beats everything |
+| class 7 marked urgent | **BLOCK** |
 
-**Why the rule exists — measured, 2026-08-24.** A round closed its mechanism cleanly and then burned three full review attempts and six fixes on documentation. The code-finding curve across the three attempts was **3 → 1 → 0**; the paper-trail curve was **3 → 8 → 11**. Every attempt's findings were mostly in text the *previous fix had just written* — the fixes were generating the next round's findings. Reviews earn their cost by finding defects in the thing being built; documentation churn is real work but it converges in one comprehensive sweep, not in N adversarial rounds.
+Report the `[docs]` ones anyway — they are collected, not discarded — but spend your budget on the thing being built.
+<!-- marks-inline:end -->
 
-**What this does not license.** Paper trail still matters — this rule changes **when** it is paid, not **whether**. A backlog entry that never reaches CP5 is a regression of this rule, not a saving. Carry the backlog forward in the round report at every attempt, and treat an empty CP5 backlog with a non-empty history as a defect.
+**Reach axis.** A `[code]` finding fails the attempt only when the PM **measures** that it has reach: an occurrence in the corpus today, in the real execution of the checkpoint (what the code does over the real files), or on the CI path (what the gate lets through). A finding reachable only by an edit outside the canonical form — the form the project's entry templates and doc lint keep from being written — becomes a known-issue entry with a trigger and does not fail. The reach measurement is a row of the consolidation table; **without it the finding counts as having real reach.** Without this axis the surface of constructible anomalies is unbounded and the attempt series does not converge.
+
+**Convergence.** An attempt with no finding that fails is a PASS. Comparing symbols between attempts is a **secondary** criterion, used to spot a repeated finding — not the verdict algorithm.
+
+**Why `[docs]` does not fail, measured 2026-08-24.** A round closed its mechanism cleanly and then spent three attempts and six fixes on documentation: the code-finding curve was 3 → 1 → 0 while the paper-trail curve was 3 → 8 → 11, most of each attempt's findings in text the previous fix had just written. Paperwork converges in one comprehensive sweep, not in N adversarial rounds. The matrix changes **when** it is paid, not **whether**: a backlog that never reaches CP5 is a regression of the rule, not a saving. Carry the backlog forward in the round report at every attempt.
 
 ## Loop cap
 
