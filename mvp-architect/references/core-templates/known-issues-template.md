@@ -23,7 +23,7 @@ Forma canônica em `sdi-mode/references/known-issues-discipline.md` §"Entry for
 > - [`DECISIONS.md`](DECISIONS.md) - deliberate decisions and rationale. Decisions may reference `KI-NNN` when they defer or accept a known issue.
 > - [`ARCHITECTURE.md`](ARCHITECTURE.md) - current intended architecture. If architecture says how the system should work but reality is broken, the issue lives here.
 > - [`MEMORY.md`](MEMORY.md) and [`memory/YYYY-MM-DD.md`](memory/) - dated work state. Memory may mention that a KI was found or updated; the durable entry lives here.
-> - Issue trackers (Linear/Jira/GitHub Issues) - execution queues. If an external issue exists, link it from `Status` or `Suggested fix scope`; this file remains the repo-local source of known problems.
+> - Issue trackers (Linear/Jira/GitHub Issues) - execution queues. If an external issue exists, link it from a `Nota de status` line or `Suggested fix scope`; this file remains the repo-local source of known problems.
 
 ---
 

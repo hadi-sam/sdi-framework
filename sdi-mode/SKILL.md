@@ -11,7 +11,7 @@ This PM / Engineer / Reviewer split is the **single** execution model for `sdi-m
 
 ## Stack-agnostic note
 
-Examples here and in the references use placeholders like `[schema directory]` or `[auth/identity service]`. Substitute the project's real stack, sourced from `AGENTS.md` / `CLAUDE.md` or from your custom-mode metadata. The discipline is identical regardless of stack.
+Examples here and in the references use placeholders like `[schema directory]` or `[auth/identity service]`. Substitute the project's real stack, sourced from `AGENTS.md` / `CLAUDE.md` or from your custom-mode metadata.
 
 ## Entry conditions
 
@@ -52,7 +52,7 @@ Five rules that, if followed, prevent 80% of implementation problems:
 2. **Stop at explicit checkpoints within a phase.** Don't execute a whole phase end-to-end without reporting. A phase runs 2–5 checkpoints in total with binary gate checklists; CP1 and CP5 are always among them, the middle ones adapt, and every gate must pass before the round closes.
 3. **Maintain `docs/DECISIONS.md` (atemporal) and `docs/memory/` (datable) as you go.** Non-obvious choices → numbered DECISIONS entry. End-of-session state → today's `docs/memory/YYYY-MM-DD.md` file. Don't conflate them.
 4. **Maintain `docs/KNOWN_ISSUES.md` for known wrongness.** Pre-existing bugs, security gaps, tech debt, and deferred fixes that don't fit the current scope become `KI-NNN` entries instead of disappearing into plans, reviews, or memory.
-5. **Respect document precedence.** When two docs disagree, the higher-authority one wins (precedence list in `references/expected-artifacts.md`). Lower doc gets a revision note. Live repo state always wins over docs; the project fact file (`AGENTS.md` / `CLAUDE.md`) wins over planning docs; PRD wins over IMPLEMENTATION_PLAN. Don't silently pick whichever is convenient.
+5. **Respect document precedence.** When two docs disagree, the higher-authority one wins (precedence list in `references/expected-artifacts.md`). Lower doc gets a revision note. Live repo state always wins over docs; the fact sheet (`AGENTS.md` / `CLAUDE.md`) wins on **facts** (stack, paths, helpers), not on **scope**, which is the PRD's; PRD wins over IMPLEMENTATION_PLAN. Don't silently pick whichever is convenient.
 
 ## The loop (one phase, start to finish)
 

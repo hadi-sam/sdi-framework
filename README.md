@@ -71,7 +71,7 @@ These live in `sdi-mode/SKILL.md` and load on demand. They are never copied into
 2. **Stop at explicit checkpoints with binary gates.** Each gate must pass before the round closes.
 3. **Maintain decisions and memory separately.** Durable rationale in `docs/DECISIONS.md`; dated work state in `docs/memory/YYYY-MM-DD.md`; per-work-item narrative in `docs/WORK_LOG.md`, indexed one line per item by the Work tracker in `AGENTS.md` / `CLAUDE.md` where there is one, and by `docs/plans/` where there isn't.
 4. **Maintain known issues separately.** `docs/KNOWN_ISSUES.md` with append-only lifecycle status.
-5. **Respect document precedence.** Live repo > `AGENTS.md` / `CLAUDE.md` > `PRD` > `ARCHITECTURE` > `ROADMAP` > `PROJECT_STRUCTURE` > `IMPLEMENTATION_PLAN` > `DESIGN_SYSTEM` > `README`. `DECISIONS` patches authority; `KNOWN_ISSUES` catalogs wrongness; `docs/memory/` is breadcrumbs, not source of truth.
+5. **Respect document precedence.** Live repo > `AGENTS.md` / `CLAUDE.md` > `PRD` > `ARCHITECTURE` > `ROADMAP` > `PROJECT_STRUCTURE` > `IMPLEMENTATION_PLAN` > `DESIGN_SYSTEM` > `README`. The fact sheet wins on **facts**, not on **scope**, which is the PRD's. `DECISIONS` patches authority; `KNOWN_ISSUES` catalogs wrongness; `docs/memory/` is breadcrumbs, not source of truth.
 
 ## Execution model
 

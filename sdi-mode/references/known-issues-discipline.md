@@ -1,6 +1,6 @@
 # KNOWN_ISSUES.md Discipline
 
-`docs/KNOWN_ISSUES.md` is the append-only catalog of known bugs, security gaps, debt and deferred fixes: "what do we know is wrong but are not fixing now?" Keep it apart from `docs/DECISIONS.md` (why a choice was made), `docs/memory/` (what happened today) and the plan (what this item will do). If an external issue tracker holds the execution queue, link it from `Status` or `Suggested fix scope`; this file stays the repo-local source of known problems.
+`docs/KNOWN_ISSUES.md` is the append-only catalog of known bugs, security gaps, debt and deferred fixes: "what do we know is wrong but are not fixing now?" Keep it apart from `docs/DECISIONS.md` (why a choice was made), `docs/memory/` (what happened today) and the plan (what this item will do). If an external issue tracker holds the execution queue, link it from a `Nota de status` line or `Suggested fix scope`; this file stays the repo-local catalog.
 
 ## When to add, when to update
 
