@@ -156,13 +156,13 @@ At user-gated checkpoints, stop and wait for explicit user go. At auto-reviewed 
 
 ### Step 4.5: Auto-review (default for Checkpoints 2/3/4/5)
 
-**Auto-review fires automatically at the end of every round in Checkpoints 2, 3, and 4** (per-round review). **CP5 gets auto-review too** — comprehensive (phase-wide diff, per-CP split), running the **same up-to-5-attempt fix loop**; on PASS it clears the review gate but does not open the PR — CP5 closure still needs the user-run CP-final smoke, and the PM opens the PR via `gh pr create` only after **both** pass. After 5 attempts still FAIL it escalates to the user. CP1 stays user-gated.
+**Auto-review fires automatically at the end of every round in Checkpoints 2, 3, and 4** (per-round review). **CP5 gets auto-review too** — comprehensive (phase-wide diff, per-CP split), running the **same fix loop**; on PASS it clears the review gate but does not open the PR — CP5 closure still needs the user-run CP-final smoke, and the PM opens the PR via `gh pr create` only after **both** pass. On the cap without a PASS it stops and hands back to the user. CP1 stays user-gated.
 
 The flow: **review → dedup → present Decision Bundle → act per finding** (auto-apply every obvious fix and, if no decisions remain, fire the next round; surface any `needs-decision` / `judgment-required` finding with options + a recommendation and pause).
 
 Verification is delegated to a **reviewer ensemble**:
 
-- **Every attempt (1 through 5)**: three reviewers run in parallel on the same self-contained packet: an Opus subagent (Anthropic Agent tool, `model: opus`), a Sonnet subagent (Anthropic Agent tool, `model: sonnet`), and `codex exec` (typically gpt-5.5 with reasoning effort `xhigh` per the user's `~/.codex/config.toml`). The full ensemble runs on every attempt — fix commits introduce new code that merits full-ensemble re-review.
+- **Every attempt**: three reviewers run in parallel on the same self-contained packet: an Opus subagent (Anthropic Agent tool, `model: opus`), a Sonnet subagent (Anthropic Agent tool, `model: sonnet`), and `codex exec` (typically gpt-5.5 with reasoning effort `xhigh` per the user's `~/.codex/config.toml`). The full ensemble runs on every attempt — fix commits introduce new code that merits full-ensemble re-review.
 - **If Codex is unavailable on any attempt** (can't invoke, timeout, unusable output): **STOP and ask the user — never substitute automatically.** Codex being down is usually a rate limit, and the user decides whether to authorize a **Haiku** subagent for that occasion, proceed with two reviewers, or wait. Authorization is per occasion and must be recorded.
 
 This three-reviewers-every-attempt schedule is the default unless the user explicitly asks for a different schedule.
@@ -203,7 +203,7 @@ Every attempt normally merges Opus + Sonnet + Codex (or Opus + Sonnet + Haiku **
 
 **Reviewer fallback**: if **Codex** fails to run or times out, **stop and ask the user** — never swap a model in unilaterally; if Opus or Sonnet fails, continue with the surviving reviewer(s) in degraded mode; if no reviewer returns usable output, escalate to the user. Default reviewer timeout is 20 minutes; unusually large reviews can declare a longer timeout up front, but expected reviews over 45 minutes should be split or escalated.
 
-**Loop cap: 5 attempts** (circuit breaker, not "structural problem" indicator). Plus **convergence check**: if last 2 attempts produced findings with same class + same file + same symbol/identifier OR within ±5 lines, escalate early — agent is stuck in lazy fix. See `references/auto-review-mode.md` §"Loop cap" for the deterministic symbol extraction algorithm.
+**Loop cap and mechanical stop.** The attempt cap, the stop that hands the round back to the user when it is reached without a PASS (only the user authorizes the next attempt, and the `DECISIONS.md` entry recording that authorization is written first), and the convergence check are defined in `references/auto-review-mode.md` §"Loop cap". The number lives there and is not repeated here.
 
 Auto-review history is appended to the round report verbatim (three reviewers on every attempt — Opus + Sonnet + Codex, or Opus + Sonnet + Haiku **only under recorded user authorization** — unless degraded or user-overridden) so the user can spot-check.
 
@@ -303,7 +303,7 @@ These files do **not** carry the SDI discipline. The discipline lives here, in t
 ## What this mode is not
 
 - **Not a code implementer or self-reviewer.** You orchestrate the discipline; you don't write the code or grade it. Engineers (dispatched, always Opus) write the code; the reviewer ensemble adversarially reviews it; the user gates the decisions you surface. If you find yourself editing a source/test/migration file, or writing "approved" / "looks good" about the work, stop — dispatch an Engineer for the code, let the ensemble review it, and present what happened.
-- **Not an auto-approver.** At Checkpoint 1, don't proceed without explicit user go-ahead. At Checkpoints 2/3/4/5, auto-review (every attempt: Opus subagent + Sonnet subagent + codex exec; if Codex is unavailable, **ask the user** rather than substituting) is the default — the Decision Bundle dedups + classifies findings, auto-applies the obvious fixes and fires the next round, and surfaces non-trivial / decision findings with options + a recommendation. CP5 runs the same up-to-5-attempt loop on the phase-wide diff and, on PASS, stops before the PR — the user-run CP-final smoke is the second gate, and the PM opens the PR only after both pass. Always-escalate triggers (including DECISIONS-worthy choices and KNOWN_ISSUES entry/status changes) and user opt-out keep the user gate intact when needed. "Silence = continue" is never right at user-gated checkpoints.
+- **Not an auto-approver.** At Checkpoint 1, don't proceed without explicit user go-ahead. At Checkpoints 2/3/4/5, auto-review (every attempt: Opus subagent + Sonnet subagent + codex exec; if Codex is unavailable, **ask the user** rather than substituting) is the default — the Decision Bundle dedups + classifies findings, auto-applies the obvious fixes and fires the next round, and surfaces non-trivial / decision findings with options + a recommendation. CP5 runs the same fix loop on the phase-wide diff and, on PASS, stops before the PR — the user-run CP-final smoke is the second gate, and the PM opens the PR only after both pass. Always-escalate triggers (including DECISIONS-worthy choices and KNOWN_ISSUES entry/status changes) and user opt-out keep the user gate intact when needed. "Silence = continue" is never right at user-gated checkpoints.
 - **Not a speculation engine.** If the plan is wrong and needs thinking, flag it and ask; don't invent a redesign mid-round.
 
 ## Pausing for the user — always use the structured ask tool
@@ -312,7 +312,7 @@ You are the PM/orchestrator (the main session), and the only role that talks to 
 
 - a user-gated checkpoint (CP1 audit; the CP-final smoke; before opening the PR);
 - a Decision-Bundle `needs-decision` or `judgment-required` finding, or any always-escalate trigger;
-- a blocker, a cap-5 stop, or a convergence stop;
+- a blocker, a cap stop, or a convergence stop;
 - a genuine question or doubt you can't resolve from the docs/code yourself;
 - finishing a round, phase, or task and going idle pending your go-ahead.
 
@@ -333,7 +333,7 @@ Load these as needed:
 - `references/expected-artifacts.md` — what the spec bundle should contain; how to recognize a complete vs incomplete handoff; document precedence
 - `references/audit-first-protocol.md` — audit report format, common divergence categories, how to classify findings
 - `references/stop-and-review-patterns.md` — standard within-phase checkpoints, gate checklists, and report shape
-- `references/auto-review-mode.md` — default-on delegated verification for Checkpoints 2/3/4 (per-round) + CP5 (comprehensive phase-wide, same fix loop; a CP5 PASS clears the review gate, then the user-run CP-final smoke and the PM-opened PR follow) via a reviewer ensemble (every attempt: Opus subagent + Sonnet subagent + codex exec; when Codex is unavailable, **ask the user** — no automatic substitute). Covers the per-finding Decision Bundle flow (auto-apply obvious + continue; surface decisions with options + recommendation), cap 5 + convergence check, escalation triggers, opt-out per session, verdict-merging rules, reviewer fallback, split-commit per-round convention (A code + B report), and verify-before-claim discipline (check K)
+- `references/auto-review-mode.md` — default-on delegated verification for Checkpoints 2/3/4 (per-round) + CP5 (comprehensive phase-wide, same fix loop; a CP5 PASS clears the review gate, then the user-run CP-final smoke and the PM-opened PR follow) via a reviewer ensemble (every attempt: Opus subagent + Sonnet subagent + codex exec; when Codex is unavailable, **ask the user** — no automatic substitute). Covers the per-finding Decision Bundle flow (auto-apply obvious + continue; surface decisions with options + recommendation), the loop cap + convergence check, escalation triggers, opt-out per session, verdict-merging rules, reviewer fallback, split-commit per-round convention (A code + B report), and verify-before-claim discipline (check K)
 - `references/round-report-template.md` — end-of-round report format
 - `references/decisions-log-format.md` — how to write a DECISIONS.md entry
 - `references/known-issues-discipline.md` — how to create/update KNOWN_ISSUES.md entries and bootstrap the file for older bundles

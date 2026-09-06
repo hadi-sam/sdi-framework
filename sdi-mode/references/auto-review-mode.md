@@ -1,6 +1,6 @@
 # Auto-Review Mode (default for Checkpoints 2/3/4/5)
 
-A workflow extension that delegates checkpoint verification to a **reviewer ensemble** — different-model Opus, Sonnet, and Codex reviewers (if Codex is unavailable, **stop and ask the user** — there is no automatic substitute) — escalating to the user only when something needs human judgment. **Default-on** for Checkpoints 2, 3, and 4 (per-round review) and CP5 (comprehensive phase-wide review). All four run the **same up-to-5-attempt fix loop**. CP1 stays user-gated. The user can opt out per session or request a different reviewer schedule.
+A workflow extension that delegates checkpoint verification to a **reviewer ensemble** — different-model Opus, Sonnet, and Codex reviewers (if Codex is unavailable, **stop and ask the user** — there is no automatic substitute) — escalating to the user only when something needs human judgment. **Default-on** for Checkpoints 2, 3, and 4 (per-round review) and CP5 (comprehensive phase-wide review). All four run the **same fix loop**. CP1 stays user-gated. The user can opt out per session or request a different reviewer schedule.
 
 > **Roles referenced in this file.** **The PM/orchestrator** is the main session — it runs the gate, dispatches reviewers, reconciles verdicts, and owns the paper trail; it never edits code. **The Engineer** is a dispatched Opus subagent — it writes code and runs the build/tests; it never edits the paper trail. An obvious code fix routes to a **fix-Engineer** dispatch (the PM never edits code); an obvious paper-trail fix the PM applies directly. Those roles, their tool scoping, Engineer fan-out, and parallel-Engineer logistics are defined in [`roles-and-orchestration.md`](roles-and-orchestration.md); this file is the reviewer machinery that doc reuses by reference.
 
@@ -8,7 +8,7 @@ A workflow extension that delegates checkpoint verification to a **reviewer ense
 
 Implementation rounds end with structured verdicts from independent reviewers, deduplicated and classified into a **Decision Bundle** acted on **per finding**: obvious/trivial fixes are auto-applied and the next review round fires automatically; non-trivial or decision findings are surfaced with options + a recommendation and pause for the user. Obvious fixes are never blocked behind a coexisting decision finding.
 
-- **Every attempt (1 through 5)** runs **three reviewers in parallel**: an Opus subagent (via Anthropic Agent tool, `model: opus`), a Sonnet subagent (via Anthropic Agent tool, `model: sonnet`), and a Codex CLI process (`codex exec`, typically gpt-5.5 with reasoning effort `xhigh` per the user's `~/.codex/config.toml`).
+- **Every attempt** runs **three reviewers in parallel**: an Opus subagent (via Anthropic Agent tool, `model: opus`), a Sonnet subagent (via Anthropic Agent tool, `model: sonnet`), and a Codex CLI process (`codex exec`, typically gpt-5.5 with reasoning effort `xhigh` per the user's `~/.codex/config.toml`).
 - **If Codex is unavailable on any attempt** (can't be invoked, times out, or returns unusable output), **STOP and ask the user — never substitute automatically.** Codex being down is usually a rate limit, and it is a **user-visible event**: the user decides what happens next. A **Haiku** substitute is valid **only with the user's explicit authorization on that occasion**. See §"Reviewer fallback".
 
 This three-reviewers-every-attempt schedule is the default unless the user explicitly asks for a different schedule for the session or round. The full ensemble is load-bearing on **every** attempt, not just the first: different models find partially-disjoint bugs, the union catches more than any one reviewer alone, and each retry re-verifies both the original code and the intermediate fixes (fix commits introduce new code, so a reduced retry ensemble would under-review exactly the freshest code).
@@ -111,7 +111,7 @@ When opted-out, the PM does **not** dispatch the reviewer ensemble: it runs the 
 | 2 — Core domain logic | **Auto-review default-on.** |
 | 3 — Wire up integrations | **Auto-review default-on.** |
 | 4 — UI | **Auto-review default-on.** |
-| 5 — Housekeeping | **Auto-review default-on (comprehensive).** Same up-to-5-attempt fix loop as CPs 2-4. See §"CP5 comprehensive review" below for what's distinct: phase-wide diff + per-CP packet split, and that a PASS clears only the review gate (the user-run CP-final smoke and the PM-opened PR follow). |
+| 5 — Housekeeping | **Auto-review default-on (comprehensive).** Same fix loop as CPs 2-4. See §"CP5 comprehensive review" below for what's distinct: phase-wide diff + per-CP packet split, and that a PASS clears only the review gate (the user-run CP-final smoke and the PM-opened PR follow). |
 
 Even within a default-on checkpoint, the round escalates immediately when any of the always-escalate triggers below fire.
 
@@ -121,11 +121,11 @@ CP5 review is distinct from CPs 1-4 in **scope**, not in loop mechanics: reviewe
 
 **Schedule:** Opus + Sonnet + Codex in parallel on every attempt (if Codex is unavailable, stop and ask the user — no automatic substitute) — same as CPs 2-4.
 
-**Fix loop:** CP5 runs the **same up-to-5-attempt fix loop** as CPs 2-4 (see §"The loop" and §"Loop cap"). Obvious fixes are auto-applied and the review re-runs; non-trivial or decision findings are surfaced with options + a recommendation. This is a change from older framework versions where CP5 was a single escalation-only pass — the per-finding autonomy, cap-5, and convergence machinery now apply at CP5 too. The always-escalate triggers and the `judgment-required` classification still stop for the user exactly as at CPs 2-4: structural CP5 findings (rewind and reopen a previous CP, accept as a KI, AC gap) typically classify as `needs-decision`/`judgment-required` and are presented for a decision, **not** auto-patched — so the loop never blindly applies superficial patches to structural problems.
+**Fix loop:** CP5 runs the **same fix loop** as CPs 2-4 (see §"The loop" and §"Loop cap"): obvious fixes are auto-applied and the review re-runs; non-trivial or decision findings are surfaced with options + a recommendation. The per-finding autonomy, the cap and the convergence machinery apply at CP5 too. The always-escalate triggers and the `judgment-required` classification still stop for the user exactly as at CPs 2-4: structural CP5 findings (rewind and reopen a previous CP, accept as a KI, AC gap) typically classify as `needs-decision`/`judgment-required` and are presented for a decision, **not** auto-patched — so the loop never blindly applies superficial patches to structural problems.
 
 **On PASS — clear the review gate, not the PR.** A CP5 comprehensive-review PASS means the phase is housekeeping-clean, but it is **not** the last gate before the work leaves the branch: CP5 closure still requires the **user-run CP-final smoke** (the PM generates the steps, the user runs them, the PM interprets). Do **not** auto-open a PR or merge. Post the final report; the PM opens the PR via `gh pr create` only after **both** the comprehensive review PASSes **and** the smoke passes (any release steps remain the user's).
 
-**After 5 attempts still FAIL (or the convergence check trips):** stop and escalate to the user to decide the next step — typically continue applying fixes manually + re-running, accept remaining findings as `KNOWN_ISSUES.md` entries and close the phase, or open a separate work item if the gap is too large. Same cap + convergence semantics as CPs 2-4 (see §"Loop cap").
+**On the cap without a PASS (or when the convergence check trips):** stop and hand back to the user to decide the next step — typically continue applying fixes manually + re-running, accept remaining findings as `KNOWN_ISSUES.md` entries and close the phase, or open a separate work item if the gap is too large. Same cap + convergence semantics as CPs 2-4 (see §"Loop cap").
 
 **Packet structure — per-checkpoint split is the DEFAULT:** reviewers read per-CP individually, aggregate findings in a final summary. Reason: real phases with 4 CPs easily exceed 30 kloc of phase-wide diff, and single-packet review overflows reviewers' context or produces shallow coverage. Per-CP split:
 - For each CP delivered (CP1-CP4), packet contains: CP diff (`git diff CP_N-1_SHA..CP_N_SHA`), CP round reports, DECISIONS/KIs created during the CP.
@@ -167,7 +167,7 @@ Don't confuse: always-escalate skips auto-review; judgment-required pauses it af
 1. The Engineer(s) finish the round and commit **commit A (code-only)**; the PM writes **commit B (report-only referencing A's SHA)** per the split-commit convention. Messages: `round X/CN: <summary>` (A) + `round X/CN report: at HEAD <short-SHA-de-A>` (B).
 2. If an always-escalate trigger fired, or the user opted out / requested user-gated review, stop for the user.
 3. Run the clean-state preflight (confirming both commit A and commit B exist), and build `.sdi-review-prompt-tmp.txt`.
-4. Run the three reviewers for the attempt in parallel: **Opus subagent + Sonnet subagent + Codex**. If Codex is unavailable, **stop and ask the user** before running anything in its place — see §"Reviewer fallback". Same on every attempt, 1 through 5.
+4. Run the three reviewers for the attempt in parallel: **Opus subagent + Sonnet subagent + Codex**. If Codex is unavailable, **stop and ask the user** before running anything in its place — see §"Reviewer fallback". Same on every attempt.
 5. Apply reviewer timeout/fallback. If no scheduled reviewer produced usable output, stop for the user.
 6. Parse verdicts and merge them (see §"Verdict merging").
 7. **Dedup pass:** read the 3 reviewer outputs (fewer only in degraded mode, when a reviewer failed and no substitute ran) and deduplicate findings using the **same matching algorithm** as the cross-attempt convergence check (see §"Loop cap" §"Symbol extraction algorithm"): same class + same file + same symbol/identifier OR within ±5 lines. Two reviewers flagging "method `validateUser` missing" at line 42 and line 48 in the same file count as one finding (convergent), not two. Prioritize 3-way > 2-way > unique. The `obvious-fix` criterion "at least 2 reviewers converge" reuses this matcher — divergent line numbers for the same logical bug DO count as convergence; divergent symbols or files do NOT.
@@ -204,13 +204,13 @@ Don't confuse: always-escalate skips auto-review; judgment-required pauses it af
     - **Stop and present revised bundle to user** with section "Failed to apply" listing the reclassified.
     - User decides: apply manually, defer, or skip.
 
-    If ALL Edits fail (nothing applied), apply doc-only commit rule (consistent with §"Loop cap" §"What counts vs not"): **single commit** `round X/CN fix N: aborted — all N edits failed (paper trail only)` only in the round report file, without separate commit B. This commit is doc-only (touches only `docs/reviews/round-*report.md`) and **does not consume a cap-5 slot**. Escalate entire bundle to user.
+    If ALL Edits fail (nothing applied), apply doc-only commit rule (consistent with §"Loop cap" §"What counts vs not"): **single commit** `round X/CN fix N: aborted — all N edits failed (paper trail only)` only in the round report file, without separate commit B. This commit is doc-only (touches only `docs/reviews/round-*report.md`) and **does not consume an attempt against the cap**. Escalate entire bundle to user.
 
     **Interrupt mid-apply:** if the user interrupts (Ctrl-C) during the apply phase, the PM inspects which fixes landed (its own paper-trail Edits in the working tree via `git diff`; code fixes via the fix-Engineer's report) and reports state honestly — "applied X of N fixes, working tree dirty, no commit yet". User decides whether to commit partial, discard, or continue.
 
 12. On PASS, append auto-review history + Decision Bundle to the round report, delete `.sdi-review-prompt-tmp.txt`, commit review artifacts, post the report, and propose the next round. **At CP5, a PASS clears only the comprehensive-review gate: post the report and stop — do not auto-open a PR or merge. CP5 closure still needs the user-run CP-final smoke; the PM opens the PR via `gh pr create` only after both the review PASSes and the smoke passes.**
 13. On FAIL (with reclassification or apply failure escalation), stop for user input.
-14. After attempt 5 still FAIL, or convergence check triggered, stop for the user with full review history.
+14. On the cap without a PASS, or when the convergence check triggers, stop for the user with the full review history; the next attempt needs the user's authorization and its DECISIONS entry (§"Loop cap").
 
 BASE_SHA stays fixed across all attempts in a round. Each retry packet includes prior findings and the fix commit(s) that claim to address them.
 
@@ -277,7 +277,7 @@ If a reviewer cannot be invoked or produces unusable output (binary missing, net
 | Opus or Sonnet failed, at least one reviewer ok | Continue with the reviewer(s) that ran. Note each skip in the round report ("sonnet skipped: <reason>", "opus subagent skipped: <reason>"). Mark the mode as `degraded` in the auto-review history, but do NOT downgrade surviving verdicts — if the surviving reviewers all returned PASS, treat as PASS. |
 | All scheduled reviewers failed (including any user-authorized substitute) | **Escalate to the user.** Surface: "All scheduled reviewers failed: [reasons]. Auto-review unavailable for this round — please review manually, fix the reviewer setup, or specify a different schedule." |
 
-The default schedule is Opus + Sonnet + Codex on **every** attempt (1-5). **There is NO sanctioned automatic model swap.** When a scheduled reviewer is unavailable, either apply the degraded-survivor rule above or ask the user — never silently promote a different model into the ensemble.
+The default schedule is Opus + Sonnet + Codex on **every** attempt. **There is NO sanctioned automatic model swap.** When a scheduled reviewer is unavailable, either apply the degraded-survivor rule above or ask the user — never silently promote a different model into the ensemble.
 
 ⚠️ **Why Codex→Haiku is not automatic.** It used to be, and it cost a user real time and tokens: an agent assumed Codex was down, swapped in Haiku unilaterally, and ran a full round with a reviewer whose findings rarely earn their cost. **A substitute reviewer is a spending decision, and it belongs to the user.** Two consequences: (1) if Codex fails, the user must be **told** — a silent swap hides a rate limit that they may want to wait out; (2) authorization is **per occasion** — "yes, use Haiku this time" does not carry to the next attempt, the next round, or the next work item, unless the user says it does.
 
@@ -477,7 +477,9 @@ Report the `[docs]` ones anyway — they are collected, not discarded — but sp
 
 ## Loop cap
 
-- **Maximum 5 review attempts per round** (every attempt: Opus + Sonnet + Codex; if Codex is unavailable, ask the user rather than substituting), unless the user explicitly requests a different schedule. The cap exists as a **circuit breaker** to prevent infinite loops when the agent isn't converging, NOT as a sign of a structural problem. Rounds requiring 5+ attempts are common and legitimate (especially in code that touches multiple areas). This cap and the convergence check apply at CP5 too.
+- **Maximum 3 review attempts per round, and 3 rounds of plan review.** This section is the only place in the framework that states the number; every other file cites it instead of repeating it. Every attempt runs the full ensemble (Opus + Sonnet + Codex; if Codex is unavailable, ask the user rather than substituting), unless the user explicitly requests a different schedule. The cap and the convergence check apply at CP5 too.
+
+- **Mechanical stop.** On attempt 3 without a PASS — or on round 3 of a plan review without a SHIP — the PM **stops and hands the work back to the user**. Only the user authorizes the next attempt, and the `DECISIONS.md` entry recording that authorization and its reason is written **before** it. The agent does not continue on its own; that is what makes the stop mechanical.
 
 - **Convergence check (escalation before the cap):** if the last 2 attempts produced findings with **same class + same file + same symbol/identifier OR within ±5 lines of the previous finding**, the loop is stuck in lazy fix (code shifted but root cause remains). Literal file:line match would be too weak — code moves after fixes. Escalate immediately with message:
   > "Finding {class} in {file} ({symbol/identifier or line}) persisted in attempts N-1 and N despite fix attempt. Lazy fix or root cause misunderstood — requesting input."
@@ -492,12 +494,10 @@ Report the `[docs]` ones anyway — they are collected, not discarded — but sp
 
   **Reviewer outputs preservation:** convergence check requires that reviewer outputs from attempt N-1 remain accessible in the working tree when the attempt N convergence check runs. The PM **must NOT delete** `docs/reviews/round-XN-attempt-(N-1)-{opus,sonnet,codex}.md` between attempts. Cleanup only happens at loop close (PASS / ESCALATE / cap), together with the review artifacts commit. Per-attempt outputs stay uncommitted in the working tree during the loop; the preflight already permits these files as an allowed uncommitted exception.
 
-- **Cap reached (attempt 5 still FAIL):** escalate with message:
-  > "Auto-review hit 5 attempts. Loop did not converge — user should review remaining findings and decide to continue manually, open as a separate work item, or accept as KNOWN_ISSUES."
+- **Cap reached (last attempt still without PASS):** stop with message:
+  > "Auto-review hit the attempt cap without a PASS. Handing this back: review the remaining findings and tell me whether to authorize another attempt (I will write the DECISIONS entry first), continue the fixes manually, open a separate work item, or accept the remainder as KNOWN_ISSUES entries."
 
-  Don't interpret cap-hit as "structural problem". It can be, but frequently it's just a slow process. Let the user diagnose.
-
-- **What counts vs doesn't count against the cap-5:**
+- **What counts vs doesn't count against the cap:**
   - **Counts:** each fix attempt that (a) addresses at least 1 reviewer finding class 1-7 or K, OR (b) modifies production code in any file of the round's diff.
   - **Doesn't count:** doc-only commits that correct typos in the commit B paper trail (e.g., wrong SHA copy-paste, typo in report prose, missing markdown link). These commits have the format `round X/CN report fix: <typo>` (distinct from `round X/CN fix N report: ...` which is the report-pair of a real fix N). The audit trail keeps them separate; the cap counter ignores them.
   - **Heuristic:** if the commit touches only `docs/reviews/round-*report.md` AND zero code, it's doc-only and doesn't consume a slot. Otherwise it consumes.
@@ -513,7 +513,7 @@ For each attempt:
 - Runtime notes: degraded mode, timeout, or extended timeout declaration if applicable.
 - Issues found (if any) and the fix applied between attempts (with the fix commit SHA — both fix N code + fix N report SHAs).
 
-Do not summarize ("3 attempts, eventual PASS"). The user uses the history to spot-check the reviewers' calls — omitting it defeats the purpose of the audit trail.
+Do not summarize ("a few attempts, eventual PASS"). The user uses the history to spot-check the reviewers' calls — omitting it defeats the purpose of the audit trail.
 
 ## Invocation — Anthropic subagents (Agent tool)
 
@@ -589,7 +589,7 @@ On each attempt, the PM fires the scheduled reviewers in parallel and waits for 
 9. If any reviewer failed to produce usable output, apply §"Reviewer fallback".
 
 Default schedule:
-- Every attempt (1-5): Opus subagent + Sonnet subagent + Codex.
+- Every attempt: Opus subagent + Sonnet subagent + Codex.
 - If Codex is unavailable on an attempt: **stop and ask the user.** Only with their authorization does the attempt run as Opus subagent + Sonnet subagent + Haiku subagent.
 
 After the round closes (PASS or escalation), append final auto-review history to `docs/reviews/round-XN-report.md`, delete `.sdi-review-prompt-tmp.txt` (it's gitignored and recreated per attempt anyway), and commit the round report + per-attempt output files with `round X/CN review artifacts: <verdict>`. Do NOT delete the per-attempt output files in `docs/reviews/` — those are the audit trail.
@@ -604,7 +604,6 @@ After the round closes (PASS or escalation), append final auto-review history to
 - **Each reviewer is a fresh subprocess with no shared context.** Build the packet to be entirely self-contained. The parent session's conversation context is invisible to all reviewers.
 - **If the diff is too large for either reviewer's context, the round was too big.** Modern models handle 100k+ tokens, but extremely large rounds may overflow. Split the round (one commit's worth of work each) and re-invoke per chunk.
 - **Treating PASS as "skip the round report".** PASS still requires the report. The user reads the report to track progress; the auto-review history is an addendum, not a replacement.
-- **Looping on cosmetic issues.** If attempt 2 fixed the substantive gate failure but attempt 3 fails on a tiny new issue, the loop cap is your friend — escalate (or use convergence check if same finding persists), don't loop forever.
 - **Single-commit round = paper trail drift.** The split-commit convention exists for a reason: report committed inside the code commit causes references to HEAD/SHA to become placeholders that reviewers flag in a loop. Today: commit A (code) and commit B (report) always separated. If the impulse is "consolidate into one commit", resist — the overhead is trivial and the gain is cutting 1-2 attempts of drift per round.
 - **`--amend` on the code commit.** Never use — the SHA changes and commit B (which references that SHA) becomes orphan. If something needs to change in the code commit, create a new `round X/CN fix N` commit and follow the pattern.
 - **Ignoring escalation triggers.** An always-escalate trigger means stop, period. Don't try to pre-resolve it and skip to auto-review; the user must see it.
