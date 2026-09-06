@@ -196,6 +196,7 @@ If you catch yourself thinking "might as well also do X while I'm at it", stop �
 - **Observations**: anything noteworthy (a design choice, a small bug, a follow-up).
 - **Next suggested deliverable** with rationale (why this, why now).
 - **Explicit gate status** — "waiting for review" for user-gated checkpoints, or "merged PASS closed the gate" for auto-reviewed checkpoints.
+- **At a user-gated stop (CP1, the CP-final smoke, before opening the PR): the round report's `## Decisões desta rodada` block, repeated** — one line per `DECISIONS.md` / `KNOWN_ISSUES.md` entry written since the last gate. That repetition is what makes writing the entries in the round enough: the record is mandatory and the reading is the user's option.
 
 Deliver every stop that waits on the user — a user-gated checkpoint, a decision, a blocker, or finishing and going idle — through the host's **structured ask tool** (`AskUserQuestion` under Claude Code), not as plain prose, so the pause is explicit and reliably surfaced (see [`../SKILL.md`](../SKILL.md) §"Pausing for the user").
 

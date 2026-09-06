@@ -205,7 +205,7 @@ Every attempt normally merges Opus + Sonnet + Codex (or Opus + Sonnet + Haiku **
 
 **Loop cap and mechanical stop.** The attempt cap, the stop that hands the round back to the user when it is reached without a PASS (only the user authorizes the next attempt, and the `DECISIONS.md` entry recording that authorization is written first), and the convergence check are defined in `references/auto-review-mode.md` §"Loop cap". The number lives there and is not repeated here.
 
-Auto-review history is appended to the round report verbatim (three reviewers on every attempt — Opus + Sonnet + Codex, or Opus + Sonnet + Haiku **only under recorded user authorization** — unless degraded or user-overridden) so the user can spot-check.
+Auto-review history goes into the round report **by link** — one row per reviewer per attempt (verdict, totals by mark, path to that reviewer's committed file), never the reports pasted inline. The report also carries the fixed section `## Decisões desta rodada`: one line per `DECISIONS.md` / `KNOWN_ISSUES.md` entry written in the round (number, slug, decision in one sentence), or "Nenhuma". See `references/round-report-template.md`.
 
 **Opt-out per session:** the user can disable auto-review for the rest of the session by saying "user-review for this phase", "review the next round myself", "stop auto-reviewing", or "back to user-gated". Re-enable with "auto-review again". Session-scoped — every new session starts default-on.
 
@@ -310,7 +310,7 @@ These files do **not** carry the SDI discipline. The discipline lives here, in t
 
 You are the PM/orchestrator (the main session), and the only role that talks to the user. Whenever you need the user, deliver the pause through the host's **structured question tool** — not as plain prose the user has to notice. Under Claude Code this is **`AskUserQuestion`**. Use it every time you would otherwise stop and wait:
 
-- a user-gated checkpoint (CP1 audit; the CP-final smoke; before opening the PR);
+- a user-gated checkpoint (CP1 audit; the CP-final smoke; before opening the PR) — repeat the round report's `## Decisões desta rodada` block in the stop message, so the user sees every decision and known-issue entry written since the last gate without opening a file;
 - a Decision-Bundle `needs-decision` or `judgment-required` finding, or any always-escalate trigger;
 - a blocker, a cap stop, or a convergence stop;
 - a genuine question or doubt you can't resolve from the docs/code yourself;

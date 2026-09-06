@@ -504,16 +504,11 @@ Report the `[docs]` ones anyway — they are collected, not discarded — but sp
 
 ## Auto-review history in round report
 
-Every auto-reviewed round must include the auto-review history in its round report. See `round-report-template.md` for the exact section shape.
+Every auto-reviewed round records the history in its round report **by link** — one row per reviewer per attempt, with the verdict, the totals by mark, and the path to that reviewer's own file at `docs/reviews/round-XN-attempt-N-{reviewer}.md`. The files are committed with the round, so the report points at them; it does not carry their contents. See `round-report-template.md` for the exact table.
 
-For each attempt:
-- Attempt N — reviewers run (default: `opus + sonnet + codex` on every attempt; `opus + sonnet + haiku` **only when the user authorized the substitution on that occasion**, and the authorization must be recorded; fewer only in documented degraded mode or under a user-overridden schedule) and merged verdict.
-- Per reviewer: full structured output verbatim from `docs/reviews/round-XN-attempt-N-{reviewer}.md` (findings + verdict line).
-- Decision Bundle (per §"Decision Bundle format"): obvious-fix / needs-decision / judgment-required classification, action taken.
-- Runtime notes: degraded mode, timeout, or extended timeout declaration if applicable.
-- Issues found (if any) and the fix applied between attempts (with the fix commit SHA — both fix N code + fix N report SHAs).
+Under the table, one line each: the merged verdict per attempt and the mark that decided it; the reach measurement for every `[code]` finding that failed an attempt; the Decision Bundle action taken; the fix commit SHAs (fix N code + fix N report); and any runtime note — degraded mode, timeout, a recorded Codex→Haiku authorization, a convergence trigger, or a user authorization for an attempt past the cap.
 
-Do not summarize ("a few attempts, eventual PASS"). The user uses the history to spot-check the reviewers' calls — omitting it defeats the purpose of the audit trail.
+The round report also carries `## Decisões desta rodada` — one line per `DECISIONS.md` or `KNOWN_ISSUES.md` entry written during the round (number, slug, the decision in one sentence), or "Nenhuma". Writing it is mandatory and happens in the round; reading it is the user's option.
 
 ## Invocation — Anthropic subagents (Agent tool)
 

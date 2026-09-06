@@ -1,85 +1,85 @@
 # Round Report Template
 
-Every implementation round ends with a report. Same sections, same order. Users read many of these; consistency lets them scan quickly.
+Every implementation round ends with a report. Same sections, same order. Users read many of these; consistency lets them scan quickly. The report's size ceiling is whatever the project's doc lint says (`scripts/docs_bounds.py` where the project has one) — cited here, never repeated.
 
 ## The shape
 
-```markdown
+````markdown
 ## Round [letter or number] — [one-line description]
 
-> **BASE_SHA:** [sha of the last `round X/CN review artifacts: <verdict>` commit from the previous round, OR for round A: the phase-start commit (previous phase's last `review artifacts` commit, or `mvp-bundle commit` for the very first phase). Used by auto-review to compute `git diff BASE_SHA..HEAD`. See `auto-review-mode.md` §"Per-round commit convention".]
+> **BASE_SHA:** [sha of the last `round X/CN review artifacts: <verdict>` commit of the previous round, OR for round A the phase-start commit. See `auto-review-mode.md` §"Per-round commit convention".]
 >
-> **PHASE_BASE_SHA:** [round A only — sha of the phase-start commit. Used by CP5 comprehensive review to compute `git diff PHASE_BASE_SHA..HEAD`. Subsequent rounds in the phase reference this value literally.]
+> **PHASE_BASE_SHA:** [round A only — sha of the phase-start commit; later rounds reference this value literally.]
 >
-> **Commit A SHA (code-only):** [sha of `round X/CN: <summary>` commit — populated after commit A is created.]
+> **Commit A SHA (code-only):** [sha of `round X/CN: <summary>`.]
 >
-> **Commit B SHA (this report, paper trail):** `at HEAD <SHA-A>` — this commit references A's SHA literally per split-commit convention.
+> **Commit B SHA (this report, paper trail):** `at HEAD <SHA-A>`.
 
 ### Delivered
 
-[Table or bullet list. For each file touched or created, one line:
- - Path
- - What it does / why it changed
- - Test coverage (counts or "n/a")]
+[One line per file touched or created: path, what it does / why it changed, test coverage (counts or "n/a").]
 
 ### Design decisions worth review
 
-1. [Decision + rationale + link to DECISIONS.md entry if applicable]
-2. ...
+1. [Decision + rationale + link to the DECISIONS entry if there is one.]
 
 ### Known issues / technical debt updates
 
-[List new or updated `KNOWN_ISSUES.md` entries. Use "None" if the round did not discover or change any known issue.]
-
-- `KI-NNN` — [new / scheduled / partially mitigated / resolved], [one-line evidence or commit/status note]
+- `KI-NNN` — [new / scheduled / partially mitigated / resolved], [one-line evidence or commit/status note]. "None" if the round touched none.
 
 ### Testing
 
-- Commands/checks run:
-  - `[exact command]` — PASS / FAIL, [runtime], [count/result], [relevant output summary]
-  - `[exact command]` — PASS / FAIL, [runtime], [count/result], [relevant output summary]
-- Skipped/not run: [explicit list with reason, or "None"]
-- Manual smoke test: [what was exercised, environment, result, or "not applicable"]
-- Evidence notes: [fixtures, local services, env vars, screenshots/logs, or other context needed to judge the checks]
+[The generated block and nothing else:
+
+<!-- test-summary -->
+…the suite generator's output…
+<!-- /test-summary -->
+
+<!-- unittest-summary -->
+…the script-test and declared-mutation generator's output…
+<!-- /unittest-summary -->
+
+A count written by hand outside the block is a lint failure. If the project has no generator, paste the runner's own output verbatim and name the command that produced it — the rule is that the numbers are copied from a machine, never retyped from memory.]
 
 ### Auto-review history (default for Checkpoints 2/3/4/5)
 
-[Append one block per attempt. Default schedule unless the user overrides it: **every attempt** has THREE reviewers (Opus subagent + Sonnet subagent + Codex; a **user-authorized Haiku subagent substitutes for Codex** when Codex is unavailable). Note any degraded mode, skipped reviewer, **user-authorized** Codex→Haiku substitution (with the authorization itself), timeout, or user-requested schedule change. The attempt cap, the mechanical stop when it is reached without a PASS, and the convergence check are in `auto-review-mode.md` §"Loop cap" — cited, not repeated here. CP5 uses the same loop on the phase-wide diff; a CP5 PASS clears only the review gate — the user-run CP-final smoke and the PM-opened PR follow (see `auto-review-mode.md` §"CP5 comprehensive review").
+[**By link.** One row per reviewer per attempt: verdict, totals by mark, and the path to that reviewer's own report, which is committed with the round. Do **not** paste the reports — they are files, and pasting them is what made this section unreadable.
 
-**Attempt N — merged verdict**: PASS / FAIL / ESCALATE.
-  - **Opus subagent verdict**: PASS / FAIL / ESCALATE (or "skipped: <reason>" if it failed to run).
-    - Full output verbatim from `docs/reviews/round-XN-attempt-N-opus.md` (findings + verdict line).
-  - **Sonnet subagent verdict**: PASS / FAIL / ESCALATE (or "skipped: <reason>").
-    - Full output verbatim from `docs/reviews/round-XN-attempt-N-sonnet.md`.
-  - **Codex verdict** (or **Haiku subagent verdict** when the user authorized the substitution): PASS / FAIL / ESCALATE (or "skipped: <reason>; user chose <authorize haiku / two reviewers / retry later>"). ⚠️ A Haiku verdict without a recorded authorization is a **defect in the report**, not a valid attempt.
-    - Full output verbatim from `docs/reviews/round-XN-attempt-N-codex.md` (or `...-haiku.md` for the substitute).
-  - **Runtime notes**: degraded mode, timeout, extended timeout declaration, user-requested schedule change, or convergence-check trigger if applicable.
-  - **Merge rule applied**: e.g., "Opus PASS + Sonnet FAIL + Codex PASS → FAIL (any FAIL blocks)".
-  - **Prior findings re-checked** (attempts 2+): list the prior findings included in `[PRIOR_REVIEW_FINDINGS]`.
+| Attempt | Reviewer | Verdict | `[code]` | `[gate]` | `[docs]` | Report |
+|---|---|---|---|---|---|---|
+| 1 | opus | FAIL | 2 | 0 | 3 | `docs/reviews/round-XN-attempt-1-opus.md` |
+| 1 | sonnet | PASS | 0 | 0 | 1 | `docs/reviews/round-XN-attempt-1-sonnet.md` |
+| 1 | codex | FAIL | 1 | 1 | 0 | `docs/reviews/round-XN-attempt-1-codex.md` |
 
-**Decision Bundle (attempt N)** — dedup + classification of merged findings:
-  - **Obvious fixes (auto-apply eligible):** list classified findings per the `obvious-fix` conditions in `auto-review-mode.md` §"The loop" step 8 (class 1-4, 6, or K; cited fix; in-round scope; and a convergence condition — 2+ reviewers converge, OR a degraded-mode surviving reviewer, OR a solo grounded class 2–4/6/K the PM can't grep-refute).
-  - **Needs decision:** list classified findings (divergent reviewers, fix outside round scope, reviewer didn't propose concrete fix).
-  - **Judgment-required (user judgment — never auto-apply):** list classified findings (ESCALATE verdict, class 5 DECISIONS-worthy, class 7 urgent).
-  - **Persistent findings (convergence check):** any finding with same class + same file + same symbol/identifier OR ±5 lines as a prior attempt.
-  - **Bundle action taken:** OBVIOUS-FIXES-APPLIED (every obvious-fix auto-applied), then either CONTINUED (no needs-decision/judgment-required left → next review round fired automatically) OR PAUSED-FOR-USER (needs-decision/judgment-required findings presented with options + recommendation; obvious fixes already applied).
-  - **Fix commits (if any applied):** `round X/CN fix N` SHA (code) + `round X/CN fix N report` SHA (paper trail). Note "(partial)" if Edit failures reclassified some items.
+Under the table, one line each: merged verdict per attempt and the mark that decided it (`auto-review-mode.md` §"Marks and the verdict matrix"); the reach measurement for every `[code]` finding that failed the attempt; the Decision Bundle action taken (obvious fixes applied / continued / paused for user); the fix commit SHAs; and any runtime note — degraded mode, timeout, a **recorded** Codex→Haiku authorization, a convergence trigger, or the user authorization for an attempt past the cap.
 
-Repeat the block for each attempt up to N. Omit this section only when (a) the round was Checkpoint 1 (always user-gated), (b) the user opted out of auto-review for this session, or (c) an always-escalate trigger fired and the round was user-gated. See `auto-review-mode.md`.]
+Omit the whole section only when (a) the round was Checkpoint 1, (b) the user opted out of auto-review this session, or (c) an always-escalate trigger fired and the round was user-gated.]
+
+## Decisões desta rodada
+
+[Fixed section, this exact heading, present in every round report. One line per `DECISIONS.md` or `KNOWN_ISSUES.md` entry written during the round: number, slug, and the decision in one sentence. Write "Nenhuma" when the round wrote none — the empty statement is the evidence that the question was asked.
+
+Writing this is mandatory and happens **in the round**; reading it is the user's option. It is the mechanism that replaced stopping the round for every decision entry and every known-issue entry.]
+
+- `#N` `slug-da-decisao` — [what was decided, one sentence].
+- `KI-NNN` `slug-da-ki` — [what is wrong, one sentence, and the status it was written with].
+
+## Paper-trail backlog
+
+[Required whenever non-empty. Findings the mark matrix deferred, one line each: `[mark] [class] file:line — what is wrong — which attempt found it`. Carry it forward at every attempt and hand it to CP5, where it is paid. An empty backlog at CP5 with a non-empty history is a defect, not a saving.]
 
 ### Not done in this round (and why)
 
-[Explicit list of scope items deferred. For each: what, why, where it goes.]
+[Explicit list of deferred scope. For each: what, why, where it goes.]
 
 ### Open questions for the user
 
-1. [Specific question with options if you have a view]
-2. ...
+1. [Specific question with options if you have a view.]
 
 ### Next suggested round
 
-[One-paragraph recommendation of what should come next, or multiple options if there's a real fork.]
-```
+[One-paragraph recommendation, or the options if there is a real fork.]
+````
 
 ## Rules for writing a good report
 
@@ -95,25 +95,19 @@ Specific reports are grep-able, defendable, and give the reviewer an entry point
 
 ### Honesty about what was NOT done
 
-This is the section users are most grateful for. "Not done in this round" prevents the "you said you did X but I can't find it" cycle. Include anything that a reasonable reader might expect to be in this round but isn't. Be explicit about deferrals.
+This is the section users are most grateful for. "Not done in this round" prevents the "you said you did X but I can't find it" cycle. Include anything a reasonable reader might expect to be in this round but isn't.
 
 ### Decisions are one paragraph, not essays
 
-Each design decision gets one short paragraph:
-
-- What the decision was.
-- Why this option over the alternatives.
-- Link to DECISIONS.md if it's non-obvious.
-
-If you find yourself writing more than a paragraph, it's probably a standalone DECISIONS.md entry — do that, and reference it from the report.
+What the decision was, why this option, link to the DECISIONS entry if it's non-obvious. More than a paragraph means it is a standalone entry — write it there and reference it from the report.
 
 ### Known issues are not memory
 
-If the round discovered a pre-existing bug, security gap, technical debt item, or deferred fix outside current scope, it belongs in `KNOWN_ISSUES.md` with a `KI-NNN` entry. The round report should reference the KI; today's memory can say the KI was added, but memory is not the durable issue catalog.
+A pre-existing bug, security gap, debt item, or deferred fix belongs in `KNOWN_ISSUES.md` as a `KI-NNN` entry. The report references the KI; today's memory can say the KI was added, but memory is not the durable catalog.
 
-### Test evidence should be exact
+### Test evidence comes from the generator
 
-Don't approximate. If your test runner says "23 tests, 23 passing," report that with the exact command you ran. If a command was skipped, timed out, failed, or required a local service/env var that was unavailable, say so. If integration tests aren't passing, say so loudly (it's an open issue, not something to gloss over). A reviewer must be able to decide whether the evidence is adequate without trusting memory from the conversation.
+Don't approximate and don't retype. The `Testing` section is the generated block; skips, timeouts, and unavailable local services appear in it or in one line beside it. A reviewer must be able to decide whether the evidence is adequate without trusting anyone's memory of the conversation.
 
 ### Open questions should be actionable
 
@@ -121,31 +115,17 @@ Bad:
 > Should we think about rate limiting?
 
 Good:
-> Rate limiting strategy — plan §8 left this stubbed behind a feature flag. Options:
-> (a) keep stubbed, revisit in hardening phase;
-> (b) implement now with Upstash (~1h);
-> (c) implement with an in-memory limiter (not production-safe but catches runaway tests locally).
-> Recommend (a). OK to keep the stub?
-
-Actionable questions can be answered with a short reply.
+> Rate limiting strategy — plan §8 left this stubbed behind a feature flag. Options: (a) keep stubbed, revisit in hardening; (b) implement now with Upstash (~1h); (c) in-memory limiter (not production-safe). Recommend (a). OK to keep the stub?
 
 ### The "next suggested round" recommendation
 
-You've been deep in the code; you have the best sense of what should come next and why. Make a recommendation, even if it's "fix these follow-ups then proceed to X." Don't leave the user guessing.
-
-### Auto-review history is not optional when auto-review fired
-
-**Paper-trail backlog (required section when non-empty).** Findings deferred by the mark matrix (`auto-review-mode.md` §"Marks and the verdict matrix") go in a section named exactly `## Paper-trail backlog`, one line each: `[mark] [class] file:line — what is wrong — which attempt found it`. **Carry it forward at every attempt**, and hand it to CP5 — CP5 is where it is paid, and an empty backlog at CP5 with a non-empty history is a defect, not a saving.
-
-Auto-review is the default for Checkpoints 2/3/4/5. If it fired, the history must appear in the report — every attempt, every reviewer's verdict, every finding, plus the Decision Bundle classification per attempt, with file:line evidence as the reviewers returned it (verbatim from `docs/reviews/round-XN-attempt-N-{reviewer}.md`). Schedule: every attempt has 3 reviewers (Opus + Sonnet + Codex; when Codex is unavailable the agent **asks the user** — a Haiku subagent runs only under recorded authorization); fewer only in degraded mode. The user uses this to spot-check the reviewers' calls. Don't summarize ("a few attempts, eventual PASS"). Omitting or compressing it defeats the purpose of the audit trail.
-
-If auto-review did not fire (Checkpoint 1, user opt-out, or always-escalate trigger), omit the section entirely.
+You've been deep in the code; you have the best sense of what should come next and why. Make a recommendation, even if it's "fix these follow-ups then proceed to X."
 
 ## What NOT to include
 
-- Long stretches of code. The user can read the files. Reports are about *why* and *what changed at a high level*, not *line-by-line what the code looks like*.
-- Apologies for taking time. Just deliver.
-- Hedging. Don't say "I think" when you mean "I did." Don't say "probably works" — either it passes tests or it doesn't.
+- Long stretches of code, and **reviewer reports pasted inline** — both are files the user can open; the report links to them.
+- Test counts typed by hand outside the generated block.
+- Apologies for taking time, or hedging. Either it passes or it doesn't.
 - Restating the plan. The plan is its own document; the report is about divergence and progress against it.
 
 ## Example (short but complete)
@@ -156,18 +136,13 @@ If auto-review did not fire (Checkpoint 1, user opt-out, or always-escalate trig
 >
 > - `src/app/api/sources/route.ts` — `GET` list, `POST` create (returns secret once).
 > - `src/app/api/sources/[id]/route.ts` — `GET` (masked), `PATCH`, `DELETE`.
-> - `src/app/api/sources/[id]/rotate-secret/route.ts` — `POST`.
-> - `src/app/api/sources/[id]/test-webhook/route.ts` — `POST` dry-run.
 > - `src/lib/sources/service.ts` — CRUD via `dbService`, explicit `organization_id` filter.
 > - `src/lib/sources/validation.ts` — schemas for mapping, custom fields, country alpha-2.
-> - Unit tests: 25 new (9 suites, 117 total passing). Integration tests: 23 new (2 suites, 34 total passing).
 >
 > ### Design decisions worth review
 >
-> 1. Secret masking uses `null` sentinel in `GET` responses, not `"****"`. Non-ambiguous (see DECISIONS.md #28).
-> 2. `rotate-secret` invalidates prior secret immediately; no grace period in Phase 1 (see DECISIONS.md #29).
-> 3. Webhook URL built from `[base URL env var]`, not `Host` header. Preview deploys would otherwise burn ephemeral URLs into source records (see DECISIONS.md #30).
-> 4. `requireRoleApi()` for JSON API routes vs `requireRole()` for page redirects. Two guards, two purposes (see DECISIONS.md #31).
+> 1. Secret masking uses a `null` sentinel in `GET` responses, not `"****"` — non-ambiguous (DECISIONS #28).
+> 2. `rotate-secret` invalidates the prior secret immediately; no grace period in Phase 1 (DECISIONS #29).
 >
 > ### Known issues / technical debt updates
 >
@@ -175,21 +150,30 @@ If auto-review did not fire (Checkpoint 1, user opt-out, or always-escalate trig
 >
 > ### Testing
 >
-> - Commands/checks run:
->   - `pnpm test:unit -- sources` — PASS, 117 tests passing, 789ms.
->   - `pnpm test:integration -- sources` — PASS, 34 tests passing, 12.96s against `[local DB service]`.
-> - Skipped/not run: None.
-> - Manual smoke: tested full create → POST signed payload → dedup detect → rotate → old secret 401 flow against `[local DB service]`. No issues.
-> - Evidence notes: local DB reset before integration run; webhook secret fixtures generated by test setup.
+> > `<!-- test-summary -->` … generated table (commit, date, command, tests, failures, errors, skipped, time) … `<!-- /test-summary -->`
+>
+> ### Auto-review history
+>
+> | Attempt | Reviewer | Verdict | `[code]` | `[gate]` | `[docs]` | Report |
+> |---|---|---|---|---|---|---|
+> | 1 | opus | PASS | 0 | 0 | 2 | `docs/reviews/round-B-C2-attempt-1-opus.md` |
+> | 1 | sonnet | PASS | 0 | 0 | 0 | `docs/reviews/round-B-C2-attempt-1-sonnet.md` |
+> | 1 | codex | PASS | 0 | 0 | 1 | `docs/reviews/round-B-C2-attempt-1-codex.md` |
+>
+> Merged: PASS on attempt 1; three `[docs]` findings deferred to the backlog below.
+>
+> ## Decisões desta rodada
+>
+> - `#28` `secret-masking-null-sentinel` — masked secrets return `null`, not a fixed string, so "masked" and "empty" are distinguishable.
+> - `#29` `no-grace-period-on-rotation` — rotation is an instant cutover in Phase 1; coordination with the single integrator is acceptable.
+>
+> ## Paper-trail backlog
+>
+> - `[docs]` `[4]` `docs/reviews/round-B-C2-report.md:31` — "34 integration tests" typed outside the generated block — attempt 1.
 >
 > ### Not done in this round
 >
 > - UI (`/[orgSlug]/sources`, `/[orgSlug]/leads`) — Round C.
-> - End-of-phase housekeeping (update `PROJECT_STRUCTURE.md`, smoke test doc) — Round D.
->
-> ### Open questions
->
-> Does `test-webhook` import `defaultIngestDeps`, or is it a standalone dry-run reusing only `applyMapping` + `normalizePhone`? Answer: standalone, in `src/lib/sources/test-webhook.ts` — 1 SELECT, zero writes. Integration test confirms zero side effects.
 >
 > ### Next suggested round
 >
