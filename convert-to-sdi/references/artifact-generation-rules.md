@@ -157,7 +157,7 @@ Fresh generation rules:
 - Generate the file even if no issues are known.
 - Do **not** convert weak auto-audit anomalies into KI entries. Put weak observations in `docs/memory/YYYY-MM-DD.md` under "Notable observations" instead.
 - Add initial KI entries only when onboarding found concrete evidence of a pre-existing bug, security gap, data correctness problem, or tech debt item that is outside the setup scope and has a reproducible `file:line` or scenario.
-- If the user has an external issue tracker, keep `KNOWN_ISSUES.md` as the repo-local catalog and link external tickets from `Status` or `Suggested fix scope`.
+- If the user has an external issue tracker, keep `KNOWN_ISSUES.md` as the repo-local catalog and link external tickets from a `Nota de status` line or `Suggested fix scope`.
 - Start numbering at `KI-001`; never reuse or renumber IDs.
 
 ### `docs/MEMORY.md` + `docs/memory/YYYY-MM-DD.md` — FRESH
