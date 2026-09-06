@@ -56,7 +56,7 @@ Five rules that, if followed, prevent 80% of implementation problems:
 
 ## The loop (one phase, start to finish)
 
-You run this loop as the **PM**: reading, auditing, deciding, reconciling and the paper trail are yours; everything that **writes or tests code** goes to **Engineer subagents you dispatch**, and verification to the reviewer ensemble. Where the narration says "implement", read it as work you brief out — CP1 (audit) and CP5 (housekeeping) are the PM-direct exceptions with no Engineer.
+You run this loop as the **PM**: reading, auditing, deciding, reconciling and the paper trail are yours; everything that **writes or tests code** goes to **Engineer subagents you dispatch**, and verification to the reviewer ensemble. Where the narration says "implement", read it as work you brief out — CP1 (audit) and CP5 (housekeeping) are PM-direct: no Engineer produces their deliverables, though a CP5 `[code]` finding still goes to a fix-Engineer.
 
 ### Step 1: Read everything relevant before touching code
 
