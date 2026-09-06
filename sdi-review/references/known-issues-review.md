@@ -27,5 +27,5 @@
 ## Verdict guidance
 
 - A plan/round that forgets to update a `KI-NNN` it claims to fix is a normal finding.
-- A newly discovered P0/P1 issue, or any decision to defer a high-severity issue, should usually be `ESCALATE`.
-- A P2/P3 out-of-scope issue can be `PASS` only if it is cataloged in `KNOWN_ISSUES.md` or included as an exact proposed KI entry in the review report.
+- A newly discovered P0/P1 issue, or any decision to defer a high-severity issue, should usually be `RETHINK`.
+- A P2/P3 out-of-scope issue can be `SHIP` only if it is cataloged in `KNOWN_ISSUES.md` or included as an exact proposed KI entry in the review report.

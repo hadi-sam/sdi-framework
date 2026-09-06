@@ -19,12 +19,13 @@ Response shape:
 - Findings first. Do not summarize what works.
 - Specific issues, graded: blocker / non-blocker / nice-to-have.
 - For non-blockers, recommend whether to fix now or defer to hardening.
-- End with `VERDICT: PASS / FAIL / ESCALATE`.
+- End with `BOTTOM LINE: SHIP | FIX-THEN-SHIP | RETHINK | BLOCK`.
 
-Verdict rules:
-- `PASS` = no blockers and no required changes before the next round.
-- `FAIL` = at least one blocker or required mechanical fix before the next round.
-- `ESCALATE` = the review surfaced a DECISIONS-worthy choice, scope change, architecture conflict, or anything requiring user judgment.
+Bottom-line rules:
+- `SHIP` = no blockers and no required changes before the next round.
+- `FIX-THEN-SHIP` = at least one blocker or required mechanical fix before the next round.
+- `RETHINK` = the review surfaced a DECISIONS-worthy choice, scope change, or architecture conflict.
+- `BLOCK` = something urgent to address before any further work on this target.
 
 ## A or B fork
 
