@@ -69,34 +69,17 @@ Inside the plan:
 - **§0 Pre-requisites** — list what from the previous work item must be green before starting this one. Reference round reports or commits where applicable. Examples: "Phase 1 housekeeping complete (smoke test green)", "DECISIONS #28-#31 materialized in code", "Migration `0007_add_billing_tables` applied".
 - **§1 Scope** — concrete in-scope and out-of-scope. The PRD §Out-of-scope and `KNOWN_ISSUES.md` are your guides for what's deferred; if the work item fixes `KI-NNN`, list it in scope and require status update during housekeeping.
 - **§2 Type-specific (database / API / UI / etc.)** — reference DECISIONS already taken (link `DECISIONS.md #N`), don't duplicate. New schema/contracts get sketched here.
-- **§11 Implementation checkpoints** — map §2–§9 work units to the standard 5 checkpoints (Foundation, Core, Integrations, UI, Housekeeping). Drop checkpoints not applicable to this work item (e.g., no UI → drop Checkpoint 4). The standard gates per checkpoint are inlined in the plan template (mirrored from sdi-mode for self-containment). Add phase-specific gates only when the phase has constraints unique to it.
-- **§12 Decisions Log** — only the decisions you anticipate this work item will memorialize. Don't pre-record decisions from earlier work items.
-- **§13 Known divergences** — pre-populate with anything the audit of recent memory dailies surfaced.
+- **§11 Implementation checkpoints** — map §2–§9 work units to the standard 5 checkpoints (Foundation, Core, Integrations, UI, Housekeeping). Drop checkpoints not applicable to this work item (e.g., no UI → drop Checkpoint 4). The standard gates are canonical in `sdi-mode/references/stop-and-review-patterns.md` and are **not** copied into the plan; add phase-specific gates only when the phase has constraints unique to it.
+- **§12 Decisions Log** — a list of slugs for the decisions you anticipate this work item will memorialize, with no restatement of the entries themselves. Numbers are assigned when each entry is written; never pre-allocate one in the plan.
+- **§13 Known divergences** — one line per divergence, pre-populated with anything the audit of recent memory dailies surfaced, without restating the docs it diverges from.
 
-Plan length: same target as initial-bundle plans (400–600 lines, hard cap 800). Don't pad.
+Plan length: the byte ceiling in `core-templates/implementation-plan-template.md` §Size, which is the project's docs lint when the project has one. Don't pad.
 
 ### Verify-before-claim discipline
 
-Every concrete reference in the generated plan — method, class, hook, file:line, precedent ("mirrors pattern of X"), count ("N sites to change") — must be preceded by Grep/Read confirming existence and shape in the codebase. Cite output verbatim when useful.
+Every symbol, class, hook or path the generated plan names must be confirmed by Grep/Read first — the plan asserts that a thing **exists** and has the shape it claims, never that there are N of them. Rule of thumb: **if a reviewer could open the file and say "this is wrong"**, it is concrete and needs Grep; **if the only validation is "does this make conceptual sense"**, it is narrative (motivation, rationale, external sources) and does not.
 
-**Anti-pattern explicitly to avoid:** assertions like "(already exists in code)" / "(method available)" / "(N sites to change)" without Grep evidence immediately before the assertion.
-
-**Doesn't apply** to narrative text (motivation, rationale) — only to concrete claims that the coding agent will use as evidence during implementation. When in doubt: if an adversarial reviewer could flag the claim with Grep, you should have Grep'd first.
-
-**Worked examples (narrative vs concrete boundary):**
-
-| Claim in plan | Category | Grep required? |
-|---|---|---|
-| "Bling rate limit is 3 req/s (per Bling V3 docs)" | Narrative (motivation, external source) | No — doesn't cite repo code |
-| "Bling rate limiter is in `RateLimitService.acquire`" | Concrete (cites repo symbol) | **YES** — Grep `RateLimitService.acquire` |
-| "Mirror the `OmieClient` pattern" | Concrete-precedent (cites symbol) | **YES** — Grep/Read `OmieClient` to confirm pattern |
-| "10 sites of `validateMembership` to migrate" | Concrete-count | **YES** — Grep and count literally |
-| "Auth helpers live in `service/auth/`" | Concrete-path | **YES** — Glob `service/auth/**` to confirm directory exists |
-| "Users expect latency < 200ms" | Narrative (UX rationale) | No — doesn't cite code |
-| "RateLimitService drops requests above threshold" | Concrete-behavior (claim about code) | **YES** — Read `RateLimitService` to confirm behavior |
-| "(method already exists in code)" with no name | Antipattern — vague concrete | **YES** — name the method AND grep; OR remove the parenthetical |
-
-Rule of thumb: **if a reviewer could open the file and say "this is wrong"**, it's concrete and needs Grep. **If the only validation is "does this make conceptual sense"**, it's narrative.
+**Anti-patterns:** `(already exists in code)` / `(method available)` with no name to grep; and any count or `file:line` anchor written into the plan. Counts and anchors go stale silently and cannot be revalidated from the prose — put the command, the number and the date in `docs/reviews/` and let the plan point there.
 
 ## Optional ROADMAP update
 
