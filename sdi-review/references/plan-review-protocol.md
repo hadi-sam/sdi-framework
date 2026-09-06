@@ -110,7 +110,7 @@ The autonomous loop in `SKILL.md` handles iteration: after round 1, the coordina
 2. Re-run this protocol with the second-pass branch active: also read the prior round's `docs/reviews/plan-review-(NN-1).md` (the second-pass step in "Steps you must perform"), and apply check K (resolution of prior findings).
 3. Save each round's output as `docs/reviews/plan-review-NN.md` (`01`, `02`, ...).
 
-Cap at **3 rounds** + the convergence check, canonical in [`sdi-mode/references/auto-review-mode.md`](../../sdi-mode/references/auto-review-mode.md) §"Loop cap". Round 3 without a SHIP is a **mechanical stop**: the coordinator stops and hands the plan back to the user, and only the user authorizes a round 4 — with the authorization and its reason written to `DECISIONS.md` before that round runs. A plan still carrying class 1-6 findings at the cap has a structural problem, not a review problem.
+Cap at **3 rounds** + the convergence check, canonical in [`sdi-mode/references/auto-review-mode.md`](../../sdi-mode/references/auto-review-mode.md) §"Loop cap". The last allowed round without a SHIP is a **mechanical stop**: the coordinator stops and hands the plan back to the user, and only the user authorizes the next round — with the authorization and its reason written to `DECISIONS.md` before that round runs. A plan still carrying class 1-6 findings at the cap has a structural problem, not a review problem.
 
 ## Common pitfalls
 
