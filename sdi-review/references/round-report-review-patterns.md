@@ -1,6 +1,6 @@
 # Round report review patterns
 
-Patterns for `sdi-review` Modes 2, 3, 4 (round report review, fork decision, bug found). The **coordinator** drives these; for **Mode 2** it dispatches the ensemble (Opus + Sonnet + Codex; Haiku if Codex fails) with the filled adversarial prompt — reviewers never load `sdi-review`. **Mode 2 does not auto-apply code fixes** — the implementer (`sdi-mode`) owns code: present obvious code fixes as recommendations, and decisions as options + a recommendation. **Modes 3 and 4 are advisory single passes**, not fix loops.
+Patterns for `sdi-review` Modes 2, 3, 4 (round report review, fork decision, bug found). The **coordinator** drives these; for **Mode 2** it dispatches the ensemble (Opus + Sonnet + Codex; if Codex fails, ask the user before substituting) with the filled adversarial prompt — reviewers never load `sdi-review`. **Mode 2 does not auto-apply code fixes** — the implementer (`sdi-mode`) owns code: present obvious code fixes as recommendations, and decisions as options + a recommendation. **Modes 3 and 4 are advisory single passes**, not fix loops.
 
 > **For review of an implementation plan document, use `plan-review-protocol.md` — same agent, different framework (deeper artifact reading, plan-specific checks).**
 
@@ -17,14 +17,11 @@ Round report on your desk. Check:
 
 Response shape:
 - Findings first. Do not summarize what works.
-- Specific issues, graded: blocker / non-blocker / nice-to-have.
+- Specific issues, each carrying its mark, graded: blocker / non-blocker / nice-to-have. That grading is **presentation and decides nothing** — the verdict is read off the matrix below.
 - For non-blockers, recommend whether to fix now or defer to hardening.
-- End with `VERDICT: PASS / FAIL / ESCALATE`.
+- End with `BOTTOM LINE: SHIP | FIX-THEN-SHIP | RETHINK | BLOCK`.
 
-Verdict rules:
-- `PASS` = no blockers and no required changes before the next round.
-- `FAIL` = at least one blocker or required mechanical fix before the next round.
-- `ESCALATE` = the review surfaced a DECISIONS-worthy choice, scope change, architecture conflict, or anything requiring user judgment.
+**Bottom-line rules (the reviewer's line, and only a proposal), off [`sdi-mode/references/auto-review-mode.md`](../../sdi-mode/references/auto-review-mode.md) §"Marks and the verdict matrix" and never re-derived here:** `SHIP` when no finding fails by that matrix; `FIX-THEN-SHIP` when one does and its fix is mechanical; `RETHINK` for a class-5 finding; `BLOCK` for a class-7 marked urgent. **The round is the coordinator's**, off the same matrix with the mark it assigned.
 
 ## A or B fork
 

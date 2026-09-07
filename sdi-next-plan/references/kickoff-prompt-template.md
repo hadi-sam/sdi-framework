@@ -16,7 +16,7 @@ Implementing [Phase N / <slug>] of this project per docs/IMPLEMENTATION_PLAN_[PH
 
 Read in this order before writing any code:
 1. README.md to get context.
-2. AGENTS.md or CLAUDE.md (project facts — stack, doc map, conventions, work tracker).
+2. AGENTS.md or CLAUDE.md (project facts — stack, doc map, conventions, and the work index if the fact sheet carries one).
 3. docs/IMPLEMENTATION_PLAN_[PHASE_N | <slug>].md fully.
 4. docs/PROJECT_STRUCTURE.md for conventions.
 5. docs/ARCHITECTURE.md — at minimum the type-specific section and the critical flows.

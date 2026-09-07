@@ -1,6 +1,6 @@
 # Adversarial review prompt template
 
-The self-contained adversarial prompt that `sdi-review`'s **coordinator hands each dispatched reviewer** (Opus / Sonnet / Codex / Haiku). It is what a reviewer receives — **never the `sdi-review` skill itself**; a reviewer that loads the skill would re-coordinate (dispatch its own reviewers) instead of reviewing. The same prompt is also usable **ad-hoc/manually** — when you want a second pair of eyes on a plan, a doc, a branch, a function, or a sketch.
+The self-contained adversarial prompt that `sdi-review`'s **coordinator hands each dispatched reviewer** (Opus / Sonnet / Codex, or a user-authorized Haiku). It is what a reviewer receives — **never the `sdi-review` skill itself**; a reviewer that loads the skill would re-coordinate (dispatch its own reviewers) instead of reviewing. The same prompt is also usable **ad-hoc/manually** — when you want a second pair of eyes on a plan, a doc, a branch, a function, or a sketch.
 
 The `sdi-mode` **PM/orchestrator** dispatches reviewers the same way (see `sdi-mode/references/roles-and-orchestration.md`): for a **plan or standalone target** it fills *this* template; for a **round/diff target** it fills the embedded template in `sdi-mode/references/auto-review-mode.md`. Either way the dispatched reviewer gets the **filled prompt, never a skill** — the prompt-not-skill rule, from both sides.
 
@@ -109,6 +109,26 @@ End with TWO lines:
 
 **Output format hint:** wrap method/class/symbol references in backticks always (enables convergence-check symbol extraction when this prompt feeds into an automated loop).
 
+**Mark every finding `[code]`, `[gate]` or `[docs]`. Your mark is a proposal — the coordinator assigns the final one.**
+
+- `[code]` — the fix touches production code; **or** the description reveals a defect in the thing described, which you decide by measuring the code, not by where the finding points; **or** the text you are reviewing **is the deliverable** of this checkpoint.
+- `[gate]` — the fix touches only a test, gate, lint, CI config, or fixture.
+- `[docs]` — the fix touches only documentation that **describes** code: a round report, a memory entry, a comment, an already-executed plan section.
+
+Two promotions apply before the mark is final: a `[gate]` finding on a gate **cited by an acceptance criterion** is `[code]` (only a gate no acceptance criterion cites has budget); and `[docs]` is `[code]` **when the text is the deliverable** — a plan review, a checkpoint whose deliverable is documentation, and everything a housekeeping checkpoint delivers, that checkpoint's deliverable being the paper trail itself.
+
+Two traps. **Prose that a live gate parses** is not `[docs]` — some repos have tests that walk the tree and parse comments, so editing that prose can turn a test red. **A choice that is still open** is class 5, not paperwork: a missing decision entry is `[docs]` only when the choice was already made and merely isn't written down.
+
+| Mark / class | Effect on the attempt |
+|---|---|
+| `[code]` of class 1–4, 6, or K | **fails** the attempt |
+| `[gate]` not promoted | fails **one** attempt per round; on the next, a remaining or new one becomes a known-issue entry with a trigger and does not fail |
+| `[docs]` not promoted, and non-urgent class 7 of any mark | never fails; goes to the report's paper-trail backlog and is paid at the housekeeping checkpoint |
+| class 5 | **ESCALATE**, beats everything |
+| class 7 marked urgent | **BLOCK** |
+
+Report the `[docs]` ones anyway — they are collected, not discarded — but spend your budget on the thing being built.
+
 BOTTOM LINE rules:
 - SHIP — zero findings of class 1-6 or K; class 7 only if minor and optional.
 - FIX-THEN-SHIP — at least one class 1-4, 6, or K finding, but all are mechanically fixable without rethinking the approach.
@@ -156,4 +176,4 @@ The `- < file` pattern is load-bearing: the `-` argument tells codex to read pro
 
 ---
 
-Or pass the filled prompt to an Agent subagent (Anthropic Agent tool, `subagent_type: general-purpose`, `model: opus` / `sonnet` / `haiku`) as the `prompt` argument — no stdin gymnastics needed; the subagent runtime handles input. The output is the review report. The coordinator dispatches one such subagent per ensemble reviewer, in parallel — Opus + Sonnet via the Agent tool, Codex via the `codex exec` block above (or a Haiku subagent if Codex is down). **Pass the filled prompt, never the skill.**
+Or pass the filled prompt to an Agent subagent (Anthropic Agent tool, `subagent_type: general-purpose`, `model: opus` / `sonnet` / `haiku` — the last **only under user authorization**) as the `prompt` argument — no stdin gymnastics needed; the subagent runtime handles input. The output is the review report. The coordinator dispatches one such subagent per ensemble reviewer, in parallel — Opus + Sonnet via the Agent tool, Codex via the `codex exec` block above (or a Haiku subagent if Codex is down). **Pass the filled prompt, never the skill.**

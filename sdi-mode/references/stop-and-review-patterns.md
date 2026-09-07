@@ -1,228 +1,109 @@
 # Stop-and-Review Patterns
 
-Implementation rounds aren't straight lines. Each phase has natural checkpoints where you deliver partial work and wait for review before continuing.
-
-## Why checkpoints exist
-
-- **Catching drift cheaply.** Errors compound; catching them at checkpoint N is 10x cheaper than catching at checkpoint N+3.
-- **Keeping the user in the loop.** A long silent implementation arrives as one big thing the user can't easily review. Small, regular deliveries = continuous review.
-- **Preserving your own context.** Stopping lets you receive corrections before you've built more code that needs reworking.
+Each phase has checkpoints where you deliver partial work and wait for review: they catch drift cheaply and let a correction land before more code sits on it.
 
 ## Gates: pass or fail, no in-between
 
-Each checkpoint has a **gate checklist** — a binary list of items that must all be ✓ before the round closes and you proceed to the next checkpoint. Gates are not aspirational. If a gate is unchecked, the checkpoint isn't complete; do not silently move on.
-
-If you're tempted to skip a gate "because it's just one item", that's exactly when the discipline matters. Either complete the gate, or surface the blocker explicitly to the user and ask for an explicit waiver.
+Each checkpoint has a **gate checklist** where every item must be ✓ before the round closes. Gates are not aspirational: an unchecked gate means the checkpoint isn't complete. Skipping one "because it's just one item" is exactly when the discipline matters — complete it, or surface the blocker and ask for an explicit waiver.
 
 ## Standard checkpoints per phase
 
-These are typical — adapt to the specific phase.
+**CP1 (Foundation) and CP5 (Housekeeping) are fixed and non-negotiable.** What adapts is the middle: CP2 to CP4 are shaped to the phase, and a phase runs **2 to 5 checkpoints in total** — no UI, no CP4; a maintenance pass may be CP1 + CP5 alone. Nothing removes CP1 or CP5.
 
 ### Roles at each checkpoint
 
-`sdi-mode` executes every checkpoint with the PM / Engineer / Reviewer split (see [`roles-and-orchestration.md`](roles-and-orchestration.md)). The gate checklists below are unchanged — what this adds is *who* performs each:
-
-- **CP1 (Foundation/audit)** is **PM-direct and user-gated** — the PM does the read/grep/audit itself (no Engineer) and pauses after the audit.
-- **CP2 / CP3 / CP4** are **Engineer(s) + review** — the PM dispatches 1–3 Engineers (always Opus) to implement the slice(s), confirms the build/tests green from their reported evidence, reconciles, then dispatches the three-reviewer ensemble and reconciles verdicts. An obvious code finding routes to a **fix-Engineer**; an obvious paper-trail finding the PM applies directly.
-- **CP5 (Housekeeping)** is **PM-direct doc work plus two closing gates** — the PM does the doc work itself (no Engineer for CP5's own deliverables), then (a) dispatches the **comprehensive auto-review ensemble** (the same up-to-5-attempt loop, on the phase-wide diff) and (b) has the **live smoke** run as a user gate (the PM generates the steps, the **user runs** them and pastes output, the PM interprets). The PM never runs the suite or the smoke itself — any suite rerun is Engineer-provided evidence.
-- **Opening the PR** is the **PM's** (`gh pr create`), only after **both** the CP5 comprehensive review PASSes **and** the smoke passes.
+The gate checklists are the same whoever runs them; the PM / Engineer / Reviewer split ([`roles-and-orchestration.md`](roles-and-orchestration.md)) only decides *who*. **CP1** is PM-direct and user-gated, no Engineer. **CP2 / CP3 / CP4** are Engineer(s) + review, with an obvious code finding routed to a **fix-Engineer** and a paper-trail one applied by the PM. **CP5** is PM-direct doc work plus two closing gates: no Engineer produces CP5's own deliverables, but **CP5 does have a fix-Engineer** for any `[code]` finding the review raises — the same routing as everywhere else. The PM never runs a suite or a smoke, and **opening the PR** is the PM's (`gh pr create`), only after **both** the review PASSes **and** the smoke passes.
 
 ### Auto-review eligibility
 
-**Auto-review is the default for Checkpoints 2, 3, 4, and 5** (CPs 2-4 per-round; CP5 comprehensive phase-wide). Verification is delegated to a different-model reviewer ensemble unless the user asks for a different schedule: **every attempt (1-5)** runs Opus subagent + Sonnet subagent + `codex exec` (typically gpt-5.5 with reasoning effort `xhigh`) in parallel; if Codex is unavailable, a Haiku subagent substitutes for it. Different models find partially-disjoint bugs; the union catches more than any one reviewer alone. The checkpoint gate is closed by a structured Decision Bundle (per `auto-review-mode.md` §"Decision Bundle format"): obvious-fix findings are auto-applied (and the next round fires when no decisions remain), needs-decision and judgment-required findings are presented with options + a recommendation (the latter never auto-applied). The user can opt out per session — see `auto-review-mode.md`.
+⚠️ **CP5 consumes the paper-trail backlog.** CP2/3/4 do **not** fail on unpromoted `[docs]` findings — they PASS and defer them. **CP5 pays that debt**, and there the promotion applies: everything CP5 delivers is the paper trail, so a `[docs]` finding at CP5 is `[code]` and blocks. A CP5 closing with an unconsumed backlog has not closed. Marks and matrix: `auto-review-mode.md` §"Marks and the verdict matrix".
 
-**Checkpoint 1 (Foundation) stays user-gated regardless** — audit findings routinely trigger always-escalate (DECISIONS material divergences, KI entries, blockers), making auto-review CP1-eligibility a near no-op. User gates the audit directly.
+**Auto-review is the default for Checkpoints 2, 3, 4 and 5** — CPs 2-4 per round, CP5 comprehensive over the whole phase. The ensemble, the Decision Bundle, the cap (§"Loop cap") and the opt-out live in `auto-review-mode.md`, not restated here. **Checkpoint 1 stays user-gated regardless**, because audit findings routinely trigger always-escalate; at CP5 a PASS stops **before** the PR.
 
-**Checkpoint 5 (Housekeeping) has comprehensive auto-review** running the **same up-to-5-attempt fix loop** as CPs 2-4. Reviewers look at the entire phase (diff between `PHASE_BASE_SHA` and `HEAD`), per-CP packet split by default. Obvious fixes auto-apply and the review re-runs; structural findings classify as needs-decision/judgment-required and are presented for the user. On PASS, stop **before opening the PR**; after 5 attempts still FAIL, escalate for the user to decide. See `auto-review-mode.md` §"CP5 comprehensive review".
-
-Any round that produces a `DECISIONS.md` entry, adds/updates a `KNOWN_ISSUES.md` entry, hits any blocker, any emergency deviation, any plan revision, and any always-escalate trigger from `auto-review-mode.md` also stays user-gated even within an eligible checkpoint.
-
-Each checkpoint header below carries an eligibility tag. Auto-eligible checkpoints have a single gate that accommodates both default auto-review and opt-out user-gated modes.
+A round that hits a blocker, an emergency deviation, a plan revision or any other always-escalate trigger stays user-gated even inside an eligible checkpoint. **Writing a `DECISIONS.md` or `KNOWN_ISSUES.md` entry does not stop the round** — it is recorded in `## Decisões desta rodada` and repeated in the stop message at the next user-gated point. A product, design or architecture choice still **open** is a different thing: class 5, ESCALATE, and not the PM's to take.
 
 ### Checkpoint 1: Foundation (after audit) **(user-gated)**
 
-**Deliver:**
-- Audit report of plan vs repo (see `audit-first-protocol.md`).
-- Proposed schema / migration / dependencies (or scaffolding for fresh repos; provider wrappers + initial prompts for AI agents; trigger handlers + first integration wrapper for workflows).
-- Any revision notes to the plan based on audit findings.
-- Any `KNOWN_ISSUES.md` entries discovered during the audit that are outside current scope.
-
-**Do not:**
-- Write any endpoint, route, business logic, or UI code.
-- Run package-install commands before approval.
-
-**Gates (all ✓ before next checkpoint):**
-- [ ] Audit report posted in canonical format
-- [ ] All Blockers from the audit are either resolved or explicitly waived by the user
-- [ ] All Open Questions from the audit are answered
-- [ ] Each **material** plan-vs-repo Divergence has a corresponding `DECISIONS.md` entry; mechanical divergences are noted in the round report only (see `decisions-log-format.md` for the material vs mechanical distinction)
-- [ ] Each concrete out-of-scope bug/security gap/tech debt finding has a `KNOWN_ISSUES.md` entry, or the audit states no new known issues were found
-- [ ] Plan has a revision note (`rN`) summarizing audit changes (if any landed)
-- [ ] User has given explicit go ("yes", "go", "proceed") — silence is **not** consent
-- [ ] Today's `docs/memory/YYYY-MM-DD.md` entry mentions this checkpoint passing
-
-**Stop phrase:**
-> "Stopping here and waiting for your review before proceeding to [next deliverable]."
-
----
-
-### Checkpoint 2: Core domain logic (pure functions, services, types) **(auto-review eligible)**
-
-**Deliver:**
-- Pure functions (mapping, validation, hashing/signing, normalization, state transitions, prompt rendering, etc.).
-- Types / interfaces / schemas for the domain.
-- Unit tests for everything above.
-
-**Do not:**
-- Write route handlers, API endpoints, or UI yet.
+**Deliver:** the audit report of plan vs repo (`audit-first-protocol.md`); the proposed schema / migration / dependencies (or whatever foundation the project type needs); revision notes from the audit; any `KNOWN_ISSUES.md` entries it surfaced outside scope. **Do not** write endpoints, routes, business logic or UI, and do not install a package before approval.
 
 **Gates:**
-- [ ] All pure functions in scope for this checkpoint are implemented
-- [ ] Unit tests cover the edge cases called out in the plan (count vs plan list)
-- [ ] All unit tests pass (real count from the runner, not approximation)
-- [ ] No TODO/FIXME left in the code without a corresponding `DECISIONS.md`, `KNOWN_ISSUES.md`, or memory entry
-- [ ] Round report posted in canonical format
-- [ ] Auto-review (default) — reviewer ensemble returned merged PASS with all gates ✓ **OR** user opted out of auto-review and gave explicit go to move into integrations (see `auto-review-mode.md`)
-- [ ] Today's `docs/memory/YYYY-MM-DD.md` entry summarizes the round
+- [ ] Audit report posted in canonical format
+- [ ] Every Blocker resolved or explicitly waived, every Open Question answered
+- [ ] Each **material** divergence has a `DECISIONS.md` entry; mechanical ones only the round report (`decisions-log-format.md`)
+- [ ] Each concrete out-of-scope bug / security gap / debt has a `KNOWN_ISSUES.md` entry, or the audit states none were found
+- [ ] Plan has a revision note (`rN`) for the audit changes, if any landed
+- [ ] User gave explicit go ("yes", "go", "proceed") — silence is **not** consent
+- [ ] Today's memory entry mentions the checkpoint passing
 
----
+**Stop phrase:** "Stopping here and waiting for your review before proceeding to [next deliverable]."
+
+### Checkpoint 2: Core domain logic **(auto-review eligible)**
+
+**Deliver:** the pure functions (mapping, validation, signing, normalization, state transitions, prompt rendering), the domain types and schemas, and unit tests for both. **Do not** write route handlers, endpoints or UI yet.
+
+**Gates:**
+- [ ] Every pure function in scope implemented
+- [ ] Unit tests cover the edge cases the plan lists and all pass — real count from the runner's generated block
+- [ ] No TODO/FIXME left without a DECISIONS, KNOWN_ISSUES or memory entry
+- [ ] Round report posted; today's memory entry summarizes the round; auto-review merged PASS **OR** explicit go after opt-out
 
 ### Checkpoint 3: Wire up integrations **(auto-review eligible)**
 
-**Deliver:**
-- Route handlers / API endpoints / background workers / pipeline stages / agent loop wiring.
-- Integration tests proving end-to-end behavior against local services (DB, job runner, LLM provider in mock mode, etc.).
-- Observability hooks (Sentry, OTel, structured logs).
-
-**Do not:**
-- Build UI yet (if applicable).
+**Deliver:** route handlers, workers, pipeline stages or agent-loop wiring; integration tests proving end-to-end behaviour against local services; observability hooks. **Do not** build UI yet.
 
 **Gates:**
-- [ ] All endpoints/handlers/workers in scope for this checkpoint exist and respond
-- [ ] Integration tests cover the canonical happy path + at least one failure mode per surface
-- [ ] All integration tests pass against a real local instance (not mocks-only)
-- [ ] Observability is wired (logs, metrics, tracing) per `ARCHITECTURE.md` requirements
-- [ ] Manual smoke command attempted (curl/httpie/CLI) and result documented
-- [ ] Round report posted
-- [ ] Auto-review (default) — reviewer ensemble returned merged PASS with all gates ✓ **OR** user opted out and gave explicit go (see `auto-review-mode.md`)
-
----
+- [ ] Every endpoint/handler/worker in scope exists and responds
+- [ ] Integration tests cover the happy path plus a failure mode per surface, passing against a real local instance (not mocks-only)
+- [ ] Observability wired per `ARCHITECTURE.md`
+- [ ] Manual smoke command **run by the Engineer**, exact output in the round report — the PM never runs it; the CP-final smoke, and only that one, is the user's
+- [ ] Round report posted; auto-review merged PASS **OR** explicit go after opt-out
 
 ### Checkpoint 4: UI (only if the phase includes it) **(auto-review eligible)**
 
-**Deliver:**
-- Pages, screens, forms, tables, dialogs, navigation.
-- Components used (Radix wrappers, shadcn, framework-native primitives, or equivalent per `DESIGN_SYSTEM.md`).
-- State management, form validation, error handling, loading states.
-
-**Do not:**
-- Defer accessibility "for later" — empty/loading/error states and basic a11y are part of this checkpoint.
+**Deliver:** pages, forms, tables, dialogs, navigation; components per `DESIGN_SYSTEM.md`; state management, validation, error handling, loading states. **Do not** defer accessibility — empty/loading/error states and basic a11y belong to this checkpoint.
 
 **Gates:**
-- [ ] Every page/screen in scope is reachable from navigation
-- [ ] Forms validate per the schemas defined in Checkpoint 2
-- [ ] Loading, empty, and error states exist for each data-driven surface
-- [ ] Manual walkthrough of the primary flow completed; screenshots in the round report
+- [ ] Every page/screen in scope reachable from navigation
+- [ ] Forms validate per the schemas from Checkpoint 2
+- [ ] Loading, empty and error states exist for each data-driven surface
+- [ ] Manual walkthrough of the primary flow **run by the Engineer**, screenshots and result in the round report — the PM never runs it; the CP-final smoke, and only that one, is the user's
 - [ ] No console errors or accessibility warnings on the primary flow
-- [ ] Round report posted
-- [ ] Auto-review (default) — reviewer ensemble returned merged PASS with all gates ✓ **OR** user opted out and gave explicit go (see `auto-review-mode.md`)
+- [ ] Round report posted; auto-review merged PASS **OR** explicit go after opt-out
 
----
-
-### Checkpoint 5: Housekeeping (end of phase) **(auto-review comprehensive — same fix loop; review PASS → user-run smoke → PM opens PR)**
-
-**Deliver:**
-- Acceptance criteria mapped to evidence (test file + line, or smoke step).
-- Updated `PROJECT_STRUCTURE.md` if layout changed.
-- Updated `DESIGN_SYSTEM.md` if tokens or components drifted (UI types only).
-- Updated `AGENTS.md` / `CLAUDE.md` with newly discovered project conventions; if both exist, kept them in sync.
-- Closing work item's verbose narrative written as a `## <work item>` section in `docs/WORK_LOG.md`; its Work tracker row reduced to one line (status + pointers).
-- `DECISIONS.md` entries complete (all decisions taken during the phase recorded).
-- `KNOWN_ISSUES.md` sweep complete (new issues cataloged; fixed issues marked resolved with commit/date; scheduled issues linked to work item).
-- Manual smoke test run and results documented.
-- Lint + typecheck + test suites green.
+### Checkpoint 5: Housekeeping **(comprehensive auto-review → user-run smoke → PM opens PR)**
 
 **Gates:**
-- [ ] Every acceptance criterion in the current `IMPLEMENTATION_PLAN_*.md` §Acceptance Criteria has linked evidence
-- [ ] `PROJECT_STRUCTURE.md` reflects the actual repo (no documented paths missing in code, no code paths missing in doc)
-- [ ] `AGENTS.md` / `CLAUDE.md` updates proposed and approved by user; if both exist, kept in sync
-- [ ] `DESIGN_SYSTEM.md` audit complete (UI types only) — tokens documented match tokens in code
-- [ ] `DECISIONS.md` end-of-phase sweep done — no orphan/contradictory entries
-- [ ] `KNOWN_ISSUES.md` end-of-phase sweep done — no uncataloged out-of-scope bugs/debt, no stale status for issues fixed or scheduled this phase
-- [ ] All revision notes on the plan reference resolved changes
-- [ ] Lint passes
-- [ ] Typecheck passes
-- [ ] All unit + integration test suites pass (Engineer-run evidence; the PM records it, does not run the suites itself)
-- [ ] Phase tracker in `AGENTS.md` / `CLAUDE.md` updated to ✓ with date, row kept to one line
-- [ ] Closing work item's narrative added as a `## <work item>` section in `docs/WORK_LOG.md` (`Type` / `Status` / `Date` matching the tracker row)
-- [ ] Today's `docs/memory/YYYY-MM-DD.md` entry marks the phase as closed
-- [ ] CP5 comprehensive review run (auto-review default) — up-to-5-attempt fix loop on the phase-wide diff; obvious fixes auto-applied, decision findings presented with options + recommendation. Ended in PASS (which **clears only the review gate** — the user-run smoke below is the second gate) OR, after 5 attempts still FAIL, escalated for the user to decide (continue manually, accept remaining findings as KNOWN_ISSUES, or open a follow-up work item). OR user opted out and reviewed manually.
-- [ ] Manual smoke test (the **CP-final smoke**) of the main acceptance criterion run live **after** the CP5 comprehensive review PASSes — **user-run** (the PM generates the steps, the user runs them, the PM interprets), completed and documented
-- [ ] PR opened by the PM via `gh pr create` only **after both** the CP5 comprehensive review PASSes **and** the CP-final smoke passes (never auto-opened or merged)
-
----
-
-## Not every phase has 5 checkpoints
-
-Simple phases may have 2–3. Complex phases (lots of integration, many UI surfaces) may have 5–6. Use judgment, but **always include Checkpoint 1 (Foundation) and Checkpoint 5 (Housekeeping)** — those are non-negotiable.
+- [ ] Every acceptance criterion has linked evidence
+- [ ] `PROJECT_STRUCTURE.md` reflects the actual repo, in both directions
+- [ ] `AGENTS.md` / `CLAUDE.md` updates proposed and approved; if both exist, in sync
+- [ ] `DESIGN_SYSTEM.md` audit complete (UI types only)
+- [ ] `DECISIONS.md` swept — no orphan or contradictory entry
+- [ ] `KNOWN_ISSUES.md` swept — nothing uncataloged, no stale status for what this phase fixed or scheduled
+- [ ] Every revision note references a change that landed
+- [ ] Lint, typecheck and all suites pass (Engineer-run evidence; the PM records it, never runs them)
+- [ ] If the fact sheet has a Work tracker, the item's row is ✓ with the date and one line — otherwise skip this gate
+- [ ] Closing item's narrative added as a `## <work item>` section in `docs/WORK_LOG.md`, always with `Type` / `Status` / `Date`, matching the tracker row where there is one
+- [ ] Today's memory entry marks the phase closed
+- [ ] CP5 comprehensive review ended in PASS (which **clears only the review gate**), OR reached the cap and was handed back, OR the user opted out and reviewed manually
+- [ ] The **CP-final smoke** of the main acceptance criterion run live **after** that PASS — **user-run**, the PM interpreting — and documented
+- [ ] PR opened by the PM via `gh pr create` only **after both** pass (never auto-opened or merged)
 
 ## What to do at each stop
 
-1. **Deliver the round report.** Same format every time. Read `round-report-template.md`.
-2. **Walk through the gates.** Confirm each ✓ in the report. If any are ✗, surface them and propose remediation, do not pretend the checkpoint is complete.
-3. **Explicitly state the gate mode.** User-gated: "Stopping here for review. Next proposed: [X]." Auto-reviewed PASS: "Merged PASS closed this gate. Next proposed: [X]."
-4. **Proceed only when the gate mode allows it.** User-gated checkpoints require explicit user go; auto-reviewed checkpoints may proceed after merged PASS once the report is posted, unless the user interjects or an always-escalate trigger fired. Silence is not consent at user-gated checkpoints.
-5. **Answer questions.** If the user raises concerns, address them before moving forward.
+**Post the round report** (`round-report-template.md`) and **walk the gates**, confirming each ✓ in it; a ✗ is surfaced with proposed remediation, not papered over. **State the gate mode explicitly** — "Stopping here for review. Next proposed: [X]." or "Merged PASS closed this gate." — and **proceed only when that mode allows**: a user-gated checkpoint needs an explicit go, and silence is not consent.
 
-## How to know it's time to stop
+The stop message carries the deliverable finished, **gate status with every item ✓ or ✗**, test status with counts, observations, and the next suggested deliverable. **At a user-gated stop (CP1, the CP-final smoke, before the PR) it also repeats the report's `## Decisões desta rodada` block** — one line per entry written since the last gate. That repetition is what makes writing the entries in the round enough: mandatory to record, optional to read.
 
-Some common natural stopping points within a round:
+Deliver every stop that waits on the user through the host's **structured ask tool** (`AskUserQuestion` under Claude Code), never as plain prose (see [`../SKILL.md`](../SKILL.md) §"Pausing for the user").
 
-- You've built the schema + migration. Stop.
-- You've added 2–4 closely related files (service layer, types, schemas). Stop — these are often a natural "foundation + service" unit.
-- You've built pure logic + tests for one module. Stop — UI that consumes it is a separate concern.
-- You've finished an API surface (all routes for one resource). Stop — UI + integration tests are logical next units.
-- You've done end-of-phase housekeeping. Stop — phase closure is itself a checkpoint.
-
-If you catch yourself thinking "might as well also do X while I'm at it", stop — that's scope creep. Put X in the round report as "next round" and let the user decide.
-
-## What to include in the stop message
-
-- **Specific deliverable** you finished.
-- **Gates status**: every gate item with ✓ or ✗.
-- **Test status**: counts and pass/fail.
-- **Observations**: anything noteworthy (a design choice, a small bug, a follow-up).
-- **Next suggested deliverable** with rationale (why this, why now).
-- **Explicit gate status** — "waiting for review" for user-gated checkpoints, or "merged PASS closed the gate" for auto-reviewed checkpoints.
-
-Deliver every stop that waits on the user — a user-gated checkpoint, a decision, a blocker, or finishing and going idle — through the host's **structured ask tool** (`AskUserQuestion` under Claude Code), not as plain prose, so the pause is explicit and reliably surfaced (see [`../SKILL.md`](../SKILL.md) §"Pausing for the user").
+Natural stopping points: the schema and migration are built; related files form a foundation-plus-service unit; pure logic and its tests for one module are done; an API surface is complete for one resource. "Might as well also do X while I'm here" is scope creep — put X in the report as next round.
 
 ## What NOT to do
 
-- **Don't plow through multiple checkpoints.** Even if you feel confident, stop. The value of checkpoints is independent of your confidence.
-- **Don't fake gate ticks.** A ✓ that doesn't reflect reality is worse than an ✗ — it removes the user's ability to catch a problem. If you're tempted to mark something done that isn't, don't.
-- **Don't over-ask.** If the next step is obvious and low-risk, say so and propose it. Don't phrase it as a vague "what now?" — that wastes the user's time.
-- **Don't skip the stop message.** Ending a round without explicit handoff makes reviews confusing.
+Don't plow through several checkpoints, however confident you feel. Don't fake a gate tick: a ✓ that doesn't reflect reality is worse than an ✗, because it removes the user's ability to catch the problem. Don't over-ask — propose the obvious low-risk next step instead of a vague "what now?", and don't skip the stop message.
 
-## When the user pushes back at a checkpoint
-
-The user might say:
-- "Can you also add [X] before the next round?"
-- "Please revise [Y] first."
-- "The choice in [Z] isn't what I expected — why?"
-- "Gate item N isn't actually true — show me the evidence."
-
-Respond directly. Don't defend out of inertia. If they're right, acknowledge and adjust. If they're mistaken, say so with reasoning. If there's a real question, answer it.
-
-Then, once resolved, re-propose the next deliverable and proceed.
+When the user pushes back, respond directly instead of defending out of inertia: if they are right, adjust; if not, say so with reasoning; then re-propose.
 
 ## Emergency deviation
 
-Occasionally something urgent needs to override the normal checkpoint pattern — a security bug, a data loss risk, a breakage of previously-working functionality. In that case:
-
-1. Flag it loudly at the top of the response.
-2. Propose the fix.
-3. Recommend whether to pause the current phase to apply it, or to roll into the next round.
-4. Even in emergency, log the deviation in today's `docs/memory/YYYY-MM-DD.md` so it isn't lost. If the emergency risk is deferred or only partially mitigated, add/update `KNOWN_ISSUES.md` too.
-
-Don't silently do security or correctness work without surfacing it.
+A security bug, a data-loss risk or a regression of working functionality may override the pattern. Flag it at the top of the response, propose the fix, and recommend pausing the phase or rolling it into the next round. Log the deviation in today's memory, and add or update a `KNOWN_ISSUES.md` entry if the risk is deferred or only partly mitigated. Never do security or correctness work silently.

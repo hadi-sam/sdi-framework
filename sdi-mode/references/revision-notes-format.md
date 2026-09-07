@@ -1,94 +1,47 @@
 # Revision Notes Format
 
-Plans evolve during implementation. Revision notes are how that evolution is marked in the plan itself, so the plan stays a current document rather than becoming a stale snapshot of the original intent.
+Revision notes mark a plan's evolution in the plan itself, so it stays current instead of becoming a stale snapshot of the original intent.
 
-## When to add a revision note
+## When to add one
 
-- Audit of the plan against the repo produces real changes. Add a revision note.
-- Mid-phase discovery shows a plan section is wrong or incomplete. Add a revision note.
-- Scope changes mid-phase (customer requirement, tech decision, trade-off reversal). Add a revision note.
-- Small typos or clarifications: no revision note needed — just fix.
-- New DECISIONS.md or KNOWN_ISSUES.md entry that doesn't change the plan: no revision note needed.
+- The audit of the plan against the repo produced real changes.
+- Mid-phase discovery showed a plan section is wrong or incomplete.
+- Scope changed mid-phase (customer requirement, tech decision, trade-off reversal).
 
-Rule of thumb: if someone reading the plan in 6 months would be confused by the diff between what's written and what was built, add a revision note.
+Not for typos or clarifications — just fix those. Not for a new `DECISIONS.md` or `KNOWN_ISSUES.md` entry that doesn't change the plan. Rule of thumb: if someone reading the plan in six months would be confused by the gap between what's written and what was built, add a note.
 
 ## Format
 
-Revision notes live at the very top of the plan, above the first `##` section. They stack — newest on top, oldest below. Never delete prior revision notes.
+Notes live at the very top of the plan, above the first `##` section. They stack, newest on top. **Never delete a prior note**, except through the mandatory consolidation in §"Limits", which replaces the earlier ones with a single line.
+
+The header is `(rN, AAAA-MM-DD)` — number **and** date, one form only, no variants:
 
 ```markdown
-# Implementation Plan — Phase N: [Title]
+# Implementation Plan — [Title]
 
-> Detailed spec for Phase N of the roadmap. Companion to PRD.md, ARCHITECTURE.md, and PROJECT_STRUCTURE.md.
+> **Revision note (r3, 2026-04-28):** [trigger — audit / mid-phase discovery / scope change]. adjustments:
+> 1. §X.Y [the specific change, one line].
+> 2. §A.B [the specific change, one line].
 >
-> **Revision note (r3):** one additional audit pass after r2. Two items added:
-> 6. Webhook handler runs entirely on the [auth service-role client] (there's no JWT on incoming webhooks). §3.1 now states this explicitly as an invariant.
-> 7. Sentry PII scrubbing is now an explicit acceptance criterion — both `phone` AND `email` must be absent from captured event bodies.
->
-> **Revision note (r2):** plan was audited against the Phase 0 repo before kickoff. Five adjustments:
-> 1. `sources.agent_id`: removed FK to `agents` (table doesn't exist yet)...
-> 2. [Data isolation policy] helper: use `public.current_org_id()` (per DECISIONS.md #1)...
-> [etc.]
->
-> **General rule**: when this plan disagrees with the actual repo conventions, the repo wins. Flag the divergence in DECISIONS.md and keep going — don't stall on paperwork.
-
-## 0. Pre-requisites
-...
+> **Revision note (r2, 2026-04-24):** [trigger]. adjustments:
+> 1. …
 ```
 
-## Length
+Each note is a **revision number and trigger**, then a **numbered list of specific one-line changes**. No personal justification; no redundancy with a `DECISIONS.md` entry that already explains the change — reference it; no speculation, because a change you are unsure of gets discussed before it enters the plan.
 
-- Revision note: 4–10 lines.
-- Bulleted list of specific changes, each 1 line.
-- Ends with a general rule reminder if useful.
+## Limits
 
-Don't write essays here. The purpose is a compact diff log, not a history lesson.
+- **The cap on notes and the per-note byte ceiling** are the project's doc lint (`scripts/docs_bounds.py`) where it has one, and otherwise the fallback in [`implementation-plan-template.md`](../../sdi-next-plan/references/core-templates/implementation-plan-template.md) §"Revision notes" — not repeated here.
+- **On the note past the cap, consolidation is mandatory**: the earlier notes collapse into a single consolidation line saying what the plan absorbed and over which revisions, and the new note takes its place on top.
+- A plan that keeps needing notes stopped describing the work; propose replanning rather than another note.
 
-## What a revision note should contain
+## Example
 
-1. **Revision number and trigger**: `r3` or similar, plus why (audit, mid-phase discovery, scope change).
-2. **Numbered list of changes**: specific, each on one line.
-3. **General rule carry-over** (optional): the "repo wins" rule or equivalent if it matters.
+> **Revision note (r2, 2026-04-24):** plan audited against the Phase 0 repo. adjustments:
+> 1. §2.1 removed the FK to a table that doesn't exist yet; plain id column instead, FK when the table lands.
+> 2. §2 isolation examples switched from an invented helper to the real one in the repo.
+> 3. §9.2 test-webhook UI switched from a heavy editor dependency to a plain textarea.
 
-## What NOT to include
+## Reading and housekeeping
 
-- Personal justification or hand-wringing. "We realized we should have..." — no. Just state the change.
-- Redundancy with DECISIONS.md. If a change is documented in detail in DECISIONS.md, reference the entry; don't re-explain.
-- Speculation. If you're unsure whether a change is right, don't add it to the plan yet — discuss with the user first.
-
-## Examples of good revision notes
-
-### After audit (most common):
-
-> **Revision note (r2):** plan audited against Phase 0 repo. 3 adjustments:
-> 1. §2.1 removed FK to `agents` table (doesn't exist yet); plain `uuid` column instead. FK added in Phase 2.
-> 2. §2 [data isolation policy] examples switched from `current_user_org()` (invented) to `public.current_org_id()` (actual helper in `migration 0001_rls_policies_and_auth_links.sql`).
-> 3. §9.2 Test webhook UI switched from Monaco to `<textarea>` — Monaco is a 2MB dependency we don't need for MVP.
-
-### After mid-phase discovery:
-
-> **Revision note (r3):** mid-phase discovery. 1 adjustment:
-> 6. §3.1 webhook handler now explicitly uses [auth service-role client] end-to-end. RLS bypass is intentional; isolation enforced in-code per `src/lib/leads/ingest.ts` invariant. Pattern formalized in DECISIONS.md #18.
-
-### After scope change:
-
-> **Revision note (r4):** customer requested expanded error reporting for PII events. 2 adjustments:
-> 7. §13 Acceptance Criteria added AC #11 — Sentry events must never contain phone, email, or raw_payload. Added test AC #8 verifying scrubber behavior.
-> 8. §12 Observability clarified — raw_payload is PII-by-design, never forwarded to Sentry or PostHog.
-
-## When to re-read old revision notes
-
-- When starting a new phase that touches the same area.
-- When auditing the plan's current state.
-- When onboarding a new contributor to the project.
-
-Revision notes are a timeline; reading them in order tells the story of how the plan evolved.
-
-## Housekeeping at end of phase
-
-At phase close:
-
-- Verify all revision notes reference resolved changes (not things that were discussed but not applied).
-- If the plan has grown significantly misaligned with the implementation, consider a final "reconciliation note" (`r-final`) summarizing what was built vs what was planned.
-
-This is optional but helpful — it's the plan's closing summary.
+Read the notes in order when starting a phase that touches the same area, when auditing the plan, or when onboarding someone — they are the timeline of how the plan evolved. At phase close, verify each note references a change that actually landed, not one discussed and dropped.
