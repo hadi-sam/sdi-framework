@@ -70,8 +70,8 @@ Target length: 200–300 lines.
 
 ### API conventions
 
-- Single client wraps fetch/Apollo. App code never calls fetch directly.
-- Wrapper handles auth; add retry, request IDs or offline queue only when the real flow/contract requires them.
+- Use a single client wrapper around fetch/Apollo only when auth or repeated response behavior in the approved flow/contract justifies it; app code then uses the wrapper instead of calling fetch directly.
+- When present, the wrapper centralizes the approved shared behavior; add retry, request IDs or offline queue only when the real flow/contract requires them.
 - Errors are typed (NetworkError, AuthError, ServerError).
 
 ## src/stores/ — State
@@ -106,7 +106,7 @@ Target length: 200–300 lines.
 ### Notification conventions
 
 - Permission request is gated by an in-app rationale screen, not auto-prompted on first launch.
-- Token registration retries on transient failures; refreshed token re-registers automatically.
+- Add retries for transient token-registration failures and automatic re-registration of refreshed tokens only when the approved notification flow/contract requires those behaviors.
 - Foreground notification handling renders an in-app toast; background goes to OS surface.
 
 ## src/deep-links/

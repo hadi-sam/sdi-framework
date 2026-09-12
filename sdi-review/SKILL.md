@@ -129,7 +129,7 @@ You are the review coordinator (the session the user invoked), and the only role
 
 A user *may* still open a fully separate session in another tool and load `sdi-review` there to act as an independent second coordinator — that's a deliberate user choice. But within one coordination run, **dispatched reviewers receive the prompt, never the skill** (see the guardrail at the top).
 
-For mid-round implementation reviews that fire automatically as part of `sdi-mode`'s checkpoint gate, see [`sdi-mode/references/auto-review-mode.md`](../sdi-mode/references/auto-review-mode.md) and [`sdi-mode/references/roles-and-orchestration.md`](../sdi-mode/references/roles-and-orchestration.md) — same loop and ensemble, but triggered by the `sdi-mode` **PM/orchestrator** rather than user-invoked through this skill. There too, the PM hands each dispatched reviewer the **filled adversarial prompt, never a skill** — the same prompt-not-skill rule as the guardrail at the top of this file.
+For mid-round implementation reviews scheduled when checkpoint risk or contract justifies independent review, see [`sdi-mode/references/auto-review-mode.md`](../sdi-mode/references/auto-review-mode.md) and [`sdi-mode/references/roles-and-orchestration.md`](../sdi-mode/references/roles-and-orchestration.md) — same loop and ensemble, but triggered by the `sdi-mode` **PM/orchestrator** rather than user-invoked through this skill. There too, the PM hands each dispatched reviewer the **filled adversarial prompt, never a skill** — the same prompt-not-skill rule as the guardrail at the top of this file.
 
 ## When to pull planning back open
 

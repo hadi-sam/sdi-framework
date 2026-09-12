@@ -1,6 +1,6 @@
 # Architecture Appendix — AI agent / MCP server / chatbot
 
-Insert these sections into ARCHITECTURE.md at §2 ("Type-specific architecture") of the core architecture template. The AI modifier (`modifiers/ai.md`) provides cross-cutting LLM concerns that complement these sections.
+Use these sections as the type-specific implementation lens for AI-agent, MCP-server, and chatbot work items. For cross-cutting LLM constraints, read the target project's existing `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, and any eval/prompt docs recorded in `AGENTS.md` / `CLAUDE.md`; this skill does not carry the initial-scoping AI modifier.
 
 ## §2.1 Agent topology
 
@@ -57,7 +57,7 @@ Tool authorization model:
 
 ## §2.6 Eval pipeline (only for an approved scored quality criterion)
 
-See modifier `modifiers/ai.md` for the cross-cutting eval discipline. Type-specific notes:
+Read the target project's existing eval/prompt docs and DECISIONS entries for cross-cutting eval discipline. Type-specific notes:
 
 - **Golden set source:** [hand-curated], [sampled from production logs after PII scrub], [synthetic via stronger model]
 - **Eval surface:** [exact match for structured outputs], [LLM-as-judge with rubric], [trajectory eval — were the right tools called in the right order?], [human review for subjective quality]

@@ -122,8 +122,7 @@ claude -p \
 test $? -eq 0 && test -s review-output.md
 ```
 
-`--bare` requires `ANTHROPIC_API_KEY` or `apiKeyHelper` and does not read OAuth
-or keychain authentication. Do not use a permission bypass.
+Do not use a permission bypass.
 
 ### Codex CLI reviewer (read-only)
 
