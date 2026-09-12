@@ -66,7 +66,7 @@ Copying the five directories by hand still works — you just lose that protecti
 - `../sdi-mode/references/known-issues-discipline.md` — when adding/updating KNOWN_ISSUES.md entries
 - `../sdi-mode/references/revision-notes-format.md` — when revising a plan
 - `../sdi-mode/references/stop-and-review-patterns.md` — when planning checkpoints
-- `../sdi-mode/references/auto-review-mode.md` — when running default-on auto-review for Checkpoints 2/3/4/5 (CP1 stays user-gated)
+- `../sdi-mode/references/auto-review-mode.md` — when a checkpoint's risk or contract justifies independent review
 - `../sdi-mode/references/expected-artifacts.md` — when assessing handoff completeness
 
 This split keeps the always-loaded surface lean while making detail available when needed. For Claude Code / Codex, the `references/` directory is part of the skill bundle and is loaded by the skill on demand. For Roo / Kilo / OpenCode, the `references/` files are read from the cloned `sdi-framework/` directory by the agent.

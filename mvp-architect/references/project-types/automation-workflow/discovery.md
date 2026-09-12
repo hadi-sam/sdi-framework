@@ -90,6 +90,6 @@ Typical questions:
 ## How to use
 
 1. Themes 1, 2, 3 are foundational. Workflow architecture follows directly from these.
-2. Theme 5 (reliability) is the difference between a demo and a production system. Don't skip.
+2. Ask Theme 5 to the depth warranted by replay, duplicate-write and delivery risk; omit mechanisms with no reachable failure contract.
 3. Theme 6 (concurrency) is silent until it bites. Ask explicitly.
 4. Theme 8 only applies if you're building a user-facing workflow builder; skip cleanly for internal automations.

@@ -1,6 +1,6 @@
 # DESIGN_SYSTEM Template — Mobile app
 
-Mobile design has specific pressures: touch targets, platform conventions (iOS HIG vs Material), variable screen sizes, dark mode is non-optional, system font scaling matters.
+Mobile design has specific pressures: touch targets, platform conventions (iOS HIG vs Material), variable screen sizes and system font scaling. Dark mode is included only when the product or platform contract requires it.
 
 Target length: 250–400 lines.
 
@@ -29,9 +29,9 @@ State your stance on platform conventions:
 ## 3. Color system
 
 - **Brand:** primary, accent
-- **Neutrals:** ramp tuned for both light and dark mode
+- **Neutrals:** ramp tuned for the supported appearance modes
 - **Semantic:** success, warning, danger
-- **Both modes from day one:** dark mode is mandatory on mobile, not optional
+- **Appearance modes:** [light only] / [light + dark because the product/platform contract requires both]
 
 ### Token definitions
 
@@ -43,7 +43,7 @@ LightTheme:
   primary, primaryFg, accent
   success, warning, danger
 
-DarkTheme: (parallel keys with adjusted values)
+DarkTheme: (include parallel keys only when dark mode is supported)
 \`\`\`
 
 ### Semantic usage
@@ -83,7 +83,7 @@ DarkTheme: (parallel keys with adjusted values)
 ### Lists
 - **Cell types:** simple, with detail, with image, with action
 - **Separators:** inset to text edge or full-width
-- **Pull-to-refresh:** required on list screens
+- **Pull-to-refresh:** include on list screens only when users need an explicit refresh path
 
 ### Buttons
 - **Primary:** filled, full-width on action sheets
@@ -112,9 +112,11 @@ DarkTheme: (parallel keys with adjusted values)
 
 ## 9. Dark mode
 
-- Tested on every screen
-- System-respecting by default; per-app override allowed
-- Token swap; no hard-coded colors anywhere
+Omit this section when dark mode is not part of the product/platform contract.
+
+- Verify the screens and components affected by the supported theme switch
+- System-respecting by default; per-app override only when required
+- Use token swaps for mode-specific values
 
 ## 10. Accessibility
 
@@ -132,7 +134,7 @@ DarkTheme: (parallel keys with adjusted values)
 
 ## 12. Implementation notes
 
-- **Theme provider:** wraps the app, exposes tokens via context/hook
+- **Theme provider:** [only if runtime theme switching is supported; otherwise state how static tokens are consumed]
 - **Component library:** [shadcn-rn / NativeBase / Tamagui / built from scratch / Flutter Material]
 - **Asset pipeline:** 1x/2x/3x for raster on iOS, density-qualified folders on Android, vector preferred where possible
 - **Where tokens live:** `src/theme/tokens.ts` — single source of truth; theme provider consumes
@@ -141,13 +143,13 @@ DarkTheme: (parallel keys with adjusted values)
 ## Writing tips
 
 - **Touch targets are non-negotiable.** Below the platform minimum is a bug, not a style choice.
-- **Dark mode is mandatory.** Both modes from day one, every screen tested.
+- **Appearance follows scope.** Document and verify only the modes the product/platform contract supports.
 - **Platform conventions matter.** Pick a posture (iOS-leaning, Android-leaning, unified) and commit.
 - **Dynamic type is accessibility.** Skipping it excludes users.
 
 ## Common failure modes
 
 - **Web-style design ported to mobile.** Hover states, tiny touch targets, no platform feel.
-- **Single-mode design.** Building light first, retrofitting dark. Always parallel.
-- **Hard-coded colors.** Tokens or nothing. Hardcoded values block dark mode and theming.
+- **Unsupported mode implied.** Do not describe dark-mode infrastructure when the product does not require it.
+- **Theme values scattered.** When multiple modes are supported, keep their mode-specific values centralized.
 - **Forgotten safe areas.** Notches, home indicators, gesture areas — every screen checked.

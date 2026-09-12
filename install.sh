@@ -34,12 +34,32 @@ hash_tree() {
   done
 }
 
+reject_managed_symlinks() {
+  local root="$1" label="$2" skill link
+  for skill in "${SKILLS[@]}"; do
+    [ -e "$root/$skill" ] || [ -L "$root/$skill" ] || continue
+    link="$(find "$root/$skill" -type l -print -quit)"
+    if [ -n "$link" ]; then
+      echo "install.sh: symlink in $label managed tree: $link — stopping before mutation." >&2
+      return 1
+    fi
+  done
+}
+
 restore_backup() {
   local backup="$1" index=0 destination skill
   [ -d "$backup" ] || { echo "install.sh: backup not found: $backup" >&2; return 2; }
   [ -f "$backup/destinations" ] || { echo "install.sh: invalid backup: missing destinations" >&2; return 2; }
   [ -f "$backup/installed.sha256" ] || { echo "install.sh: invalid backup: missing manifest" >&2; return 2; }
 
+  while IFS= read -r destination; do
+    [ -n "$destination" ] || { echo "install.sh: invalid empty destination in backup" >&2; return 2; }
+    reject_managed_symlinks "$backup/dest-$index" "backup source" || return 2
+    reject_managed_symlinks "$destination" "restore destination" || return 2
+    index=$((index + 1))
+  done < "$backup/destinations"
+
+  index=0
   while IFS= read -r destination; do
     [ -n "$destination" ] || { echo "install.sh: invalid empty destination in backup" >&2; return 2; }
     for skill in "${SKILLS[@]}"; do
@@ -98,6 +118,7 @@ if [ ! -f "$MANIFEST" ]; then
 fi
 
 declare -A MANIFEST_H REPO_H INSTALLED_H
+reject_managed_symlinks "$REPO_ROOT" "repository source" || exit 2
 while read -r sum rel; do
   [ -n "${rel:-}" ] && MANIFEST_H["$rel"]="$sum"
 done < "$MANIFEST"
@@ -114,6 +135,7 @@ MISSING_ANY=0
 preflight_destination() {
   local destination="$1" rel
   local -a drift=() to_install=() to_copy=() to_delete=() stale=()
+  reject_managed_symlinks "$destination" "destination" || return 1
   INSTALLED_H=()
   while read -r sum rel; do
     [ -n "${rel:-}" ] && INSTALLED_H["$rel"]="$sum"
@@ -226,7 +248,7 @@ apply_destination() {
   for rel in "${!REPO_H[@]}"; do
     if [ -z "${INSTALLED_H[$rel]+set}" ] || [ "${INSTALLED_H[$rel]}" != "${REPO_H[$rel]}" ]; then
       mkdir -p -- "$destination/$(dirname -- "$rel")"
-      cp -- "$REPO_ROOT/$rel" "$destination/$rel"
+      cp --remove-destination -- "$REPO_ROOT/$rel" "$destination/$rel"
     fi
   done
   for rel in "${!INSTALLED_H[@]}"; do

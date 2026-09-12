@@ -24,12 +24,12 @@ Target length: 200–300 lines.
 │       ├── load.py         # write to final destination
 │       └── pipeline.py     # orchestration (calls the others)
 ├── shared/                 # cross-pipeline utilities
-│   ├── http/               # HTTP client wrappers, retry, rate limit
+│   ├── http/               # HTTP clients; wrapper/retry/rate limit only per source contract
 │   ├── proxy/              # proxy rotation (if scraping)
 │   ├── storage/            # raw/staging/final storage clients
-│   ├── quality/            # validation + statistical checks
+│   ├── quality/            # checks required by consumer/data-integrity contracts
 │   ├── delivery/           # PDF/CSV/email output engines
-│   └── observability/      # logging, metrics, alerting
+│   └── observability/      # only if a material operational boundary requires it
 ├── reports/                # report templates (HTML, Jinja, etc.)
 ├── orchestrator/           # DAG definitions (Airflow/Prefect/Dagster) or cron specs
 ├── tests/                  # unit + integration
@@ -55,14 +55,14 @@ Target length: 200–300 lines.
 ## shared/http/ — Fetch infrastructure
 
 \`\`\`
-[tree — client wrappers, retry logic, rate limiter]
+[tree — clients plus only the retry/rate-limit helpers required by source contracts]
 \`\`\`
 
 ### HTTP conventions
 
-- App code never calls `requests`/`fetch` directly. Always go through wrapper.
-- Wrapper adds: retry, exponential backoff, rate limiting, observability hooks.
-- Rate limits are per-host, configurable per source.
+- Centralize a client only when shared auth, source-policy or response contracts justify it; direct calls are otherwise acceptable.
+- Add retry, backoff, rate limiting and observability independently, only for the relevant source contract/risk.
+- When a source requires a rate limit, scope and configure it at that source's actual boundary.
 
 ## shared/proxy/ — Proxy rotation (if scraping)
 
@@ -97,7 +97,7 @@ Target length: 200–300 lines.
 
 - Validation is pluggable per pipeline.
 - Failures route to quarantine zone; runs do not silently drop records.
-- Statistical checks use a baseline file per pipeline (rolling window of historical metrics).
+- Add statistical baselines only when a named quality criterion requires drift detection.
 
 ## shared/delivery/
 
@@ -109,7 +109,7 @@ Target length: 200–300 lines.
 
 - Templates live in `reports/`, separate from delivery code.
 - Personalization is parameterized at delivery boundary; templates are pure.
-- Failed deliveries log to a delivery_log table with retry capability.
+- Persist failed deliveries or add retry only when a recovery/delivery contract requires it.
 
 ## reports/
 

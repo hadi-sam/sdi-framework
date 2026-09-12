@@ -118,7 +118,7 @@ Ordered list of palette colors used in stable order across all charts. First ser
 
 - Loading: skeleton matching final chart shape, no spinner
 - Empty: centered message with icon, suggestion for action
-- Error: centered message with retry option, error code if relevant
+- Error: centered message; add retry or an error code only when the flow supports recovery or operations consume the code
 
 ## 8. Component patterns
 
@@ -149,13 +149,13 @@ Dashboard kit:
 
 ## 11. Dark mode
 
-If supported, every component is tested in both modes. Tokens are the only place where mode-specific values live.
+Omit this section when dark mode is unsupported. When it is required, identify the affected components and the smallest evidence that proves the theme contract; keep mode-specific values in tokens.
 
 ## 12. Implementation notes
 
 - **CSS strategy:** [Tailwind / CSS modules / vanilla-extract]
 - **Component primitives:** [shadcn / Radix / Headless UI]
-- **Chart wrappers:** every chart is a custom wrapper around the library; theme tokens fed in
+- **Chart abstraction:** use a shared wrapper only when repeated theme/behavior contracts justify one; otherwise use the library directly with documented tokens
 - **Where tokens live:** `src/styles/tokens.css` — single source of truth
 ```
 
@@ -169,6 +169,6 @@ If supported, every component is tested in both modes. Tokens are the only place
 ## Common failure modes
 
 - **Brand color overused.** Primary should be rare; neutrals do the work.
-- **Chart inconsistency.** Different fonts, gridlines, tooltips per chart. Wrap the library.
+- **Chart inconsistency.** Centralize only the shared options needed to enforce the chosen chart contract.
 - **Accessibility deferred.** Internal tools often skip accessibility, then can't onboard a colleague who needs it.
 - **Tokens drift from code.** End-of-phase audit of `globals.css` vs documented tokens prevents this.

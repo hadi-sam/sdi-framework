@@ -4,7 +4,7 @@ The self-contained adversarial prompt that `sdi-review`'s coordinator hands each
 
 The `sdi-mode` **PM/orchestrator** dispatches reviewers the same way (see `sdi-mode/references/roles-and-orchestration.md`): for a **plan or standalone target** it fills *this* template; for a **round/diff target** it fills the embedded template in `sdi-mode/references/auto-review-mode.md`. Either way the dispatched reviewer gets the **filled prompt, never a skill** — the prompt-not-skill rule, from both sides.
 
-Adapted from `sdi-mode/references/auto-review-mode.md` §"Adversarial review prompt template", with the implementer-loop scaffolding (round report, BASE_SHA, plan sections, prior findings) stripped and replaced with manual placeholders the coordinator fills before dispatching.
+Adapted from `sdi-mode/references/auto-review-mode.md` §"Round/diff reviewer prompt", with the implementer-loop scaffolding (round report, BASE_SHA, plan sections, prior findings) stripped and replaced with manual placeholders the coordinator fills before dispatching.
 
 ## How to use
 
@@ -63,7 +63,7 @@ You may run targeted read-only checks when they materially improve confidence. D
 2. Read the context I pointed you at (named files, related docs, `AGENTS.md` / `CLAUDE.md` if either exists).
 3. For every concrete reference in the target — file, function, helper, env var, dep, test, hook, convention — verify it exists and actually does what the target assumes. Use git/ls/cat/grep.
 4. If the target is a plan or proposal: walk through how it would actually be implemented step by step; flag where the plan glosses over a hard part or assumes work that isn't trivial.
-5. If the target is code: trace the unhappy paths — bad input, retry, concurrent calls, partial failure, timeouts, empty state, degraded dependency.
+5. If the target is code: trace the unhappy paths reachable for it — bad input, retry, concurrent calls, partial failure, timeouts, empty state, degraded dependency.
 6. For the specific focus, weight findings there but still report any other material issue you can defend.
 
 ## What to actively check
@@ -72,7 +72,7 @@ A. Internal consistency. Does the target contradict itself across sections?
 B. External consistency. Does the target contradict the context I gave you, existing code, or documented conventions?
 C. Cross-references. Every named file/function/env var/dep/test the target leans on — verify it exists and behaves as assumed.
 D. Hidden assumptions. What does the target assume that isn't stated and might not hold? Name them.
-E. Unhappy paths. Bad input, retries, concurrent calls, partial failure, timeouts, empty state, degraded dependency — does the target survive each?
+E. Reachable unhappy paths. Of bad input, retries, concurrent calls, partial failure, timeouts, empty state and degraded dependency, which apply to the target, and does it survive them?
 F. High-blast-radius risk. Auth/tenant isolation and trust boundaries; data loss, duplication, or irreversible state changes; rollback safety, retries, partial failure, idempotency gaps; ordering assumptions and re-entrancy; version skew, schema drift, migration hazards; observability gaps that hide failure or block recovery.
 G. Vague claims. Flag one only when it hides a reachable defect, breaks an existing mandatory gate, or invalidates the only evidence for an approved acceptance criterion.
 H. Scope risk. Is the target trying to do too much in one step? Is there a piece that should be its own decision or its own change?

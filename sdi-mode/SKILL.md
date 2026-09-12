@@ -158,13 +158,13 @@ Verification goes to the reviewers recorded in the persistent profile. Every att
 
 **ESCALATE is not FAIL.** FAIL is mechanically fixable: fix through the Decision Bundle, commit, retry. ESCALATE means the user must judge — surface as `judgment-required`, never auto-apply, and write the DECISIONS entry *with* the user rather than silently before retrying.
 
-**Before invoking reviewers**, walk the always-escalate triggers listed in `references/auto-review-mode.md` §"Always-escalate triggers". If one holds, STOP and surface it — do not build the packet: catching a trigger after the reviewers fired wastes a cycle and produces an ESCALATE you should have raised yourself. If none holds, run the clean-state preflight and proceed.
+**Before invoking reviewers**, walk the always-escalate triggers listed in `references/auto-review-mode.md` §"Always-escalate before dispatch". If one holds, STOP and surface it — do not build the packet: catching a trigger after the reviewers fired wastes a cycle and produces an ESCALATE you should have raised yourself. If none holds, run the clean-state preflight and proceed.
 
-**Verdict merge** takes the worst of what the reviewers **returned**; the verdict of the **attempt** comes from the mark matrix. Merge rules, reviewer fallback and timeouts in `references/auto-review-mode.md`.
+**Verdict merge** takes the worst of what the reviewers **returned**; the verdict of the **attempt** comes from the mark matrix. Merge and invocation-failure handling are in `references/auto-review-mode.md` §§"The loop" and "Profile and failure handling".
 
 **Loop cap and mechanical stop.** The attempt cap, the stop that hands the round back to the user when it is reached without a PASS (only the user authorizes the next attempt, and the `DECISIONS.md` entry recording that authorization is written first), and the convergence check are defined in `references/auto-review-mode.md` §"Loop cap". The number lives there and is not repeated here.
 
-Auto-review history goes into the round report **by link** — one row per reviewer per attempt (verdict, totals by mark, path to that reviewer's committed file), never the reports inline. The report also carries `## Decisões desta rodada`: one line per `DECISIONS.md` / `KNOWN_ISSUES.md` entry written in the round, or "Nenhuma". See `references/round-report-template.md`.
+Auto-review history goes into the round report **by link** — one row per reviewer per attempt (verdict, totals by mark, path to that reviewer's committed file), never the reports inline. Include `## Decisões desta rodada` when the round wrote a `DECISIONS.md` / `KNOWN_ISSUES.md` entry, or when a project parser requires the fixed section; only in the latter case write "None" for an empty section. See `references/round-report-template.md`.
 
 Read `references/auto-review-mode.md` for the full proportional review protocol, packet, Decision Bundle, cap and invocation contract.
 

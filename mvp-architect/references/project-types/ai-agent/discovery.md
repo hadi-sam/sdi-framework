@@ -93,5 +93,5 @@ Typical questions:
 
 1. Themes 1, 2, 3 are the highest leverage — get those answered before anything else.
 2. Theme 4 (tools) is where most of the design happens. Expect it to be the longest discussion.
-3. Don't skip Themes 6 and 7 — many AI projects ship without eval and without guardrails, and regret it.
+3. Ask Themes 6 and 7 only to the depth warranted by an approved quality criterion or a reachable safety/tool risk.
 4. The AI modifier (`modifiers/ai.md`) supplements this with cross-cutting AI themes; ensure both load in Phase A.

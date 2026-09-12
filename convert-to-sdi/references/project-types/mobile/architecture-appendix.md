@@ -17,7 +17,7 @@ State the platform commitment and rationale:
 - **Backend:** [own API at endpoint X] / [Supabase/Firebase/Amplify] / [hybrid]
 - **Auth:** [email/pw + social] / [magic link] / [biometric local + server-issued JWT]
 - **API client:** [native fetch + custom wrapper] / [Apollo (GraphQL)] / [SDK from BaaS]
-- **Network resilience:** retry policy on flaky network, request queue on offline
+- **Network resilience:** add retry or an offline queue only when the approved flow's delivery/offline contract requires it
 
 ## §2.3 Offline and sync
 
@@ -69,11 +69,11 @@ For each capability:
 - **Image strategy:** local assets at 1x/2x/3x; remote images responsively sized via CDN
 - **Lists:** virtualized for any list potentially > 50 items (FlashList, Flutter ListView.builder)
 
-## §2.9 Analytics, crash, and observability
+## §2.9 Analytics, crash, and observability (select only required surfaces)
 
-- **Analytics:** [Amplitude / Mixpanel / Firebase / PostHog]; event taxonomy lives in shared module
-- **Crash reporting:** [Sentry / Bugsnag / Crashlytics] with source-map / dSYM upload in CI
-- **Performance traces:** key user flows instrumented (cold start, screen-to-interactive)
+- **Analytics:** [none] / [provider + only events required by an approved product criterion]
+- **Crash reporting:** [none] / [provider + symbol upload when production recovery requires it]
+- **Performance traces:** only flows covered by an approved performance target
 - **Privacy:** ATT prompt timing on iOS, opt-in vs opt-out posture, store privacy labels
 
 ## §2.10 Distribution

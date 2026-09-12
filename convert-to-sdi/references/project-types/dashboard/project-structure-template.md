@@ -21,7 +21,7 @@ Target length: 200–300 lines.
 │   ├── app/                # routes (or pages/ if classical)
 │   ├── components/
 │   │   ├── ui/             # primitives (Button, Card, Badge, etc.)
-│   │   ├── charts/         # chart wrappers + theme adapters
+│   │   ├── charts/         # chart components; shared adapters only if justified
 │   │   ├── tables/         # data table primitives
 │   │   └── layout/         # shell, nav, sidebar
 │   ├── queries/            # data fetching — one file per logical query
@@ -63,13 +63,13 @@ Target length: 200–300 lines.
 ## src/components/charts/
 
 \`\`\`
-[tree — LineChart, BarChart, KpiTile, FunnelChart wrappers]
+[tree — chart components and any justified shared adapter]
 \`\`\`
 
 ### Chart conventions
 
-- App code imports our wrappers, not the underlying library directly. Provider swaps stay surgical.
-- Empty state, loading state, error state are first-class — every chart accepts these props.
+- Use a wrapper only when multiple charts share a real theme/behavior contract; direct library use is otherwise acceptable.
+- Add empty, loading and error props to charts whose reachable data flow needs those states.
 - Theme integration: charts read from CSS tokens, not hardcoded colors.
 
 ## src/components/tables/

@@ -39,7 +39,7 @@ Target length: 400–600 lines. Crisp, concrete, defendable.
 - **Security**: [auth, authorization, RLS, webhook auth, etc.]
 - **Compliance**: [GDPR, LGPD, HIPAA, SOC2, or N/A]
 - **Data Retention**: [explicit decision or "TBD post-MVP"]
-- **Observability**: [Sentry, PostHog, or equivalent]
+- **Observability (only if a product/operations requirement)**: [named need and surface, or N/A]
 
 ## 5. Out of Scope for MVP
 

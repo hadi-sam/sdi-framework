@@ -8,7 +8,7 @@ The standard set of artifacts produced at the end of Phase C. Each has a specifi
 
 2. **PRD.md** — what's being built and why. Users, roles, features in scope, features explicitly out of scope, success metrics. Universal across project types.
 
-3. **ARCHITECTURE.md** — how the system is designed. Universal sections (stack, critical flows, security, observability, trade-offs) **plus** type-specific sections inserted from `project-types/{type}/architecture-appendix.md` (multi-tenancy + data model + RLS for SaaS, rendering strategy for landing pages, data sources + caching for dashboards, etc.).
+3. **ARCHITECTURE.md** — how the system is designed. Core sections cover stack, critical flows, security and trade-offs; observability and type-specific sections are included only where the approved flow, contract or risk requires them.
 
 4. **ROADMAP.md** — phased delivery plan. Each phase gets a goal, deliverables, and acceptance criterion ("done when..."). Includes a fast-track option if relevant. Universal across project types.
 

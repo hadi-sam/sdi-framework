@@ -123,7 +123,7 @@ Target length: 200–300 lines.
 
 ### Analytics conventions
 
-- All events go through `tracker.ts`. No direct SDK calls in components.
+- Use `tracker.ts` only when an approved analytics taxonomy/shared consent boundary exists.
 - Event names follow a fixed taxonomy file; no ad-hoc strings.
 - PII is never in event properties.
 
@@ -176,6 +176,6 @@ Target length: 200–300 lines.
 ## Writing tips
 
 - **Screens are folders, not single files.** Once a screen has hooks + sub-components, splitting is mandatory.
-- **API client wraps the network.** Direct fetch in components is the path to inconsistency.
+- **API boundary follows shared contracts.** Use a client wrapper only when auth or repeated response behavior justifies it.
 - **Permissions need rationale UX.** Native prompts are unforgiving — soft-ask first.
 - **OTA policy must be explicit.** Without it, native breakage will eventually be shipped via OTA.

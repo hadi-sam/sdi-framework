@@ -116,8 +116,8 @@ Append the relevant block based on the project type. Insert after the "Critical 
 
 ```markdown
 ### Workflow reliability
-- **Idempotency keys** required on every external write step.
-- **Retry policies** explicit per step; no infinite-retry defaults.
+- **Idempotency keys** required when retry/replay/concurrency can duplicate a material external write and the provider supports that boundary.
+- **Where retries exist**, policies are explicit and bounded; no infinite-retry defaults.
 - **DLQ depth** monitored; growth triggers alert.
 - **Concurrency limits** per workflow type prevent cascade failures during partner-side incidents.
 ```
