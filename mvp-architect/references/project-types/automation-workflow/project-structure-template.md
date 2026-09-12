@@ -121,13 +121,11 @@ Target length: 200–300 lines.
 - The retry policy distinguishes — permanent errors don't retry.
 
 ### Logging
-- Every step entry/exit logs: workflow_id, run_id, step_name, attempt, duration.
-- Errors include a stable code for alerting + a human message.
+- Log step/retry context when a material failure could otherwise be silent; add stable alert codes only where operations consume them.
 
 ### Testing
-- Unit tests for steps with mocked integration clients.
-- Integration tests for triggers with real signature verification + dedup.
-- E2E test (optional Phase 2): a full workflow run against a sandbox environment.
+- Add a test only for material silent harm or an approved acceptance criterion.
+- Exercise real signature/dedup/external-write boundaries when those are the risk being proved.
 
 ### Idempotency
 - Every external write goes through the integration wrapper, which enforces idempotency keys.

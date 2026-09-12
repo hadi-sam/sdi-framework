@@ -26,23 +26,23 @@ Adapt examples to the project's actual stack and type. Below is the canonical te
 - **Response shape stability:** new fields OK; removing or renaming fields requires the deprecation cycle above.
 
 ### Feature gating
-- **New behavior ships behind a feature flag by default.** Default-off for existing users; can default-on for new users in [feature flag system: LaunchDarkly / GrowthBook / custom].
+- **Use a feature flag when rollout or rollback risk requires one.** State the reachable risk and default for existing/new users in [feature flag system]. Do not create a flag for a routine low-risk change.
 - **Flag removal cycle:** flag → roll out → bake → remove flag. Don't leave permanent flags as on/off switches without rationale in DECISIONS.md.
 
 ### Migrations on production tables
 - **Online migration patterns required.** No exclusive locks on tables with >[N] rows or active write traffic.
 - **Backfills run async.** Long-running backfills run as background jobs, paginated, idempotent. Never inline in a migration.
-- **Test migration on a recent production-data clone before deploying.** [Tooling: pgcopydb / Supabase clone / custom — fill per project].
+- **Test migration on a scrubbed recent production-data clone when table size, lock or backfill risk requires it.** [Tooling — fill per project].
 
-### Observability before code
-- **Alerts/logs/metrics for new code paths exist before merge.** No "ship code now, add observability later" — that pattern fails silently in production.
-- **New endpoints/handlers/jobs:** structured log on entry + exit, error path captured to [Sentry/Datadog/etc.], latency metric with appropriate dimensions.
-- **Cost monitoring** for any new external API call (LLM, payment, comms): per-call cost logged, daily aggregate visible.
+### Risk-driven observability
+- **Add alerts/logs/metrics when a reachable failure could be materially silent or an existing production contract requires them.** Name that failure; do not instrument every new path by default.
+- **Endpoints/handlers/jobs:** capture the material error/recovery boundary in [observability system] when the path needs operational detection.
+- **Cost monitoring** for a new external API call only when spend can materially vary or a budget/acceptance criterion requires it.
 
 ### On-call awareness
 - **Runbooks live in [location: docs/runbooks/, Notion, Confluence — fill per project].**
 - **On-call rotation tooled via [PagerDuty / Opsgenie / custom — fill per project].**
-- **New code that can page on-call must have a runbook entry** before merge. Otherwise silent toil for whoever responds.
+- **New code that can page on-call must have a runbook entry** before merge. Code that cannot page does not create a runbook by habit.
 
 ### Critical paths that MUST NOT break
 
@@ -71,7 +71,7 @@ Append the relevant block based on the project type. Insert after the "Critical 
 ```markdown
 ### Multi-tenant invariants
 - **Every multi-tenant query goes through tenant-resolved auth context.** Never trust `tenant_id` from request body or query string.
-- **Cross-tenant data leakage is a P0 incident.** Add a regression test for any code path that touches multiple tenants.
+- **Cross-tenant data leakage is a P0 incident.** Add a regression test when the changed path can silently associate or expose data across tenants.
 - **Service-role / admin queries** are rare and audited. Each call site is documented in DECISIONS.md.
 ```
 
@@ -100,7 +100,7 @@ Append the relevant block based on the project type. Insert after the "Critical 
 - **Cost ceiling per session enforced.** Hard kill switch when [$X] exceeded; user-facing graceful degradation message.
 - **Prompt-injection defenses** validated on every change to system prompt or tool surface.
 - **Tool authorization changes** require explicit DECISIONS entry. New high-blast tool? User-confirmation flow first.
-- **Eval regression blocks merge** when score drops on golden set.
+- **Eval regression blocks merge** when an approved acceptance criterion or existing mandatory gate names the golden set.
 ```
 
 ### For Mobile app
@@ -138,4 +138,4 @@ This is intentional — the framework can't know these without asking. Encourage
 - Q3 = `(a) greenfield-mvp` AND no production indicators detected. There are no production constraints because there's no production.
 - Q3 was skipped AND <3 production indicators. Default to skipping; user can add later if needed.
 
-If unsure, **include it** with low-confidence flag — over-cautious is safer than under-cautious in production.
+If unsure, include only constraints supported by measured production indicators and mark uncertainty. Do not turn a hypothetical risk into mandatory work.

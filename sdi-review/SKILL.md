@@ -7,7 +7,7 @@ description: Consultative review during SDI implementation. Equips the review co
 
 Second pair of eyes during SDI implementation. The coding agent has produced something — a plan, a round report, a fork decision, a bug — and the user wants it reviewed.
 
-This skill is the **playbook for the review coordinator** — the single agent the user invokes (the main session, `/sdi-review`, an Opus session, a Codex session, whichever the user opens). That agent reads the planning bundle and **drives** the review: it owns the loop, the dedup, the fix decisions, and the verdict. For model diversity it **dispatches a reviewer ensemble** (Opus + Sonnet + Codex) rather than judging alone, then reconciles their findings.
+This skill is the **playbook for the review coordinator** — the main session the user invokes. It reads the planning bundle and drives the review: loop, dedup, fix decisions and verdict. It dispatches the reviewers in the work-item profile rather than choosing a vendor, model or roster itself.
 
 > **Who loads this skill — read this first.**
 > Only the **coordinator** (the agent the user invoked) loads `sdi-review`. When the coordinator dispatches reviewers, it hands each one the **self-contained adversarial prompt** from [`references/adversarial-review-prompt-template.md`](references/adversarial-review-prompt-template.md) — **never this skill**. A subagent that loads `sdi-review` would try to *re-coordinate* (dispatch its own reviewers) instead of reviewing, causing recursion and wasted context. The skill is the conductor's score; a dispatched reviewer gets the sheet music (the filled prompt), reads its target, and returns findings + verdict.
@@ -16,17 +16,24 @@ This skill is the **playbook for the review coordinator** — the single agent t
 
 ## The review loop (autonomous, capped)
 
+Read the work-item operating profile in plan §0. It persists across the item. If
+the function is pending, ask the PO once before first dispatch and persist the
+answer. If this is an ad-hoc review without a plan, ask once and record a
+session-local profile in the first artifact. A rate limit, invocation failure or
+unusable output returns to the PO for pause or explicit replacement; never fall
+back automatically. Cross-vendor diversity is recommended, not a gate.
+
 The coordinator runs this loop for artifact reviews, same shape as `sdi-mode`'s auto-review (see [`sdi-mode/references/auto-review-mode.md`](../sdi-mode/references/auto-review-mode.md) for the full mechanics it reuses). **Mode 1 (plan review) runs it in full** — obvious fixes land in the plan doc and it re-dispatches until SHIP or the cap. **Mode 2 (round/code review) runs one ensemble pass (steps 1-2) and does NOT auto-loop** — the coordinator can't auto-apply code fixes (step 3), so there's nothing for it to re-dispatch on; it presents findings + recommendations and escalates. (Modes 3-4 don't use this loop at all — they're single advisory passes.)
 
-1. **Dispatch the ensemble in parallel: Opus + Sonnet + Codex**, every round. Hand each reviewer the filled adversarial prompt from `references/adversarial-review-prompt-template.md` (never the skill). If **Codex** is unavailable on any round (can't invoke / timeout / unusable output), **STOP and ask the user — there is no automatic substitution.** Codex being down is usually a rate limit, and it is a user-visible event: surface it and offer **(a)** authorize a **Haiku** subagent for this occasion, **(b)** proceed with two reviewers (Opus + Sonnet), or **(c)** pause and retry Codex later. ⚠️ Haiku is **never** the coordinator's own choice — a silent swap spends the user's time and tokens on a reviewer whose findings rarely earn their cost, which is exactly what happened once and is why this rule exists. Authorization is **per occasion** and does not carry to the next round.
+1. **Dispatch the profiled reviewers in parallel**, each in a fresh read-only non-persistent context with the same filled adversarial prompt. Validate exit zero, non-empty final output and evidence of reading/grepping the target. Any failure stops for the PO; there is no automatic substitution.
 2. **Merge verdicts, dedup findings, classify per finding** — `obvious-fix` / `needs-decision` / `judgment-required`, same rules as `auto-review-mode.md`.
-   ⚠️ **Then assign each finding its final mark** — `[code]` / `[gate]` / `[docs]`, the reviewer's being only a proposal — and read the round off [`sdi-mode/references/auto-review-mode.md`](../sdi-mode/references/auto-review-mode.md) §"Marks and the verdict matrix", which is not restated here and is not the bug class. In a plan review the plan **is** the deliverable, so a `[docs]` finding on it is promoted to `[code]` and fails the round — the revised text is what the next session reads. A `[docs]` finding outside the deliverable never fails: it goes to a named backlog that **CP5** consumes. **The coordinator classifies, never the reviewer.**
+   Then assign each finding its final mark and read the round from [`sdi-mode/references/auto-review-mode.md`](../sdi-mode/references/auto-review-mode.md) §"Marks and the verdict matrix". Instrumental or documentary findings block only under that section's binary predicate; the fact that a plan is the deliverable does not promote prose by itself. **The coordinator classifies, never the reviewer.**
 3. **Act per finding** (this is the autonomy):
    - **Obvious/trivial fix the coordinator may apply** — *only* a planning/review artifact: the plan under review, `docs/reviews/`, or `KNOWN_ISSUES.md`. Re-verify via Grep/Read, apply it, then **dispatch the next round**.
    - **Obvious fix to source code** — **never apply it.** The coordinator reviews; it does not implement. Present it with a recommendation for the user or `sdi-mode` to apply. (Reviewer/implementer separation is deliberate.)
    - **Non-trivial or decision finding** (class-5 DECISIONS-worthy, scope/architecture conflict, divergent reviewers, anything needing user judgment) — present **options + a recommendation** and stop for the user.
 4. **Continue vs stop:** if a round produced only coordinator-appliable obvious fixes and nothing to escalate → auto-continue to the next round. If anything needs the user or `sdi-mode` → stop and present (the applied fixes are kept; the loop resumes after the user or `sdi-mode` responds).
-5. **Cap: 3 rounds**, canonical in [`sdi-mode/references/auto-review-mode.md`](../sdi-mode/references/auto-review-mode.md) §"Loop cap", plus the convergence check (same finding persisting across two rounds → escalate early). **The last allowed round without a SHIP is a mechanical stop:** the coordinator stops and hands back to the user. Only the user authorizes a further round, and the `DECISIONS.md` entry recording that authorization and its reason is written **before** the round runs. The coordinator never continues on its own — that is what makes the stop mechanical, and it is the same rule `sdi-mode` applies to auto-review attempts.
+5. **Apply the cap and convergence rule** canonical in [`sdi-mode/references/auto-review-mode.md`](../sdi-mode/references/auto-review-mode.md) §"Loop cap". At the last allowed round without SHIP, stop. Only the PO authorizes another round, with that authorization recorded first.
 
 Net effect:
 - A **plan review** iterates autonomously — the ensemble hammers the plan, obvious fixes land in the plan doc, decisions surface to you — until SHIP or the cap.
@@ -49,7 +56,7 @@ Triggered when the user asks for review of an implementation plan document:
 - "any issues with this plan?"
 - "second pair of eyes on the plan?"
 
-Action: run the autonomous loop above, using `references/plan-review-protocol.md` as the check framework (what to read, the verification steps, the 7 bug classes, output format). Each round, the dispatched reviewers apply that framework against the plan; the coordinator dedups, **applies obvious fixes to the plan doc**, and re-dispatches — escalating non-trivial/decision findings with options + a recommendation. Write each round's review to `docs/reviews/plan-review-NN.md`; surface findings + verdict to the user.
+Action: run the proportional loop above using `references/plan-review-protocol.md`. Apply only fixes that meet the canonical blocking predicate; do not open another round for cosmetic prose or optional instrumentation. Write each round's review to `docs/reviews/plan-review-NN.md`.
 
 ### Mode 2 — Round report review
 
@@ -118,7 +125,7 @@ You are the review coordinator (the session the user invoked), and the only role
 
 ## Combining with other models
 
-**The coordinator gets model diversity by dispatching the ensemble itself** (the loop above) — Opus + Sonnet + Codex reviewers, each handed the filled prompt, reconciled by the coordinator. This is the default; the user doesn't have to open multiple sessions to get multiple models.
+**The coordinator dispatches the persistent review profile itself**, handing every reviewer the same filled prompt and reconciling the outputs. The framework recommends independent cross-vendor perspectives but does not require or label a particular roster.
 
 A user *may* still open a fully separate session in another tool and load `sdi-review` there to act as an independent second coordinator — that's a deliberate user choice. But within one coordination run, **dispatched reviewers receive the prompt, never the skill** (see the guardrail at the top).
 
@@ -139,4 +146,4 @@ In these cases, don't just patch the current phase — step back to scope. Ask: 
 - `references/plan-review-protocol.md` — plan review framework (Mode 1). Steps to read, things to actively check, bug classes, output format.
 - `references/round-report-review-patterns.md` — patterns for Modes 2, 3, 4. Tone, what NOT to do, when to pull planning back open.
 - `references/known-issues-review.md` — how reviews should use or update `KNOWN_ISSUES.md` without duplicating issues.
-- `references/adversarial-review-prompt-template.md` — the self-contained adversarial prompt the coordinator hands **each dispatched reviewer** (Opus / Sonnet / Codex, or a user-authorized Haiku); also usable ad-hoc on a file, branch, or sketch. Includes the two-step `codex exec` pattern (write filled prompt to file, then `- < file` stdin redirect) and the Agent-tool invocation. Reviewers get THIS, never the skill.
+- `references/adversarial-review-prompt-template.md` — the self-contained adversarial prompt handed to each profiled reviewer; also usable ad-hoc. Vendor-specific CLI recipes live in `sdi-mode/references/roles-and-orchestration.md`. Reviewers get the prompt, never the skill.

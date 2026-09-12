@@ -1,6 +1,6 @@
 # Adversarial review prompt template
 
-The self-contained adversarial prompt that `sdi-review`'s **coordinator hands each dispatched reviewer** (Opus / Sonnet / Codex, or a user-authorized Haiku). It is what a reviewer receives — **never the `sdi-review` skill itself**; a reviewer that loads the skill would re-coordinate (dispatch its own reviewers) instead of reviewing. The same prompt is also usable **ad-hoc/manually** — when you want a second pair of eyes on a plan, a doc, a branch, a function, or a sketch.
+The self-contained adversarial prompt that `sdi-review`'s coordinator hands each reviewer in the persistent work-item profile. A reviewer receives this prompt, never the skill itself. The same prompt is usable ad-hoc with the session-local profile recorded in the first artifact.
 
 The `sdi-mode` **PM/orchestrator** dispatches reviewers the same way (see `sdi-mode/references/roles-and-orchestration.md`): for a **plan or standalone target** it fills *this* template; for a **round/diff target** it fills the embedded template in `sdi-mode/references/auto-review-mode.md`. Either way the dispatched reviewer gets the **filled prompt, never a skill** — the prompt-not-skill rule, from both sides.
 
@@ -9,11 +9,11 @@ Adapted from `sdi-mode/references/auto-review-mode.md` §"Adversarial review pro
 ## How to use
 
 1. Copy the prompt block below verbatim.
-2. Replace the four placeholders: `[TARGET]`, `[CONTEXT]`, `[FOCUS]`, `[OUT_OF_SCOPE]`.
-3. Paste into a fresh chat with the reviewer (Claude/Codex/etc). A fresh session is the point — the reviewer should not inherit your reasoning.
+2. Replace the five placeholders: `[PROFILE_ENTRY]`, `[TARGET]`, `[CONTEXT]`, `[FOCUS]`, `[OUT_OF_SCOPE]`.
+3. Dispatch each profiled reviewer in a fresh read-only, non-persistent context with explicit model/effort and the same packet.
 4. Read the BOTTOM LINE first; then walk the findings in order of class.
 
-The reviewer should be a different model from the one that produced the target when possible — model diversity finds disjoint bugs.
+Independent cross-vendor reviewers are recommended, not required or gating.
 
 ## Filling the placeholders
 
@@ -31,7 +31,7 @@ If `[OUT_OF_SCOPE]` is empty, write `none — open review`.
 Copy from the next line through the closing backticks, fill the placeholders, and paste.
 
 ```
-You are an adversarial reviewer. Your job is to find what is wrong, weak, or misrepresented in the target — not to validate it.
+You are an independent adversarial reviewer. Identity to report: [PROFILE_ENTRY]. Your job is to find material defects or misrepresentation in the target.
 
 ## Target
 
@@ -55,7 +55,7 @@ You are an adversarial reviewer. Your job is to find what is wrong, weak, or mis
 
 Default to skepticism. The author wants this to ship or work and may overstate confidence. Assume claims are overstated until evidence confirms them. Trust only what you can verify in the target itself, the context I gave you, or what you can read/grep in the repo.
 
-You may run targeted read-only checks (read files, grep, run tests if I say so explicitly). Do NOT edit anything. If something I referenced is unclear or missing, ask me — do not guess.
+You may run targeted read-only checks when they materially improve confidence. Do NOT edit anything or ask the PO. Return the uncertainty as a finding instead of guessing.
 
 ## Steps
 
@@ -74,7 +74,7 @@ C. Cross-references. Every named file/function/env var/dep/test the target leans
 D. Hidden assumptions. What does the target assume that isn't stated and might not hold? Name them.
 E. Unhappy paths. Bad input, retries, concurrent calls, partial failure, timeouts, empty state, degraded dependency — does the target survive each?
 F. High-blast-radius risk. Auth/tenant isolation and trust boundaries; data loss, duplication, or irreversible state changes; rollback safety, retries, partial failure, idempotency gaps; ordering assumptions and re-entrancy; version skew, schema drift, migration hazards; observability gaps that hide failure or block recovery.
-G. Vague claims. "Tests pass", "performant", "secure", "scalable", "easy to extend" without evidence — flag and say what would constitute proof.
+G. Vague claims. Flag one only when it hides a reachable defect, breaks an existing mandatory gate, or invalidates the only evidence for an approved acceptance criterion.
 H. Scope risk. Is the target trying to do too much in one step? Is there a piece that should be its own decision or its own change?
 I. SDI plan-vs-bundle (only when [TARGET] is an SDI implementation plan). Does the plan contradict a `DECISIONS.md` entry? Does it misreference or fail to status-gate a `KI-NNN` from `KNOWN_ISSUES.md`? Does it violate PRD/ARCHITECTURE precedence (PRD and ARCHITECTURE win over the plan)? Is each round's output evidenceable from THAT round's deliverable, not a downstream one?
 K. Verify-before-claim audit. For every concrete reference in `[TARGET]` — method, class, hook, file:line, precedent ("mirrors pattern of X"), count ("N sites to change") — Grep/Read and confirm it exists in the shape claimed. Invented / fictitious citations are class-3 (missing prerequisite); shape mismatches are class-1 (internal inconsistency). Especially watch for assertions like "(already exists in code)" / "(method available)" / "(N sites)" without Grep evidence immediately before the assertion.
@@ -92,7 +92,7 @@ K. Verify-before-claim violation — target cited a method/class/hook/file:line/
 
 ## Calibration
 
-Prefer one strong, defensible finding over several weak ones. Do not dilute class 1-4 findings with marginal class 7 noise. Speculative or cosmetic concerns: omit. Every finding should be worth me acting on. If the target looks solid, say so directly and return no findings.
+Prefer one strong, defensible finding over several weak ones. Prioritize delivered functionality, material silent harm, security/tenant/data/API/migration safety and reachable regression. Do not demand an abstraction, refactor, instrumentation, hardening or new test without a reachable defect, approved acceptance criterion or existing mandatory gate. Speculative, cosmetic and meta-instrument concerns are omitted.
 
 ## Output
 
@@ -109,31 +109,25 @@ End with TWO lines:
 
 **Output format hint:** wrap method/class/symbol references in backticks always (enables convergence-check symbol extraction when this prompt feeds into an automated loop).
 
-**Mark every finding `[code]`, `[gate]` or `[docs]`. Your mark is a proposal — the coordinator assigns the final one.**
+**Mark each finding `[code]`, `[gate]` or `[docs]`; your mark is a proposal and the coordinator assigns the final mark after measuring reach.**
 
-- `[code]` — the fix touches production code; **or** the description reveals a defect in the thing described, which you decide by measuring the code, not by where the finding points; **or** the text you are reviewing **is the deliverable** of this checkpoint.
-- `[gate]` — the fix touches only a test, gate, lint, CI config, or fixture.
-- `[docs]` — the fix touches only documentation that **describes** code: a round report, a memory entry, a comment, an already-executed plan section.
+- `[code]` — a reachable defect in shipped behavior or the implementation contract, including security, tenant isolation, data integrity, API compatibility or migration safety.
+- `[gate]` — a test, CI rule, lint, fixture or other verification instrument.
+- `[docs]` — documentation or paper trail that describes the work.
 
-Two promotions apply before the mark is final: a `[gate]` finding on a gate **cited by an acceptance criterion** is `[code]` (only a gate no acceptance criterion cites has budget); and `[docs]` is `[code]` **when the text is the deliverable** — a plan review, a checkpoint whose deliverable is documentation, and everything a housekeeping checkpoint delivers, that checkpoint's deliverable being the paper trail itself.
+A `[gate]` or `[docs]` finding blocks only when concrete evidence shows that it reveals a reachable product defect or material silent harm, breaks an existing mandatory gate, or invalidates the only evidence for an approved acceptance criterion. In the first case classify the underlying defect as `[code]`. Being a deliverable, template, plan or housekeeping text does not by itself promote the finding. Cosmetic prose, speculative defense and meta-instrumentation never block.
 
-Two traps. **Prose that a live gate parses** is not `[docs]` — some repos have tests that walk the tree and parse comments, so editing that prose can turn a test red. **A choice that is still open** is class 5, not paperwork: a missing decision entry is `[docs]` only when the choice was already made and merely isn't written down.
-
-| Mark / class | Effect on the attempt |
+| Finding | Effect |
 |---|---|
-| `[code]` of class 1–4, 6, or K | **fails** the attempt |
-| `[gate]` not promoted | fails **one** attempt per round; on the next, a remaining or new one becomes a known-issue entry with a trigger and does not fail |
-| `[docs]` not promoted, and non-urgent class 7 of any mark | never fails; goes to the report's paper-trail backlog and is paid at the housekeeping checkpoint |
-| class 5 | **ESCALATE**, beats everything |
-| class 7 marked urgent | **BLOCK** |
+| Reachable `[code]` defect with a mechanical fix | **FIX-THEN-SHIP** |
+| Open non-obvious product/architecture/scope decision | **RETHINK** |
+| Urgent material risk requiring PO action | **BLOCK** |
+| `[gate]` / `[docs]` meeting the blocking predicate above | **FIX-THEN-SHIP** or **RETHINK**, according to whether judgment is needed |
+| Other instrumental/documental/advisory finding | Non-blocking; record only when it has a useful consequence or trigger |
 
-Report the `[docs]` ones anyway — they are collected, not discarded — but spend your budget on the thing being built.
-
-BOTTOM LINE rules:
-- SHIP — zero findings of class 1-6 or K; class 7 only if minor and optional.
-- FIX-THEN-SHIP — at least one class 1-4, 6, or K finding, but all are mechanically fixable without rethinking the approach.
-- RETHINK — at least one class 5 finding (decision needs to be made deliberately), or the structure is wrong enough that fixing one finding at a time won't help.
-- BLOCK — class 7 marked urgent, or something I as the author need to stop and address before any further work on this target.
+BOTTOM LINE follows the effect table, not class alone: SHIP when no finding meets
+a blocking row; FIX-THEN-SHIP for reachable mechanical defects; RETHINK when PO
+judgment is needed; BLOCK for urgent material risk.
 
 Do NOT edit any files. Your response is the review report itself.
 ```
@@ -145,35 +139,10 @@ Do NOT edit any files. Your response is the review report itself.
 - **A code-style or convention nit pass.** This prompt's calibration explicitly suppresses style findings. Use a different reviewer or a linter.
 - **You want validation, not interrogation.** This prompt is biased toward finding problems. If you want a balanced "what's good and what's bad" read, ask for that explicitly in a different prompt.
 
-## Pairing with codex exec or a subagent
+## Headless or cross-tool dispatch
 
-If you want to run this review headless (background process, structured artifact), the same template works. **Two steps, do not skip step 1:**
-
-### Step 1 — Write the filled prompt to a file
-
-```
-cat > my-filled-review-prompt.txt <<'PROMPT_EOF'
-<the full filled prompt — all four placeholders replaced>
-PROMPT_EOF
-```
-
-The heredoc delimiter MUST be quoted (`'PROMPT_EOF'`) so bash doesn't expand `$variables` or backticks inside the prompt content.
-
-### Step 2 — Invoke codex with stdin redirected from the file
-
-```
-codex exec --ephemeral --sandbox read-only \
-  --output-last-message review-output.md \
-  -C . \
-  - < my-filled-review-prompt.txt
-```
-
-The `- < file` pattern is load-bearing: the `-` argument tells codex to read prompt from stdin, the `< file` feeds the file as stdin AND closes naturally on EOF.
-
-**Never pass the prompt as a positional argument** (e.g., `codex exec ... "$(cat <<EOF ... EOF)"`). In any non-TTY shell (Claude Code Bash, CI, background tasks), codex sees "stdin is piped" and tries to read it to append to the positional prompt; stdin never closes; the process hangs with 0 bytes output. Always use stdin redirect.
-
-**Pre-flight:** ensure the directory containing the `--output-last-message` path exists (e.g., `mkdir -p docs/reviews` if writing there). Codex exits 0 even when the output file can't be written, so a missing parent dir results in a silently empty/absent reviewer output.
-
----
-
-Or pass the filled prompt to an Agent subagent (Anthropic Agent tool, `subagent_type: general-purpose`, `model: opus` / `sonnet` / `haiku` — the last **only under user authorization**) as the `prompt` argument — no stdin gymnastics needed; the subagent runtime handles input. The output is the review report. The coordinator dispatches one such subagent per ensemble reviewer, in parallel — Opus + Sonnet via the Agent tool, Codex via the `codex exec` block above (or a Haiku subagent if Codex is down). **Pass the filled prompt, never the skill.**
+Use the confirmed reviewer recipes in
+`sdi-mode/references/roles-and-orchestration.md` §"Cross-tool recipes". They
+require fresh read-only non-persistent sessions, explicit profile selection,
+prompt by stdin, and validation by exit code plus non-empty final artifact.
+Those vendor-specific examples are invocation syntax, not a default roster.

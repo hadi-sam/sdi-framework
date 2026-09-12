@@ -85,7 +85,7 @@ Target length: 200–300 lines.
 
 - Path convention is centralized: `raw/{source}/{YYYYMMDD}/{run_id}/{filename}`.
 - Atomic writes: write to temp path, rename on success.
-- All storage operations log: bytes, target path, duration.
+- Log storage metadata when loss/corruption/recovery risk requires operational evidence.
 
 ## shared/quality/
 
@@ -146,13 +146,10 @@ Target length: 200–300 lines.
 - Use deterministic IDs (hashes) where natural keys are absent.
 
 ### Testing
-- Unit tests for each stage with fixtures.
-- Integration tests run a full pipeline end-to-end against a local-only target.
-- Quality checks are tested with both passing and failing fixtures.
+- Add stage/integration/quality tests only for material silent data harm or an approved acceptance criterion; use the level that reaches the risky boundary.
 
 ### Observability
-- Every stage logs: stage name, run_id, input count, output count, duration.
-- A run summary at the end posts to the chosen alerting surface (Slack/email/etc).
+- Log stage/run fields and alert summaries only where a material failure could otherwise be silent or operations require recovery evidence.
 
 ### Commits & Branches
 - [conventional commits, branch naming]

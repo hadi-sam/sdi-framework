@@ -12,8 +12,8 @@ Stack-agnostic. Single-developer friendly. Designed for IDE-based AI coding tool
 | --- | --- | --- |
 | `mvp-architect` | Turn an idea into the initial spec bundle (PRD, ARCHITECTURE, ROADMAP, PROJECT_STRUCTURE, IMPLEMENTATION_PLAN_PHASE_1, DECISIONS, KNOWN_ISSUES, MEMORY, WORK_LOG, AGENTS/CLAUDE.md). | Starting greenfield. |
 | `convert-to-sdi` | Adopt SDI on a project that already has code. Documents reality without editing source. | Joining a legacy project or formalizing an in-flight one. |
-| `sdi-mode` | Orchestrate implementation against specs as the **PM**: audit-first, dispatch Engineer subagents (Opus) to write the code and a reviewer ensemble to review it, checkpoint gates, decisions, known issues, memory, auto-review on mid-phase checkpoints. | Writing code from an SDI plan. |
-| `sdi-review` | SDI-aware review coordinator for plans, rounds, fork decisions, and bugs. Dispatches a reviewer ensemble (Opus + Sonnet + Codex) and runs the autonomous fix loop; reviewers get the prompt, never the skill. | Mid-implementation second pair of eyes. |
+| `sdi-mode` | Orchestrate proportional implementation against specs: audit-first, profiled Engineers, risk-based review/checkpoints, decisions, known issues and memory. | Writing code from an SDI plan. |
+| `sdi-review` | SDI-aware review coordinator for plans, rounds, fork decisions and bugs. Dispatches the work-item reviewer profile; reviewers get the prompt, never the skill. | Mid-implementation second pair of eyes. |
 | `sdi-next-plan` | Generate the next `IMPLEMENTATION_PLAN_*.md` after a phase or feature closes. | Between work items in an ongoing project. |
 
 `mvp-architect`, `convert-to-sdi`, and `sdi-next-plan` produce planning artifacts. `sdi-review` reviews them. `sdi-mode` orchestrates execution — the PM dispatches Engineers and a reviewer ensemble (see [Execution model](#execution-model)). The project's `AGENTS.md` / `CLAUDE.md` carry only project facts (stack, doc map, conventions).
@@ -43,7 +43,13 @@ Install the five skills as either project- or user-scoped:
 
 Skills auto-invoke from their descriptions. Restart Codex after adding skills.
 
-`sdi-mode` dispatches its **Engineer and Reviewer subagents** through the host's Agent tool — the Opus/Sonnet reviewers and the Opus Engineers run as subagents (Claude Code provides this). For `sdi-mode` auto-review, the `codex` CLI must additionally be on PATH with a reviewer model configured in `~/.codex/config.toml` (recommended: `gpt-5.5` with reasoning effort `xhigh`); if Codex is unavailable the PM asks the user rather than substituting a model on its own. See [`sdi-mode/references/roles-and-orchestration.md`](sdi-mode/references/roles-and-orchestration.md) for the execution roles and [`sdi-mode/references/auto-review-mode.md`](sdi-mode/references/auto-review-mode.md) for the full reviewer-ensemble protocol and Decision Bundle flow.
+`sdi-mode` uses native subagents when the selected profile and required read/write boundary are available. Otherwise it can use a supported tool's CLI with explicit model/effort and an isolated worktree (Engineer) or fresh read-only session (Reviewer). There is no default roster or automatic fallback. See [`sdi-mode/references/roles-and-orchestration.md`](sdi-mode/references/roles-and-orchestration.md) for confirmed cross-tool recipes.
+
+The installer accepts one or more skill destinations in a single transaction:
+`./install.sh /path/to/skills-a /path/to/skills-b`. With no path it preserves
+the existing single-destination behavior (`SKILLS_DIR` or the default). It
+preflights all destinations before copy and prints a restore command backed by
+an ephemeral snapshot for post-install smoke recovery.
 
 ### Roo Code, Kilo Code, OpenCode
 
@@ -68,8 +74,8 @@ Tools that only support always-applied global rules are not supported — SDI as
 These live in `sdi-mode/SKILL.md` and load on demand. They are never copied into `AGENTS.md` / `CLAUDE.md`.
 
 1. **Audit the plan against the repo before coding.** The repo wins when it disagrees with the plan; the plan gets a revision note.
-2. **Stop at explicit checkpoints with binary gates.** Each gate must pass before the round closes.
-3. **Maintain decisions and memory separately.** Durable rationale in `docs/DECISIONS.md`; dated work state in `docs/memory/YYYY-MM-DD.md`; per-work-item narrative in `docs/WORK_LOG.md`, indexed one line per item by the Work tracker in `AGENTS.md` / `CLAUDE.md` where there is one, and by `docs/plans/` where there isn't.
+2. **Use proportional checkpoints and binary gates.** Each must map to a real risk, decision, delivery boundary, acceptance criterion or mandatory project gate.
+3. **Maintain decisions and memory separately.** Durable rationale in `docs/DECISIONS.md`; dated state in `docs/memory/YYYY-MM-DD.md`; factual result/evidence/consequence links in `docs/WORK_LOG.md` at close.
 4. **Maintain known issues separately.** `docs/KNOWN_ISSUES.md` with append-only lifecycle status.
 5. **Respect document precedence.** Live repo > `AGENTS.md` / `CLAUDE.md` > `PRD` > `ARCHITECTURE` > `ROADMAP` > `PROJECT_STRUCTURE` > `IMPLEMENTATION_PLAN` > `DESIGN_SYSTEM` > `README`. The fact sheet wins on **facts**, not on **scope**, which is the PRD's. `DECISIONS` patches authority; `KNOWN_ISSUES` catalogs wrongness; `docs/memory/` is breadcrumbs, not source of truth.
 
@@ -78,10 +84,10 @@ These live in `sdi-mode/SKILL.md` and load on demand. They are never copied into
 `sdi-mode` runs as a **multi-agent** loop, not a single agent writing code. Three roles:
 
 - **PM / orchestrator** (the main session) — runs the audit, writes briefs, dispatches subagents, reconciles verdicts, and owns the entire paper trail. Never writes or reviews code itself.
-- **Engineer** (dispatched subagent, always Opus; 1–3 in parallel by PM judgment, isolated worktrees when parallel) — writes the code and runs the build/tests; never touches the paper trail.
-- **Reviewer** (dispatched subagent, three in parallel) — adversarially reviews the round's diff and returns a verdict; strictly read-only.
+- **Engineer** (selection persisted in plan §0 and reused for normal/Fix/Merge) — writes the smallest sufficient change in an exclusive worktree and runs scoped checks; never touches the paper trail.
+- **Reviewer** (profile persisted in plan §0) — independently reviews the same packet in a fresh read-only session and returns a verdict.
 
-Mid-phase checkpoints are **auto-reviewed by default**: a model-diverse ensemble (Opus + Sonnet + Codex; when Codex is unavailable the PM asks the user instead of substituting) reviews each round, and findings are deduped into a Decision Bundle (obvious fixes auto-applied — code via a fix-Engineer, paper trail by the PM — and decisions surfaced with a recommendation). What a finding does to the attempt is decided by its mark, `[code]` / `[gate]` / `[docs]`, proposed by the reviewer and assigned by the PM; the fix loop is capped at **3 attempts** and then stops mechanically, handing the round back to the user — [`sdi-mode/references/auto-review-mode.md`](sdi-mode/references/auto-review-mode.md) §"Loop cap". CP1 (foundation) stays user-gated; CP5 (housekeeping) closes on review PASS → user-run smoke → PM-opened PR. The user can opt out per session (the PM then runs the checkpoint user-gated).
+Independent review is used where risk or contract warrants it. Findings are deduplicated into a Decision Bundle; instrumental or documentary findings block only when they expose a real defect/material silent harm, break an existing mandatory gate, or invalidate the only evidence for an approved acceptance criterion. The cap remains canonical in [`sdi-mode/references/auto-review-mode.md`](sdi-mode/references/auto-review-mode.md) §"Loop cap".
 
 Full spec: [`sdi-mode/references/roles-and-orchestration.md`](sdi-mode/references/roles-and-orchestration.md) (roles + tool scoping, Engineer fan-out, the prompt-not-skill reviewer dispatch, brief templates) and [`sdi-mode/references/auto-review-mode.md`](sdi-mode/references/auto-review-mode.md) (the reviewer-ensemble mechanics it reuses). The same ensemble is also available user-invoked through `sdi-review`.
 
@@ -91,8 +97,8 @@ After `mvp-architect` or `convert-to-sdi`, a project typically has, under `docs/
 
 ## What SDI Is Not
 
-- **Not a code reviewer.** `sdi-mode` is the execution orchestrator: as PM it dispatches Engineer subagents (Opus) to write the code and a model-diverse reviewer ensemble to adversarially review it, while the human gates decisions and the final smoke/PR. It orchestrates implementation and review rather than acting as a standalone review tool — for a user-invoked second pair of eyes, use `sdi-review`.
-- **Not an auto-approver.** Foundation (CP1) stays user-gated. Mid-phase checkpoints get per-round auto-review; CP5 housekeeping gets phase-wide auto-review running the same fix loop; on PASS it clears the review gate but does not open the PR — the user-run CP-final smoke is the second gate, and the PM opens the PR only after both pass. Findings are deduped into a Decision Bundle: obvious fixes auto-apply and the loop continues, while non-trivial / decision findings are surfaced with options + a recommendation. Every attempt runs three reviewers (Opus + Sonnet + Codex; if Codex is unavailable the PM asks the user). Always-escalate triggers (blocker, emergency deviation, schema migration with data-loss risk, new external dep, security-relevant change, plan revision, PRD/ARCHITECTURE deviation) keep the round user-gated even when auto-review is on, as does a product, design or architecture choice that is still **open**; writing a `DECISIONS` or `KNOWN_ISSUES` entry for a choice already made does not — it goes in the round report's `## Decisões desta rodada`.
+- **Not a code reviewer.** `sdi-mode` is the PM/orchestrator; profiled Engineers author code and profiled reviewers independently assess it when justified.
+- **Not an auto-approver.** Open decisions, irreversible/production actions and material risks remain user-gated. Review PASS never substitutes for a required live smoke or PR approval.
 - **Not a refactor agent.** `convert-to-sdi` documents reality; it never edits source.
 - **Not scope-from-scratch for in-flight projects.** Use `sdi-next-plan`.
 - **Not bureaucracy.** Friction should earn its keep by improving clarity, quality, or auditability.

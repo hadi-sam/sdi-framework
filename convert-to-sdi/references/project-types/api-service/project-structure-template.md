@@ -68,7 +68,7 @@ Target length: 200–300 lines.
 
 - Services orchestrate; they don't reach into HTTP or DB drivers directly.
 - Services use repositories for data access and external clients (from `lib/`) for third-party calls.
-- Services are tested in isolation with mocked repositories.
+- Services may be tested in isolation when the proportional test threshold is met.
 
 ## src/repositories/ — Data access
 
@@ -137,13 +137,11 @@ Target length: 200–300 lines.
 - Never leak stack traces in 5xx responses; log them, return generic message.
 
 ### Observability
-- Every request gets a `request_id` (header in, propagated through logs and downstream calls).
-- Logs are structured JSON. PII scrubbed at the boundary.
+- Add request correlation/logging when a reachable failure needs operational detection; scrub PII at the boundary.
 
 ### Testing
-- Unit tests for services with mocked repositories.
-- Integration tests against a real local DB; routes hit through real HTTP.
-- Webhook handlers tested with sample payloads + signature verification.
+- Add only tests required by an approved criterion or a material silent-harm path.
+- When that path crosses DB/HTTP/signature boundaries, use an integration test that exercises the real boundary.
 
 ### Commits & Branches
 - [conventional commits, branch naming]

@@ -97,7 +97,7 @@ Read `references/artifact-generation-rules.md` and `references/confidence-flags.
 - **DECISIONS.md** (seed, 3–5 entries) — obvious patterns detected (e.g. "uses Drizzle ORM", "monorepo with pnpm workspaces"). Marked `Source: code analysis — confirm rationale with team`.
 - **KNOWN_ISSUES.md** (fresh or preserved) — append-only catalog scaffold. Preserve existing issue entries; for fresh generation, leave empty unless onboarding found concrete evidence-backed issues outside setup scope.
 - **docs/MEMORY.md + docs/memory/YYYY-MM-DD.md** (fresh) — index empty except for today's entry, which describes the framework setup itself.
-- **docs/WORK_LOG.md** (fresh) — verbose per-work-item narrative; header + a single retroactive `## Framework adoption` section. The verbose counterpart to the one-line Work tracker.
+- **docs/WORK_LOG.md** (fresh) — factual per-work-item close (result, evidence, consequence, links); header + a short retroactive `## Framework adoption` section.
 - **PRD.md** (thin by design) — `Current state` (extracted from code/README) + `Out of scope` placeholder.
 - **ROADMAP.md** (optional) — only if Q4 = "discrete phases planned" and the user has visibility into future work; otherwise minimal note pointing to the `sdi-next-plan` skill for forward planning.
 

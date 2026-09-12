@@ -42,7 +42,7 @@ Target length: 200–350 lines.
 
 - One loop file owns the main agent iteration. No tool dispatch logic spread across files.
 - Max iterations is a config knob, not a magic number.
-- Every iteration logs: model used, tool calls made, tokens consumed, cost delta.
+- Log iteration/model/tool/cost fields when an approved budget, audit or recovery requirement needs them.
 - Early-stop conditions are explicit: success signal from agent, budget exhausted, error budget exceeded.
 
 ## src/tools/ — Tool implementations
@@ -57,7 +57,7 @@ Target length: 200–350 lines.
 - Each tool exports: name, description (used in tool list), input schema (Zod / Pydantic / JSON Schema), execute function.
 - Idempotent tools mark themselves as such in metadata.
 - High-blast-radius tools require an explicit approval flag in the call signature.
-- Tests live next to the tool file (`tool-name.test.ts`) and exercise both happy path and error cases.
+- Tests justified by material silent harm or an approved acceptance criterion may live next to the tool file (`tool-name.test.ts`).
 
 ## src/prompts/ — Prompts
 
@@ -111,18 +111,16 @@ Target length: 200–350 lines.
 
 ### LLM SDK usage
 - One wrapper module per provider. App code never calls SDK directly.
-- All API calls flow through the wrapper, which adds: retry, fallback, cost accounting, logging.
+- All API calls flow through the wrapper; add retry, fallback, cost accounting or logging only for the path's real contract/risk.
 - Streaming and non-streaming go through the same surface.
 
 ### Logging & observability
-- Every LLM call logs: provider, model, latency, input tokens, output tokens, cost, request id.
-- Tool calls log: name, input (PII-scrubbed), output (PII-scrubbed), duration, success/failure.
-- Trace ID propagates from request → loop iteration → tool calls → LLM calls.
+- When a failure or cost overrun would be materially silent, log only the fields needed to detect/recover, with PII scrubbing.
+- Propagate a trace ID when the approved flow crosses boundaries that must be correlated.
 
 ### Testing
-- Unit tests for each tool, each prompt template renderer, each guardrail.
-- Integration tests: a fixed transcript replay confirms the agent loop converges as expected on canonical inputs.
-- Eval suite is separate from tests — slower, scored, run on a cadence.
+- Add a unit/integration test only for material silent harm or an explicitly approved acceptance criterion.
+- Use an eval suite only when product quality criteria define a scored behavior.
 
 ### Commits & Branches
 - [conventional commits, branch naming]

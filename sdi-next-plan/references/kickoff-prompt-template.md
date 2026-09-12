@@ -1,6 +1,6 @@
 # Kickoff Prompt Template
 
-After this skill generates the next `IMPLEMENTATION_PLAN_*.md`, the user takes the plan and hands it to a coding agent for execution. The kickoff prompt sets the tone: read first, audit before code, stop at checkpoints. There is **one consolidated template**, with a single conditional line for how `sdi-mode` is loaded — as a skill (Claude Code / Codex) or as a custom mode (Roo Code / Kilo Code / OpenCode).
+After this skill generates the next plan, the user hands it to a coding agent. The kickoff requires audit-first and the persistent operating profile, while leaving checkpoints, tests and review proportional to real risk.
 
 Keep this template in sync with the equivalent file in `mvp-architect/references/kickoff-prompt-template.md`. Both skills carry their own copy on purpose: each skill is self-contained.
 
@@ -28,7 +28,9 @@ Then audit the plan against the actual repo state. Produce an audit report cover
 - Open questions for me
 - Aligned / no action items
 
-After the audit, propose the first deliverable — usually [foundation: schema/migration/dependencies for types with a database; project scaffolding for fresh repos] — and stop for review. Don't start on subsequent scope items until I approve the foundation.
+Read the work-item operating profile in plan §0. If a function to dispatch is pending, ask me once before its first dispatch and persist my answer. Do not choose a model, effort, vendor, replacement or reviewer quantity yourself.
+
+After the audit, stop only if there is an open product/architecture/scope decision, irreversible or production action, migration hazard, or other material risk. Otherwise implement the smallest sufficient change and use only evidence justified by the changed flow, an approved acceptance criterion or an existing mandatory gate.
 ```
 
 The prompt is short because the SDI discipline (8-step loop, audit-first, stop-and-review, DECISIONS, memory, document precedence, tone) is loaded by the `sdi-mode` skill or custom mode. The kickoff just signals "we're starting this work item — proceed with audit".
@@ -55,12 +57,12 @@ Now implementing Phase N per docs/IMPLEMENTATION_PLAN_PHASE_N.md.
 [For Claude Code / Codex:] Use the `sdi-mode` skill for this work.
 [For Roo Code / Kilo Code / OpenCode:] Activate the `sdi-mode` custom mode for this work.
 
-Follow the same SDI discipline as Phase 1:
+Follow the same proportional SDI discipline as Phase 1:
 1. Read the plan fully.
 2. Audit against the current repo.
 3. Produce an audit report before writing code.
-4. Stop at natural checkpoints for review.
-5. Write tests alongside code.
+4. Use checkpoints/review only at independent risk, decision or delivery boundaries.
+5. Add a test only for material silent harm to data/access or an explicitly approved acceptance criterion.
 6. DECISIONS.md for non-obvious choices; KNOWN_ISSUES.md for pre-existing bugs/tech debt/security gaps that stay out of scope.
 
 Start with the audit.
@@ -79,7 +81,7 @@ Before starting, verify:
 - Audit state from the start of the phase is still valid (no new divergences).
 - Plan §[section] for round [Y] has what you need, or needs a revision note.
 
-Propose the first deliverable of this round and stop for review.
+Implement the smallest approved deliverable; stop only for a required user gate.
 ```
 
 ## What the prompts do
@@ -87,7 +89,7 @@ Propose the first deliverable of this round and stop for review.
 - **Force context loading before code.** The agent reads before writing.
 - **Prime the audit discipline.** The audit is the highest-leverage step; make it explicit.
 - **Establish repo-wins rule.** Prevents the agent from being hostage to a stale plan.
-- **Pre-announce stop-and-review.** The user isn't surprised when the agent stops; it's expected.
+- **Make stops proportional.** The agent stops for real gates, not checkpoint ceremony.
 - **Normalize DECISIONS.md and KNOWN_ISSUES.md.** Makes the decision trail and known-issue catalog defaults, not afterthoughts.
 - **Set tone for revision notes.** Plans evolve; the agent knows how to mark that.
 

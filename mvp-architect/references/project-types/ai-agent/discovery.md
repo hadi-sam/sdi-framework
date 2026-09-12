@@ -30,7 +30,7 @@ This drives cost, latency, capability ceiling, and many architecture choices.
 
 Typical questions:
 - Provider — Anthropic, OpenAI, Google, open-weight via Bedrock/Vertex/local?
-- Specific model tier — frontier (Opus/GPT-5/Gemini-Pro) or fast/cheap (Haiku/GPT-mini/Flash)?
+- Specific model tier — frontier-quality or fast/low-cost? Record the product's exact provider/model choice.
 - Fallback strategy if primary model fails or rate-limits?
 - Streaming required, or batch/sync acceptable?
 - Context window needs — small (few-shot prompts) or large (long docs, deep history)?

@@ -1,12 +1,12 @@
 # Plan review protocol
 
-Framework for reviewing an SDI implementation plan — the **check framework** the coordinator and the reviewers it dispatches apply against the plan (what to read, what to verify, the bug classes, the output format). The coordinator runs the autonomous loop from `SKILL.md` (dispatch Opus + Sonnet + Codex with the adversarial prompt, dedup, apply obvious fixes to the plan doc, re-dispatch until SHIP or the cap, escalate decisions). A dispatched reviewer applies these checks against the plan and returns findings; **a reviewer never loads `sdi-review`** — it gets the filled adversarial prompt.
+Framework for reviewing an SDI implementation plan. The coordinator dispatches the persistent work-item profile with the same adversarial prompt, deduplicates findings, applies only blocking mechanical fixes and escalates decisions. A reviewer never loads `sdi-review`.
 
 This file is loaded by `sdi-review` for **Mode 1: plan review**. Other modes use `round-report-review-patterns.md`.
 
 ## Why this exists
 
-A plan written by the same agent that scoped it tends to overstate readiness — the planner is not adversarial but wants to ship. An external review applies adversarial pressure: cross-checks every concrete claim against the repo, every choice against `DECISIONS.md`, every known issue against `KNOWN_ISSUES.md`, and every gate against evidenceability. The coordinator combines perspectives by dispatching the ensemble (Opus + Sonnet + Codex; if Codex fails, ask the user before running anything in its place) — partially-disjoint blind spots, so the union catches more than any one model alone.
+A plan written by the same agent that scoped it tends to overstate readiness. Independent review cross-checks concrete claims against the repo, decisions and known issues. The coordinator uses the profiled reviewers; cross-vendor diversity is recommended, not a gate, and any scheduled failure returns to the PO without automatic replacement.
 
 ## When this is used
 
@@ -53,7 +53,7 @@ E. **Plan-vs-PRD/ARCHITECTURE precedence** — PRD wins over plan; ARCHITECTURE 
 
 F. **Missing prerequisites** — references components, hooks, env vars, tables, helpers, conventions that no prior phase delivered AND this plan doesn't create.
 
-G. **Vague or non-binary gates** — gates a reviewer can't mark ✓/✗ from evidence. "Verify the integration tests pass" is too vague; "Integration test count matches plan §8 list and all pass per the runner output below" is binary.
+G. **Vague or non-binary gates** — flag only when ambiguity breaks an existing mandatory gate or invalidates the only evidence for an approved acceptance criterion. `Verify tests pass` is vague; `run <existing command>, require exit 0 and the named isolation scenario to pass` is binary. The example does not authorize a new test or count by habit.
 
 H. **DECISIONS-worthy choices not flagged** — library choice, architecture pattern, scope deviation, accepted trade-off — must be called out as new `DECISIONS.md` entries in the plan. If the plan picks library X over Y without a `DECISIONS.md` entry, that's a finding.
 
@@ -90,9 +90,9 @@ End with TWO summary lines:
 - `TOTAL FINDINGS: N. By class: 1=a, 2=b, 3=c, 4=d, 5=e, 6=f, 7=g, K=k.`
 - `BOTTOM LINE: <SHIP | FIX-THEN-SHIP | RETHINK | BLOCK> + one sentence saying why.`
 
-⚠️ **The mark decides the round, not the class.** The coordinator assigns each finding its final mark and reads the round off [`sdi-mode/references/auto-review-mode.md`](../../sdi-mode/references/auto-review-mode.md) §"Marks and the verdict matrix". **Here the plan IS the deliverable**, so a `[docs]` finding on it is promoted to `[code]`; a `[docs]` finding outside the plan goes to the backlog CP5 consumes.
+⚠️ **The canonical blocking predicate decides the round, not class or artifact type.** The coordinator applies [`sdi-mode/references/auto-review-mode.md`](../../sdi-mode/references/auto-review-mode.md) §"Marks and the verdict matrix". A plan being the deliverable does not by itself promote a documentary finding.
 
-**BOTTOM LINE rules (the reviewer's line, and only a proposal):** `SHIP` only if zero findings of class 1–6 or K; `FIX-THEN-SHIP` if at least one is mechanically fixable in class 1–4, 6 or K; `RETHINK` for a class-5 finding or a structure that one-finding-at-a-time will not fix; `BLOCK` for a class-7 marked urgent. Non-urgent class 7 alone can stay `SHIP`. This line is **by class on purpose**, the same reason `auto-review-mode.md` §"Verdict format" is: a reviewer must not be able to buy its own pass by marking its own finding. **The round is the coordinator's**, off the matrix cited above with the mark it assigned.
+**BOTTOM LINE is a proposal:** `SHIP` when no finding meets the canonical blocking predicate; `FIX-THEN-SHIP` for a reachable mechanical defect; `RETHINK` when PO judgment is needed; `BLOCK` for urgent material risk. The coordinator owns the round.
 
 ## Saving the review
 
@@ -110,7 +110,7 @@ The autonomous loop in `SKILL.md` handles iteration: after round 1, the coordina
 2. Re-run this protocol with the second-pass branch active: also read the prior round's `docs/reviews/plan-review-(NN-1).md` (the second-pass step in "Steps you must perform"), and apply check K (resolution of prior findings).
 3. Save each round's output as `docs/reviews/plan-review-NN.md` (`01`, `02`, ...).
 
-Cap at **3 rounds** + the convergence check, canonical in [`sdi-mode/references/auto-review-mode.md`](../../sdi-mode/references/auto-review-mode.md) §"Loop cap". The last allowed round without a SHIP is a **mechanical stop**: the coordinator stops and hands the plan back to the user, and only the user authorizes the next round — with the authorization and its reason written to `DECISIONS.md` before that round runs. A plan still carrying class 1-6 findings at the cap has a structural problem, not a review problem.
+Apply the cap and convergence check canonical in [`sdi-mode/references/auto-review-mode.md`](../../sdi-mode/references/auto-review-mode.md) §"Loop cap". The last allowed round without SHIP is a mechanical stop; only the PO authorizes another, with the authorization recorded first.
 
 ## Common pitfalls
 
@@ -123,6 +123,6 @@ Cap at **3 rounds** + the convergence check, canonical in [`sdi-mode/references/
 
 ## Model diversity
 
-The coordinator dispatches Opus + Sonnet + Codex every round — and if Codex is unavailable, **stops and asks the user** instead of substituting — each reviewer gets the filled adversarial prompt and runs it against the plan, returning findings + verdict. **Dispatched reviewers can't read this protocol file** (it lives in the skill, not the project repo), so the adversarial prompt is **self-contained**: its general checks (A–H, K) plus the SDI plan-vs-bundle check (item I — plan-vs-DECISIONS, plan-vs-KNOWN_ISSUES, PRD/ARCHITECTURE precedence, round-structure soundness) cover the checks listed above. This protocol is the **coordinator's** reference — for interpreting findings, deduping, and second-pass resolution (check K). What differs between reviewers is their blind spots; the union catches more than any single model. The coordinator dedups and reconciles per `SKILL.md`.
+The coordinator dispatches the persistent profile in parallel. Each reviewer gets the same filled self-contained prompt and returns findings plus verdict. Reviewers cannot read this protocol file, so the prompt carries the minimal proportionality and plan-vs-bundle checks. The coordinator deduplicates and reconciles per `SKILL.md`.
 
 A user may also open a fully separate session in another tool and load `sdi-review` there as an independent second coordinator — their choice. But the reviewers a coordinator dispatches always receive the filled adversarial prompt, **never this skill**.

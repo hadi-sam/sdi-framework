@@ -14,7 +14,7 @@ Entry signals, soft signals and the "don't enter" list are in `references/next-p
 1. **Read the current state of the repo** (NOT memory of earlier conversations). Reading order in `references/next-phase-planning.md` §"Reading order before generating".
 2. **Calibrate** against ROADMAP with ≤4 focused questions.
 3. **Light discovery** only on what's specific to this work item — do NOT re-run mvp-architect Phase A.
-4. **Generate one new `IMPLEMENTATION_PLAN_*.md`** using the universal template + type appendix.
+4. **Generate one new `IMPLEMENTATION_PLAN_*.md`** using the universal template + type appendix. Persist the PO's work-item role profile in §0, or the exact `Pendente` marker when it has not been chosen; never invent it.
 5. **Index the new work item.** If the fact sheet (`AGENTS.md` / `CLAUDE.md`) has a Work tracker, add the one-line row, keeping both files in sync when both exist. If it has none, there is nothing to add: the index of work items is the `docs/plans/` folder and the history is `docs/WORK_LOG.md`.
 6. **Optional:** ROADMAP revision note if subsequent phases shifted.
 7. **Hand off to `sdi-mode`** via the kickoff prompt.

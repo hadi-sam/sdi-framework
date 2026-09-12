@@ -45,11 +45,17 @@ Use `core-templates/implementation-plan-template.md` for the universal structure
 Inside the plan:
 
 - **§0** — what from the previous item must be green before this one starts, citing round reports or commits.
+- **§0 operating profile** — persist the PO's exact Engineer/Fix/Merge and reviewer models/vendors/efforts/quantity. If not supplied, keep the template's `Pendente` marker so `sdi-mode` asks once before first dispatch; never infer a default.
 - **§1** — concrete in and out of scope, guided by PRD §Out of scope and `KNOWN_ISSUES.md`. If the item fixes a `KI-NNN`, list it in scope and require the status update at housekeeping.
 - **§2** — reference decisions already taken instead of duplicating them; new schema and contracts get sketched here.
 - **§11–§13** follow the template's rules; pre-populate §13 with what the audit of the memory dailies surfaced, and nothing else.
 
-Plan length: the byte ceiling in `core-templates/implementation-plan-template.md` §"Size and stability" — the project's docs lint when it has one. Don't pad. Two consequences at generation time. The plan is a **stable spec** once approved, so what grows round by round (findings, divergences, narrative) is written to the round report, `docs/WORK_LOG.md` and `docs/reviews/`, never back into the plan, and §12/§13 stay one-line slug lists. And **if the plan you are about to write already runs past about 80% of that ceiling, split the work item into `PHASE_N` phases**, each with its own plan under the ceiling, indexed by a short `BRIEF_<slug>.md` naming the phases and their order. The ceiling is never raised by exception.
+Apply the canonical proportionality rule by reference to `sdi-mode`: tests,
+observability, gates, review and checkpoint splits appear only when linked to a
+reachable flow, production constraint, approved acceptance criterion or
+existing mandatory gate. Do not restate neutral examples merely for style.
+
+Plan length follows the template's byte ceiling. Don't pad. The plan is a stable spec once approved; later facts and evidence link from the round report, short `WORK_LOG.md` close and reviews. If the draft already runs past about 80% of the ceiling, split the item into ordered plans rather than raising the limit.
 
 ### Verify-before-claim discipline
 
@@ -63,7 +69,7 @@ If later phases shifted because of this item, add a note at the top of `ROADMAP.
 
 ## Index the new work item
 
-**If the fact sheet (`AGENTS.md` / `CLAUDE.md`) has a Work tracker**, add or update the one-line row there — item, type, status, date, path to the plan — keeping both files in sync when both exist, and flag a missing companion as a housekeeping note. The row stays one line; the narrative goes to `docs/WORK_LOG.md` at close (sdi-mode Step 8). Mark the previous item ✓ if it isn't; a missing `WORK_LOG.md` section for it is a gap for sdi-mode, not a backfill for this skill.
+**If the fact sheet (`AGENTS.md` / `CLAUDE.md`) has a Work tracker**, add or update its one-line row and keep both files in sync. The factual close goes to `docs/WORK_LOG.md`. Mark the previous item ✓ if needed; a missing close section is a gap for sdi-mode, not a backfill for this skill.
 
 **If the fact sheet has no Work tracker**, there is nothing to add: the index of work items is the `docs/plans/` folder. A project without a tracker did that deliberately — don't reintroduce one.
 

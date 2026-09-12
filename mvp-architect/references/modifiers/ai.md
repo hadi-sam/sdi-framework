@@ -25,7 +25,7 @@ Pull these into the conversation alongside the type-specific discovery themes. K
 ### B. Model and provider
 
 - Provider preference (Anthropic, OpenAI, Google, open-weight via Bedrock/Vertex/local)?
-- Specific tier — frontier (Opus/GPT-5/Gemini-Pro) or fast/cheap (Haiku/GPT-mini/Flash)?
+- Specific tier — frontier-quality or fast/low-cost? Record the exact provider/model selected for the product.
 - Multi-model strategy — primary + fallback, or single?
 - Budget per request / per user / per month — set explicitly, not implied?
 - Context window needs — fits in 8k, needs 100k+?

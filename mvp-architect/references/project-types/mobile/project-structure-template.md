@@ -71,7 +71,7 @@ Target length: 200–300 lines.
 ### API conventions
 
 - Single client wraps fetch/Apollo. App code never calls fetch directly.
-- Wrapper handles: auth header, retry, request id, offline queue.
+- Wrapper handles auth; add retry, request IDs or offline queue only when the real flow/contract requires them.
 - Errors are typed (NetworkError, AuthError, ServerError).
 
 ## src/stores/ — State
@@ -153,9 +153,7 @@ Target length: 200–300 lines.
 - Respects reduce-motion and large-text system settings.
 
 ### Testing
-- Unit tests for stores, API wrappers, formatters, deep-link parsers.
-- Component tests with rendering library (React Native Testing Library / Flutter widget tests).
-- E2E (optional Phase 2): Detox / Maestro / Patrol.
+- Add unit/component/E2E tests only for material silent harm or an approved acceptance criterion; choose the smallest level that proves the risky flow.
 
 ### Distribution
 - iOS build via [Expo EAS / fastlane / Xcode Cloud]; outputs ipa with provisioning profile.

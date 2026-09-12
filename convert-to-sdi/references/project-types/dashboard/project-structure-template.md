@@ -106,7 +106,7 @@ Target length: 200–300 lines.
 
 - Each action: name, input schema, permission check, execute, audit log emit.
 - Destructive actions require explicit confirmation token in the input (forces UI to ask).
-- Every action logs to the audit log table.
+- Actions enter the audit log when authorization, destructive impact or a production contract requires traceability.
 
 ## Coding Conventions
 
@@ -128,9 +128,7 @@ Target length: 200–300 lines.
 - Initial page renders the most important chart first; secondary charts can lazy-load.
 
 ### Testing
-- Unit tests for filter serialization, formatters, action logic.
-- Integration tests: a fixture DB → render dashboard → assert known values.
-- Visual regression for charts (optional Phase 2).
+- Add unit/integration/visual tests only for material silent harm or an approved acceptance criterion; choose the level that exercises the risky boundary.
 
 ### Commits & Branches
 - [conventional commits, branch naming]
@@ -149,5 +147,5 @@ Target length: 200–300 lines.
 
 - **Queries are the spine.** Treat them as first-class modules, not glue code.
 - **Filters in URL, not state.** Shareability matters more than ergonomics.
-- **Actions need ceremony.** Confirmation, audit, rate limits — not optional.
+- **Actions get proportionate safeguards.** Confirmation, audit and rate limits follow destructive impact, authorization risk and production constraints.
 - **Empty/loading/error states are designed, not afterthoughts.**

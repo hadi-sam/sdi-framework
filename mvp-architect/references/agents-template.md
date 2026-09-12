@@ -51,7 +51,7 @@ All planning docs live under `docs/` unless noted:
 - `docs/DECISIONS.md` — running paper trail of non-obvious choices *(append-only, atemporal)*
 - `docs/MEMORY.md` — index of daily memory entries
 - `docs/memory/YYYY-MM-DD.md` — daily session memory: active round, blockers, next step, open questions
-- `docs/WORK_LOG.md` — verbose per-work-item narrative; the **Work tracker** section is its one-line index
+- `docs/WORK_LOG.md` — factual per-work-item close; the **Work tracker** section is its one-line index
 
 ## Project-specific conventions
 
@@ -74,7 +74,7 @@ All planning docs live under `docs/` unless noted:
 
 ## Work tracker
 
-One-line index per work item — current status + pointers, nothing more. The full narrative of each item lives in [`docs/WORK_LOG.md`](docs/WORK_LOG.md) and in the canonical artifacts each row links (the plan, `docs/memory/`, `DECISIONS.md`, `KNOWN_ISSUES.md`). Keep each `Notes` cell to a single line — new detail goes to `WORK_LOG.md` and those artifacts, never bloats a cell here.
+One-line index per work item — current status + pointers, nothing more. The factual close lives in [`docs/WORK_LOG.md`](docs/WORK_LOG.md): result, evidence, consequence and links to canonical artifacts. Keep each `Notes` cell to a single line.
 
 | Work item | Type | Status | Date | Notes |
 |---|---|---|---|---|
@@ -86,7 +86,7 @@ One-line index per work item — current status + pointers, nothing more. The fu
 
 ## Updating this file
 
-This file is **living** for project facts only. Every phase reveals new project-specific conventions — add them under the relevant section. Every phase completes — update the work tracker (keep rows one-line; the closing item's full narrative goes to `docs/WORK_LOG.md`).
+This file is **living** for project facts only. Every phase reveals new project-specific conventions — add them under the relevant section. At close, update the one-line tracker and add the factual `WORK_LOG.md` section.
 
 Two rules:
 
@@ -104,7 +104,7 @@ When `mvp-architect` Phase C generates this:
 
 - **Fill in confidently** (Phase B answers settled them): `Type`, `AI/LLM modifier`, `Primary deployment target`, the high-level `Stack`.
 - **Leave as placeholder for the implementation agent to discover**: `Stack details` subsection (specific helper names, schema directories, test runners), `File / directory conventions`, `Convention exceptions`. These are project-specific and emerge during the first audit and rounds. The implementation agent (running under `sdi-mode`) is responsible for proposing additions; the user approves.
-- **Leave empty rows in `Work tracker`** beyond the current phase. Each new `IMPLEMENTATION_PLAN_*.md` adds a one-line index row; that item's verbose narrative is written to `docs/WORK_LOG.md` when it closes (sdi-mode Step 8), not in the tracker cell.
+- **Leave empty rows in `Work tracker`** beyond the current phase. Each new plan adds a one-line index row; its factual close is written to `docs/WORK_LOG.md`, not the tracker cell.
 
 When `convert-to-sdi` Phase 2 generates this from an existing repo:
 
