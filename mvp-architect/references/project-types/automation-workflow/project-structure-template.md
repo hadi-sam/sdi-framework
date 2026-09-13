@@ -22,7 +22,7 @@ Target length: 200–300 lines.
 │   ├── triggers/           # webhook handlers, cron registrations, manual triggers
 │   ├── integrations/       # external service clients (one file per provider)
 │   ├── schemas/            # input/output schemas for workflows and steps
-│   ├── lib/                # cross-cutting utilities (idempotency keys, logging, retry helpers)
+│   ├── lib/                # only shared utilities justified by workflow contracts
 │   └── ops/                # ops UI / dashboard / replay tools (if user-visible)
 ├── tests/
 ├── docs/
@@ -38,7 +38,7 @@ Target length: 200–300 lines.
 ### Workflow conventions
 
 - One file per workflow. Filename matches the workflow id.
-- Each file exports: id, name, trigger config, step graph, retry policy, concurrency policy.
+- Each file exports the workflow's required metadata; retry/concurrency policy only when applicable.
 - Workflows compose steps from `src/steps/`; they don't inline business logic.
 - Schema for trigger payload is defined alongside the workflow.
 
@@ -51,9 +51,9 @@ Target length: 200–300 lines.
 ### Step conventions
 
 - Each step has input schema, output schema, execute function.
-- Steps that perform external writes accept (or generate) an idempotency key.
+- Steps that can replay or race on a material external write use the provider's supported idempotency boundary.
 - Steps that read are pure where possible; side-effecting reads (e.g., increment counter) are marked.
-- Retry / timeout policies live on the workflow's invocation of the step, not in the step itself.
+- When required, retry/timeout policies live on the workflow's invocation of the step, not in the step itself.
 
 ## src/triggers/ — Trigger surface
 
@@ -63,7 +63,7 @@ Target length: 200–300 lines.
 
 ### Trigger conventions
 
-- **Webhook handlers:** verify signature → dedupe (idempotency on upstream event id) → ack 200 → enqueue workflow.
+- **Webhook handlers:** verify signature and dedupe; enqueue only when provider latency/delivery semantics require it.
 - **Cron triggers:** registered with the engine; payload is the run window.
 - **Manual triggers:** auth-gated, parameterized, audit-logged.
 
@@ -76,7 +76,7 @@ Target length: 200–300 lines.
 ### Integration conventions
 
 - One file per provider. Single client export with typed methods.
-- Authentication, rate limit, retry are in the wrapper — workflows don't deal with raw API.
+- Centralize only shared authentication or provider contracts; add rate limiting/retry only when that integration requires them.
 - Sandbox/test credentials switchable via env var.
 - Each method returns typed responses; errors are domain errors, not raw HTTP.
 
@@ -92,13 +92,13 @@ Target length: 200–300 lines.
 ## src/lib/
 
 \`\`\`
-[tree — idempotencyKey.ts, logger.ts, retry.ts, runContext.ts]
+[tree — only the idempotency, logging, retry or context helpers required by approved flows]
 \`\`\`
 
 ### Library conventions
 
 - Idempotency key generator: deterministic from (workflow_run_id, step_name, parameters).
-- Run context propagates run_id, workflow_id, trigger metadata through logs and integration calls.
+- Propagate only the context fields needed by a named audit/recovery boundary.
 
 ## src/ops/ — Operations UI (if applicable)
 
@@ -121,17 +121,15 @@ Target length: 200–300 lines.
 - The retry policy distinguishes — permanent errors don't retry.
 
 ### Logging
-- Every step entry/exit logs: workflow_id, run_id, step_name, attempt, duration.
-- Errors include a stable code for alerting + a human message.
+- Log step/retry context when a material failure could otherwise be silent; add stable alert codes only where operations consume them.
 
 ### Testing
-- Unit tests for steps with mocked integration clients.
-- Integration tests for triggers with real signature verification + dedup.
-- E2E test (optional Phase 2): a full workflow run against a sandbox environment.
+- Add a test only for material silent harm or an approved acceptance criterion.
+- Exercise real signature/dedup/external-write boundaries when those are the risk being proved.
 
 ### Idempotency
-- Every external write goes through the integration wrapper, which enforces idempotency keys.
-- Replaying a step yields the same end state.
+- Protect an external write from duplication when replay/concurrency can cause material harm; use the narrowest supported boundary.
+- Require replay to yield the same end state only for workflows whose contract permits replay.
 
 ### Commits & Branches
 - [conventional commits, branch naming]
@@ -149,6 +147,6 @@ Target length: 200–300 lines.
 ## Writing tips
 
 - **Workflows compose, steps execute.** Mixing concerns produces unreadable spaghetti.
-- **Idempotency is the foundation.** Every external write protected, no exceptions.
-- **Integration wrappers are mandatory.** Direct calls from workflows make provider swaps and observability hard.
-- **Triggers ack fast.** Heavy work always happens in the workflow runtime, not the trigger handler.
+- **Idempotency follows duplicate-write risk.** Protect material writes when replay or concurrency is reachable.
+- **Integration boundaries follow shared contracts.** Do not add a wrapper solely for a hypothetical provider swap.
+- **Trigger acknowledgement follows the provider contract.** Queue work when its latency or delivery semantics require it.

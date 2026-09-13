@@ -93,7 +93,7 @@ Concrete proposal for what to deliver first, pending resolution of the above.
 
 For projects whose primary type is one of:
 
-- **Web SaaS / API service:** all the above + tenant resolution chain, rate limit setup
+- **Web SaaS / API service:** all the above + tenant resolution chain; rate-limit setup only when present or required by a real abuse/capacity contract
 - **Landing page:** content sources (CMS connectivity), build pipeline, deployment target
 - **Dashboard:** data source connections, query module shapes, cache infra
 - **Mobile:** native module presence, signing certs, OTA channel

@@ -142,7 +142,7 @@ Read `references/artifact-bundle.md` for the canonical set of artifacts, their o
 - DECISIONS → `references/core-templates/decisions-template.md` (empty scaffold; do not invent decisions for a greenfield project)
 - KNOWN_ISSUES → `references/core-templates/known-issues-template.md` (empty scaffold; do not invent issues for a greenfield project)
 - MEMORY → `references/core-templates/memory-template.md` (index + today's Phase C handoff entry)
-- WORK_LOG → `references/core-templates/work-log-template.md` (header + Phase C section; verbose counterpart to the one-line Work tracker)
+- WORK_LOG → `references/core-templates/work-log-template.md` (header + short factual Phase C close)
 - AGENTS.md + CLAUDE.md → `references/agents-template.md` (same customized content in both files)
 - README → `references/core-templates/readme-template.md`
 

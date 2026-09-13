@@ -26,8 +26,8 @@ For sources that need it (especially scraping):
 
 - **HTTP client choice:** [native fetch/requests] / [Playwright headless] / [scraping API (Apify/ScrapingBee)] / [proxy network (Bright Data/Oxylabs)]
 - **Concurrency:** N parallel fetches per source, with per-source semaphore
-- **Retry posture:** N attempts with exponential backoff; distinguish transient (5xx, network) from permanent (4xx) errors
-- **Politeness:** rate limit per source (e.g. 1 req/s), respect robots.txt where applicable
+- **Retry posture (when delivery/recovery semantics require it):** max attempts and backoff; distinguish transient from permanent errors
+- **Politeness/contract:** honor source terms and robots.txt; add a rate limit only when the source contract or measured behavior requires one
 - **Identity:** user-agent string, IP rotation policy, session/cookie management
 
 ## §2.4 Storage tiers
@@ -70,21 +70,25 @@ For each consumer:
 
 ## §2.8 Quality and validation
 
-- **Schema validation:** at the ingest boundary, reject malformed records to a quarantine zone
-- **Statistical checks:** per-run, compare row count, null rate, distinct counts to a rolling baseline; alert on Z-score deviation
-- **Reconciliation:** against an external truth (e.g., partner-reported totals) on a defined cadence
-- **Anomaly review surface:** quarantine zone is queryable; weekly review ritual documented
+Select only checks that protect a consumer contract or a material data-integrity risk.
+
+- **Schema validation:** define the ingest behavior for malformed records; quarantine only when recovery requires it
+- **Statistical checks:** add only when an approved quality threshold needs drift detection
+- **Reconciliation:** add only when a named external truth and cadence are part of the contract
+- **Anomaly review surface:** add only when operators need to inspect/recover rejected data
 
 ## §2.9 Observability
 
-- **Per-run telemetry:** start, end, duration, rows in/out per stage, error count, retry count
-- **Centralized log destination:** structured logs with run_id, source, stage
-- **Long-running alert:** if a run exceeds expected duration by N×, page
-- **SLA dashboard:** freshness lag per source, success rate per pipeline
+Omit this section when the pipeline creates no material operational detection or recovery need. Otherwise select the minimum signal for that need:
 
-## §2.10 Cost posture
+- **Per-run signal:** only the timestamps/counts needed to detect or recover the named failure
+- **Log destination:** structured correlation fields only where stages must be traced together
+- **Long-running alert:** only when a runtime/freshness contract has an actionable threshold
+- **Dashboard:** only when operators consume aggregate freshness or success targets
 
-Pipelines often surprise on cost.
+## §2.10 Cost posture (when spend is material or contractually bounded)
+
+Estimate only the metered resources that can affect the approved budget.
 
 - **Compute:** estimated cost per run (orchestrator, transform engine, scraping API)
 - **Storage:** raw retention is the silent killer; estimate growth and pruning policy

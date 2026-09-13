@@ -41,7 +41,7 @@ Where mobile differs from web.
 
 Typical questions:
 - Camera, photo library, location, contacts, calendar?
-- Push notifications — required, with what targeting?
+- Push notifications — part of an approved flow or deferred/absent? If approved, with what targeting?
 - Background tasks — periodic sync, location updates, geofencing?
 - Deep links / universal links / app clips?
 - Biometric auth (Face ID, Touch ID, fingerprint)?
@@ -49,7 +49,7 @@ Typical questions:
 
 ## 5. Push notifications
 
-Worth a dedicated theme — most apps need them.
+Use this theme only when notifications are part of an approved flow; otherwise omit it from requirements and architecture.
 
 Typical questions:
 - Provider — Apple Push, FCM, OneSignal, Pusher, Expo Notifications?
@@ -103,6 +103,6 @@ Typical questions:
 ## How to use
 
 1. Themes 1, 2, 3 are foundational — without these, the app's shape is unclear.
-2. Theme 5 (push) is often Phase 2 but design must accommodate it from day one.
+2. Explore Theme 5 (push) only for an approved notification flow; if it is absent or deferred, do not turn it into a requirement.
 3. Theme 7 (perf) and Theme 9 (privacy/compliance) are frequently deferred and frequently regretted.
-4. If the app is iOS-first, prioritize App Store compliance themes (5, 9) early.
+4. If the app is iOS-first, prioritize Theme 9 and the compliance implications of approved native capabilities early.

@@ -24,7 +24,6 @@ Target length: 200–300 lines.
 │   ├── api/                # HTTP/GraphQL client + endpoint wrappers
 │   ├── stores/             # state management (Zustand/Redux/Riverpod)
 │   ├── persistence/        # AsyncStorage/MMKV/SQLite wrappers
-│   ├── notifications/      # push registration, handlers, preference UI
 │   ├── deep-links/         # link parsing → route mapping
 │   ├── analytics/          # event taxonomy + tracker
 │   ├── theme/              # tokens, typography, dark mode
@@ -36,6 +35,8 @@ Target length: 200–300 lines.
 ├── docs/
 └── [config files]
 \`\`\`
+
+When an approved notification flow or contract exists, add `src/notifications/` for only its required registration, handlers, or preference UI; otherwise omit that directory and the notification section below.
 
 ## src/screens/ — Screens
 
@@ -70,8 +71,8 @@ Target length: 200–300 lines.
 
 ### API conventions
 
-- Single client wraps fetch/Apollo. App code never calls fetch directly.
-- Wrapper handles: auth header, retry, request id, offline queue.
+- Use a single client wrapper around fetch/Apollo only when auth or repeated response behavior in the approved flow/contract justifies it; app code then uses the wrapper instead of calling fetch directly.
+- When present, the wrapper centralizes the approved shared behavior; add retry, request IDs or offline queue only when the real flow/contract requires them.
 - Errors are typed (NetworkError, AuthError, ServerError).
 
 ## src/stores/ — State
@@ -99,15 +100,17 @@ Target length: 200–300 lines.
 
 ## src/notifications/
 
+[Include this entire section only when an approved notification flow or contract exists; otherwise omit it from the generated PROJECT_STRUCTURE.md.]
+
 \`\`\`
 [tree — registration, handler, preference UI]
 \`\`\`
 
 ### Notification conventions
 
-- Permission request is gated by an in-app rationale screen, not auto-prompted on first launch.
-- Token registration retries on transient failures; refreshed token re-registers automatically.
-- Foreground notification handling renders an in-app toast; background goes to OS surface.
+- **Permission UX:** [contextual OS prompt] / [soft-ask then OS prompt], at the point approved by the flow.
+- Add retries for transient token-registration failures and automatic re-registration of refreshed tokens only when the approved notification flow/contract requires those behaviors.
+- **Foreground/background handling:** [in-app presentation] / [OS surface] / [suppressed] for each relevant app state.
 
 ## src/deep-links/
 
@@ -123,7 +126,7 @@ Target length: 200–300 lines.
 
 ### Analytics conventions
 
-- All events go through `tracker.ts`. No direct SDK calls in components.
+- Use `tracker.ts` only when an approved analytics taxonomy/shared consent boundary exists.
 - Event names follow a fixed taxonomy file; no ad-hoc strings.
 - PII is never in event properties.
 
@@ -153,9 +156,7 @@ Target length: 200–300 lines.
 - Respects reduce-motion and large-text system settings.
 
 ### Testing
-- Unit tests for stores, API wrappers, formatters, deep-link parsers.
-- Component tests with rendering library (React Native Testing Library / Flutter widget tests).
-- E2E (optional Phase 2): Detox / Maestro / Patrol.
+- Add unit/component/E2E tests only for material silent harm or an approved acceptance criterion; choose the smallest level that proves the risky flow.
 
 ### Distribution
 - iOS build via [Expo EAS / fastlane / Xcode Cloud]; outputs ipa with provisioning profile.
@@ -167,7 +168,7 @@ Target length: 200–300 lines.
 
 ### Environment Variables
 - API endpoints (dev/staging/prod).
-- Analytics keys, push provider keys.
+- Analytics keys; push provider keys only when an approved notification flow selects a provider.
 - Feature flags resolved at app start.
 
 ## Coding agent kickoff prompt template
@@ -178,6 +179,6 @@ Target length: 200–300 lines.
 ## Writing tips
 
 - **Screens are folders, not single files.** Once a screen has hooks + sub-components, splitting is mandatory.
-- **API client wraps the network.** Direct fetch in components is the path to inconsistency.
-- **Permissions need rationale UX.** Native prompts are unforgiving — soft-ask first.
+- **API boundary follows shared contracts.** Use a client wrapper only when auth or repeated response behavior justifies it.
+- **Permissions follow approved capabilities.** Document the chosen rationale flow when a used capability needs a native prompt; use a soft-ask only when the approved UX requires it.
 - **OTA policy must be explicit.** Without it, native breakage will eventually be shipped via OTA.

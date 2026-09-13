@@ -45,21 +45,17 @@ Deliverables:
 
 ---
 
-## Phase N — Hardening (last phase)
+## Phase N — Risk-driven hardening (include only when demonstrated)
 
 **Goal**: Ship to [customer] with confidence.
 
-Deliverables:
-- Rate limiting on [critical endpoints]
-- Retry/backoff on [external service] failures with alerting
-- Dead-letter handling for [job system] failures
-- Audit pass on RLS policies
-- Audit pass on API authorization
-- Load test: [target volume]
-- Sentry release integration
-- Runbook for super admin operations
-- Data backup strategy documented
-- Smoke-test suite covering the N critical flows
+Deliverables (select only items tied to a measured risk, production constraint or approved acceptance criterion):
+- [Rate limiting on a reachable abuse/capacity boundary]
+- [Retry/backoff or dead-letter handling for a material external-write failure]
+- [Tenant/authorization audit for a path that crosses an access boundary]
+- [Load test for a stated traffic target]
+- [Alert/runbook/backup proof required by production operations]
+- [Targeted smoke for named critical flows]
 
 **Done when**: We're comfortable handing real production traffic to the platform.
 
@@ -97,7 +93,7 @@ This validates the **core hypothesis** before committing to the full build.
 - **Phases that don't ship.** If Phase 2 requires Phase 3 to be usable, it's not actually a phase — it's half a phase. Split boundary differently.
 - **Too many phases.** If there are 10 phases, the plan is overcooked. 5–7 is typical for an MVP.
 - **"And then a miracle happens."** A late phase with huge scope ("Phase 7: build the analytics platform") isn't a phase, it's a project.
-- **No hardening phase.** Production-ready requires explicit hardening work. If it's not a phase, it'll be skipped.
+- **Cargo-cult hardening phase.** Include hardening only when each item points to a real risk, production constraint or approved criterion; it may share another phase when no independent boundary exists.
 
 ## Relation to IMPLEMENTATION_PLAN
 

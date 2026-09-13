@@ -94,4 +94,4 @@ Typical questions:
 1. Themes 1, 2, 3 are foundational. Without them you can't sketch architecture.
 2. Theme 2 (anti-bot) only matters for scraping; skip cleanly if not.
 3. Theme 7 (quality) is often deferred. Ask the user if "data quality" is in MVP — if yes, scope it; if no, document the gap.
-4. Theme 6 (scheduling) and Theme 8 (observability) determine whether the pipeline survives the first month in production. Don't skip.
+4. Ask Themes 6 and 8 only when cadence or a material operational detection/recovery need exists; do not turn them into infrastructure by default.

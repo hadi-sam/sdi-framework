@@ -7,6 +7,17 @@ O registro existe para que nenhuma regra suma em silêncio: quem procurar por el
 onde foi parar. Mudança que só reescreve ou move uma regra para a seção canônica não entra — entra
 o que deixou de existir, e o que foi absorvido por outra seção com a origem nomeada.
 
+## 2026-09-12 — `sdi-proportionality`
+
+- 2026-09-12 · `sdi-mode/SKILL.md` e referências de execução · roster/modelos fixos, Engineer obrigatório de um vendor e fallback automático · substituídos pelo perfil persistente definido pelo PO, vendor/model-agnostic
+- 2026-09-12 · `sdi-mode/SKILL.md`, `stop-and-review-patterns.md` e plan templates · cinco checkpoints e auto-review obrigatórios por posição · substituídos por fronteiras de risco/contrato, preservando audit e fechamento
+- 2026-09-12 · `sdi-mode/SKILL.md` e plan templates · mandato genérico de criar testes e executar toda suíte · substituído por evidência relevante e teste novo somente para dano material silencioso ou acceptance aprovado
+- 2026-09-12 · `auto-review-mode.md` e `sdi-review/**` · ensemble nominal, substituto específico e regra de pior verdict sem predicado material · substituídos pelo perfil do item e pela rubrica production-first
+- 2026-09-12 · `round-report-template.md` e referências de paper trail · prosa e seções obrigatórias sem consequência · reduzidas a resultado, evidência, decisão/KI e próximo passo
+- 2026-09-12 · templates de arquitetura/estrutura/roadmap · dark mode, wrappers, retry/fallback/cache/observability e mecanismos semelhantes exigidos apenas pelo tipo de projeto · condicionados ao fluxo, contrato ou risco aprovado
+- 2026-09-12 · templates mobile · push notifications e sua estrutura exigidos mesmo quando adiados · seção/diretório agora só existem para fluxo aprovado
+- 2026-09-12 · `installation-guides/README.md` · auto-review descrito como default fixo em CP2/3/4/5 · alinhado à seleção proporcional por risco/contrato
+
 ## 2026-09-06 — CP4 do `sdi-bounds-and-mechanisms` (E7, skill `sdi-mode`)
 
 - 2026-09-06 · `sdi-mode/references/auto-review-mode.md` · seção `## Terminology: always-escalate vs judgment-required`, que distinguia os dois em meia página · duplicação: a distinção cabe em uma frase e ficou no fim de `## Always-escalate triggers`

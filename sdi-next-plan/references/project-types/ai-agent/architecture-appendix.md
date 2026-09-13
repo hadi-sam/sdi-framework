@@ -41,11 +41,11 @@ Tool authorization model:
 ## §2.4 Model orchestration
 
 - **Primary model:** [provider/model + version pin]
-- **Fast/cheap model for routing/classification:** [provider/model]
-- **Fallback chain:** if primary fails or rate-limits, fallback to [model], then [model]
+- **Routing/classification model (only if that separate path exists):** [provider/model]
+- **Failure posture:** [surface primary failure] / [approved fallback chain when continuity justifies its cost/quality trade-off]
 - **Streaming:** [yes/no] for the user-facing surface
 - **Prompt caching:** [Anthropic prompt cache / OpenAI cached input / none]
-- **Cost ceiling per turn:** [N tokens or $X], with [hard fail / graceful degradation] when hit
+- **Cost ceiling per turn (when spend is contractually/materially bounded):** [N tokens or $X], with [hard fail / graceful degradation] when hit
 
 ## §2.5 Guardrails
 
@@ -55,7 +55,7 @@ Tool authorization model:
 - **Refusal policy:** [system prompt directives + monitoring] / [external moderation API] / [both]
 - **Loop limits:** max iterations per task, max tools called per iteration, max wall-clock time
 
-## §2.6 Eval pipeline
+## §2.6 Eval pipeline (only for an approved scored quality criterion)
 
 Read the target project's existing eval/prompt docs and DECISIONS entries for cross-cutting eval discipline. Type-specific notes:
 

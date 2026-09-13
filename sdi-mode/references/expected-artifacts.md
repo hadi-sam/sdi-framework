@@ -9,7 +9,7 @@ Under `docs/` (or equivalent), at minimum:
 - `README.md` (index), `PRD.md` (requirements), `ARCHITECTURE.md` (stack, structural model, flows, trade-offs), `ROADMAP.md` (phases, acceptance criteria), `PROJECT_STRUCTURE.md` (layout and conventions).
 - `DECISIONS.md` and `KNOWN_ISSUES.md` — the two append-only paper trails. New bundles create both even when empty.
 - `MEMORY.md` + `memory/YYYY-MM-DD.md` — datable session memory. New bundles create the index and an initial handoff entry.
-- `WORK_LOG.md` — verbose per-work-item narrative, one section per item, written at close. Its index is the fact sheet's **Work tracker** where the project has one; where it doesn't, the index is the `docs/plans/` directory. Read on demand.
+- `WORK_LOG.md` — factual per-work-item close, one section per item: result, evidence, consequence and links. Its index is the fact sheet's **Work tracker** where the project has one; otherwise `docs/plans/`. Read on demand.
 - `IMPLEMENTATION_PLAN_*.md` — the spec for the current item, suffixed `PHASE_N` or `<slug>`; the framework treats both uniformly.
 
 At the repo root, `AGENTS.md` and/or `CLAUDE.md` — the fact sheet: stack, document map, conventions, and optionally a work tracker. New bundles generate both with the same content; the user keeps whichever their agents read. **These files do not carry the SDI discipline.** `DESIGN_SYSTEM.md` only if the project has a UI.
@@ -38,7 +38,7 @@ If the skill or configured mode is not active, the discipline isn't loaded — a
 
 **Plan has gaps:** list them as **open questions** in the audit; don't fill them in silently. **`PROJECT_STRUCTURE.md` outdated:** flag it and offer to update it at housekeeping — don't let "docs are wrong" become "docs stay wrong".
 
-**`DECISIONS.md`, `KNOWN_ISSUES.md`, `MEMORY.md`/`docs/memory/` or `WORK_LOG.md` missing:** an older bundle, not a reason to route back through planning. Create each scaffold from its reference file when first needed — before the first decision, before the first round report, at the end of the first session, at the first close. Never invent a decision or fabricate a past daily entry to fill a file. In a bundle whose Work tracker has verbose `Notes` cells, slim those into per-item `WORK_LOG.md` sections at the same time, and start the narrative from the next close rather than backfilling.
+**`DECISIONS.md`, `KNOWN_ISSUES.md`, `MEMORY.md`/`docs/memory/` or `WORK_LOG.md` missing:** an older bundle, not a reason to route back through planning. Create each scaffold when first needed. Never invent decisions or fabricate past entries. Slim verbose tracker cells into linked close sections; future closes use fact, evidence and consequence rather than backfilled narrative.
 
 **Fact sheet sparse or divergent:** a bare template means filling in stack and conventions during the audit and proposing them; both files missing means routing to `convert-to-sdi` or `mvp-architect`. A fact sheet carrying **discipline rules** (an 8-step list, "audit before coding", checkpoint behaviour, tone, precedence) is an older format — suggest `convert-to-sdi` Phase 1.5 Strategy B. If both files exist and differ, flag the drift and propose syncing at housekeeping.
 
@@ -51,7 +51,7 @@ If the skill or configured mode is not active, the discipline isn't loaded — a
 5. **KNOWN_ISSUES.md** — the index and open entries; note what this item fixes, worsens, or must avoid duplicating. **DECISIONS.md** — skim headers, read what applies.
 6. **The repo files the phase will touch** — schemas, helpers, modules.
 
-That is 15-30 minutes before any code. Don't skip it. `docs/WORK_LOG.md` is deliberately **not** in the list: it is the verbose archive, read on demand — which section to open is told by the fact sheet's Work tracker where there is one, and by `docs/plans/` where there isn't.
+Do this before code. `docs/WORK_LOG.md` is deliberately **not** in the standard list: it is a linked close history, read on demand.
 
 ## What the planner artifacts mean
 
@@ -93,4 +93,4 @@ Two cases worth naming. **Live repo vs ARCHITECTURE:** the repo wins by definiti
 
 The user may pair you with `sdi-review` (consultative review during implementation) or invoke `sdi-next-plan` at phase close; fresh-project planning is `mvp-architect`. A relayed question or an audit suggestion taken back to one of those is a good-faith review loop.
 
-Execution under `sdi-mode` is itself multi-agent: you are the **PM/orchestrator**, dispatching **Engineer** subagents and a three-model **Reviewer** ensemble, and you own the paper trail ([`roles-and-orchestration.md`](roles-and-orchestration.md)). That is distinct from the `sdi-review` consultant, which never executes code work: a code finding there becomes a recommendation, while the PM routes one to a fix-Engineer. Either way, only the PM edits docs.
+Execution under `sdi-mode` uses the work-item profile: the **PM/orchestrator** dispatches profiled Engineers and, when justified, the profiled reviewers, while owning the paper trail ([`roles-and-orchestration.md`](roles-and-orchestration.md)). That is distinct from the `sdi-review` consultant, which never executes code work: a code finding there becomes a recommendation, while the PM routes one to the profiled Fix Engineer. Either way, only the PM edits docs.

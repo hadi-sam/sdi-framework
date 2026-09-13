@@ -25,7 +25,7 @@ Pull these into the conversation alongside the type-specific discovery themes. K
 ### B. Model and provider
 
 - Provider preference (Anthropic, OpenAI, Google, open-weight via Bedrock/Vertex/local)?
-- Specific tier — frontier (Opus/GPT-5/Gemini-Pro) or fast/cheap (Haiku/GPT-mini/Flash)?
+- Specific tier — frontier-quality or fast/low-cost? Record the exact provider/model selected for the product.
 - Multi-model strategy — primary + fallback, or single?
 - Budget per request / per user / per month — set explicitly, not implied?
 - Context window needs — fits in 8k, needs 100k+?
@@ -77,16 +77,15 @@ Pull these into the conversation alongside the type-specific discovery themes. K
 
 ## Architecture additions
 
-Add these sections (or sub-sections) to ARCHITECTURE.md:
+Select only the sections below that are tied to the approved AI flow, a production constraint or a material risk. Omit the rest.
 
 ### §X.1 LLM provider layer
 
-- Wrapper module that's the only place app code calls the SDK from
-- Wrapper adds: retry, fallback chain, cost accounting, prompt cache, observability hooks
-- Streaming and non-streaming go through the same surface
-- Provider swap is a one-file change
+- State whether a provider wrapper is justified by multiple call sites or a shared auth/contract boundary
+- If justified, keep only the required concerns there; retry, fallback, cost accounting, prompt cache and observability are separate opt-ins
+- Unify streaming and non-streaming only when both modes exist and share a contract
 
-### §X.2 Prompt management
+### §X.2 Prompt management (when prompts need an independent lifecycle)
 
 - Where prompts live (`src/prompts/`, file-based, versioned)
 - Prompt versioning convention (`system.v1.md`, switch via env var)
@@ -100,14 +99,14 @@ Add these sections (or sub-sections) to ARCHITECTURE.md:
 - Index update pipeline (when corpus changes, how indexes refresh)
 - Re-ranking pipeline (if applicable)
 
-### §X.4 Eval pipeline
+### §X.4 Eval pipeline (when an approved quality criterion needs scored behavior)
 
 - Golden set location (`evals/`)
 - Runner architecture (sync, async, batched)
 - Scoring strategy (exact, LLM-judge with rubric, structured validation)
 - Reporting (per-PR check, dashboard, alerts on regression)
 
-### §X.5 Cost controls
+### §X.5 Cost controls (when measured or contractually bounded spend requires them)
 
 - Token budget enforcement points
 - Per-tier or per-user limits
@@ -123,14 +122,14 @@ Add these sections (or sub-sections) to ARCHITECTURE.md:
 
 ## Project structure additions
 
-Add these directories to PROJECT_STRUCTURE.md:
+Add only directories selected by the architecture; do not scaffold wrappers, retrieval, eval or safety subsystems speculatively:
 
 ```
 src/
-├── llm/               # provider wrappers, fallback chain, cost accounting
+├── llm/               # provider boundary, only if architecture justifies one
 ├── prompts/           # versioned system prompts and reusable fragments
 ├── retrieval/         # embedding, indexing, search, re-rank (if RAG)
-├── evals/             # eval harness — runner, scorers
+├── evals/             # eval harness, only for an approved scored criterion
 └── safety/            # guardrails — input validation, output validation, refusal handlers
 
 evals/                 # golden sets (jsonl/yaml), at repo root or under docs/
@@ -139,10 +138,10 @@ prompts/               # markdown prompts in version control (alternative to src
 
 Conventions:
 
-- App code never imports `anthropic`/`openai`/etc. directly — always via `src/llm/`
-- Prompts versioned and diffable (`system.v1.md`, `system.v2.md`)
-- Eval golden sets are PR-reviewed; changes require justification
-- Tests for prompt template rendering, guardrails, retrieval, but **not** for LLM output (use evals for that)
+- When a provider boundary is justified, route the call sites covered by that boundary through it
+- Version prompts when they have a release/review lifecycle independent from application code
+- Review golden-set changes only when an approved eval contract uses that set
+- Add tests or evals only under the framework's proportional evidence threshold
 
 ## Design system additions
 
@@ -153,7 +152,7 @@ If the project has a UI, add to DESIGN_SYSTEM.md:
 - **Loading / thinking:** indicator that LLM is working (different from network spinner — communicates "agent is processing")
 - **Streaming:** in-progress text rendering with cursor; defer final formatting until complete
 - **Tool call in progress:** if user-visible, show what tool is running
-- **Error / fallback:** model failed or fell back — surface clearly
+- **Error / fallback:** surface failure, and fallback only when the approved flow has one
 - **Refusal:** model declined; show user-friendly message
 - **Citation / source:** when output references retrieved sources, render cleanly
 
@@ -165,12 +164,12 @@ If the project has a UI, add to DESIGN_SYSTEM.md:
 
 ## Implementation plan additions
 
-When generating IMPLEMENTATION_PLAN_PHASE_1.md for an AI-modifier project, ensure it includes:
+When generating IMPLEMENTATION_PLAN_PHASE_1.md, select only items required by the approved AI flow, contract or measured risk:
 
-- **§ Provider wrapper** — implement `src/llm/` wrapper before any app feature uses it
+- **§ Provider boundary** — add a wrapper only when shared call-site or provider contracts justify it
 - **§ Prompt skeleton** — initial system prompt committed; structure for future prompts in place
-- **§ Eval harness skeleton** — golden set with at least 5 cases; runner that scores them; CI integration deferred but config in place
-- **§ Cost monitoring** — minimum: log cost per call; ideal: daily cost report
+- **§ Eval evidence** — add a golden set/runner only for an approved scored quality criterion
+- **§ Cost controls** — add only the limit or signal needed for a measured budget exposure
 - **§ Safety basics** — input length cap, output validation for structured outputs, kill switch for runaway loops (if agent)
 
 ## Tone notes
@@ -178,14 +177,14 @@ When generating IMPLEMENTATION_PLAN_PHASE_1.md for an AI-modifier project, ensur
 When discussing AI projects:
 
 - **Be honest about what LLMs can and can't do.** Many users overestimate capability.
-- **Eval is non-negotiable for production.** A user shipping AI without eval is shipping a regression-prone product.
-- **Cost runaway is a real risk.** Always raise cost ceilings and kill switches early.
+- **Evidence follows the AI contract.** Use evals when product quality is expressed as scored behavior; use other targeted evidence for deterministic boundaries.
+- **Cost controls follow exposure.** Raise ceilings or kill switches when usage, agent loops or a budget contract can materially overrun.
 - **Prompt injection is real.** Especially for agent projects with tools, the threat model deserves attention.
 
 ## Common failure modes
 
-- **No provider wrapper.** App code scattered with raw SDK calls; provider swap is painful, observability inconsistent.
+- **Uncontrolled provider boundary.** Centralize only when repeated call sites or shared auth/contract behavior would otherwise drift.
 - **Prompts as string literals.** No versioning, no diff, no eval — just changes appear in commits with no signal.
-- **No golden set.** Regressions ship silently because nothing tested.
-- **Cost discovery.** Bills surprise the team because nothing tracked per-feature spend.
+- **No evidence for an approved quality criterion.** Use the smallest test or eval capable of proving that criterion.
+- **Unbounded material spend.** Add the narrowest control that enforces the approved budget.
 - **Tool gating skipped.** High-blast tools (delete, send, charge) wired to the agent loop with no approval; eventually fires wrongly.

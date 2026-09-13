@@ -66,24 +66,24 @@ For each provider:
 - **Endpoint:** `POST /webhooks/{provider}`
 - **Signature verification:** scheme (e.g. `HMAC-SHA256` over raw body using provider's secret), tolerance window
 - **Replay protection:** dedupe on upstream `event_id` (stored in `webhook_events` table)
-- **Processing model:** ack 200 immediately if signature ok + dedup miss → enqueue work; do heavy processing async
+- **Processing model:** queue work only when the provider deadline or processing/recovery contract requires asynchronous acknowledgement
 - **Retry posture upstream:** what the provider does on non-2xx; ensure handler is idempotent
 
 ## §2.5 Outgoing webhooks (if applicable)
 
 - **Registration:** consumers register URLs + chosen events via API or UI
 - **Delivery:** queue-based; worker picks events and delivers
-- **Retry policy:** exponential backoff (e.g. 1m, 5m, 30m, 2h, 12h), max N attempts → DLQ
+- **Retry policy:** when the delivery contract requires it, use bounded attempts/backoff and retain exhausted work only if recovery needs it
 - **Signature for consumers:** HMAC over the body with consumer-specific secret
-- **Failure surfacing:** dashboard for consumer to see failed deliveries, with manual retry
+- **Failure surfacing:** add a consumer/operations surface only when failed delivery needs manual recovery
 
-## §2.6 Rate limiting
+## §2.6 Rate limiting (only when abuse risk, capacity or the API contract requires it)
 
-- **Dimensions:** per-API-key + per-IP (defense in depth)
+- **Dimensions:** select only the identity dimensions needed for the named risk/contract
 - **Algorithm:** token bucket (smooths bursts) or fixed window (simpler)
 - **Tiers:** map plan → per-minute and per-day limits
-- **State store:** Redis preferred for distributed; in-process if single node
-- **429 response:** include `Retry-After` and `X-RateLimit-*` headers
+- **State store:** choose according to the selected deployment and consistency contract
+- **429 response:** include retry/limit headers only when they are part of the public API contract
 
 ## §2.7 Errors and status codes
 
@@ -107,12 +107,13 @@ Document the canonical error shape and the status code semantics.
 | 404 | Resource not found |
 | 409 | Conflict (idempotency mismatch, version conflict) |
 | 422 | Semantic error (well-formed but semantically invalid) |
-| 429 | Rate limited |
+| 429 | Rate limited (only if §2.6 applies) |
 | 5xx | Server error — never leak internals |
 
 ## §2.8 Observability
 
-- **Logging:** structured JSON, request id propagated, PII redacted at log boundary
-- **Metrics:** request rate, error rate, latency histogram per endpoint; webhook lag for incoming, delivery success rate for outgoing
-- **Tracing:** OpenTelemetry spans on each handler + downstream call
-- **SLA targets:** p95 latency per endpoint, error budget per period
+Omit this section when no material operational detection/recovery or SLA contract exists. Otherwise select the minimum signal:
+
+- **Logging:** correlation fields needed by the named failure, with PII redacted at the boundary
+- **Metrics/tracing:** only for endpoints/downstream calls covered by an actionable SLO or recovery need
+- **SLA targets:** only targets the product or production contract actually commits to

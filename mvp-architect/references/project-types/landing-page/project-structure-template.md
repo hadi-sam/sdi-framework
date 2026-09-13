@@ -26,7 +26,7 @@ Target length: 150–250 lines.
 │   ├── styles/             # globals, tokens, fonts
 │   └── types/              # TS types for CMS schemas, etc.
 ├── content/                # CMS-drafts or local content (if not in src/)
-├── tests/                  # smoke + visual tests
+├── tests/                  # only evidence required by approved criteria/material risk
 ├── docs/                   # PRD, ARCHITECTURE, DECISIONS, KNOWN_ISSUES, MEMORY, etc.
 └── [config files]
 \`\`\`
@@ -53,7 +53,7 @@ Target length: 150–250 lines.
 
 - Components are content-driven: props match CMS schema fields.
 - No business logic in components beyond basic state (open/closed accordion, form state).
-- Forms are isolated components that wrap the form handler from `src/lib/forms.ts`.
+- Centralize form handling only when multiple forms share a validation/delivery contract.
 
 ## src/content/ — Content (if local)
 
@@ -69,7 +69,7 @@ Target length: 150–250 lines.
 
 - `cms.ts` — CMS client, query helpers, response typing.
 - `forms.ts` — form submission, validation, error mapping.
-- `analytics.ts` — event tracking wrapper (consent-aware).
+- `analytics.ts` — only when approved analytics events need a shared consent boundary.
 - `seo.ts` — metadata helpers, canonical URL builder, structured data generators.
 
 ## src/styles/
@@ -91,21 +91,19 @@ Tokens align with `DESIGN_SYSTEM.md` exactly.
 - Strict mode. CMS responses typed at the boundary. No `any` in production code.
 
 ### Forms
-- All forms go through `src/lib/forms.ts`. Direct fetch calls in components are not allowed.
+- Route forms through `src/lib/forms.ts` only when shared validation/delivery behavior justifies it.
 - Submission state is local; success state may navigate to a thank-you page.
 
 ### SEO
-- Every page sets `title`, `description`, `og:image`. The site has a fallback global meta config.
-- Canonical URL is set on every page.
+- Set per-page metadata and canonical URLs only where the approved SEO/sharing contract requires them; use a global fallback only when one is needed.
 
 ### Performance
-- Lighthouse CI runs on every PR; perf score must be ≥ baseline.
+- Use Lighthouse CI only when it is an existing mandatory gate or proves an approved performance criterion.
 - No third-party scripts above the fold without explicit reason.
 - Fonts loaded via the framework's font optimizer; no FOUT/FOIT.
 
 ### Testing
-- Smoke: a Playwright run that visits each page and asserts a known string.
-- Visual regression (optional Phase 2): Chromatic or Percy.
+- Select the smallest existing smoke/visual evidence that proves an approved criterion; do not create either by default.
 
 ### Commits & Branches
 - [conventional commits, branch naming]
@@ -124,5 +122,5 @@ Tokens align with `DESIGN_SYSTEM.md` exactly.
 
 - **Pages directory is the spine.** Keep it readable at a glance.
 - **Components are content-shaped.** If a component has heavy logic, it probably belongs in `lib/`.
-- **Performance conventions are non-negotiable.** State them and enforce in CI.
+- **Performance work follows a target.** Add CI enforcement only for an approved budget or existing mandatory gate.
 - **Form discipline matters.** Marketing teams add forms quickly; without a single chokepoint, validation and analytics drift.

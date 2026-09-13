@@ -16,8 +16,8 @@ State the upstream data layer:
 - **Query authoring:** [hand-written SQL in `lib/queries/`] / [ORM] / [SQL-as-code (kysely)] / [GraphQL with persisted ops]
 - **Query cache:** [server-side Redis with TTL N min] / [CDN edge cache for public dashboards] / [SWR client-side only]
 - **Cache invalidation:** [time-based TTL] / [event-based (DB triggers)] / [manual refresh from UI]
-- **Stale-while-revalidate:** UX shows last-known good while fetching fresh in background
-- **Query timeout policy:** N seconds → fall back to [skeleton + retry] / [partial results] / [error with reason]
+- **Stale-while-revalidate (if the freshness contract permits stale data):** UX shows last-known good while fetching fresh
+- **Query timeout/recovery (when slow queries are reachable):** choose the least complex supported state: retry, partial result or error
 
 ## §2.3 Refresh and real-time
 
@@ -32,7 +32,7 @@ State how fresh the data is and the mechanism.
 - **Chart library:** [Recharts] / [Tremor] / [Visx] / [ECharts] / [Plotly] / [Custom]
 - **Chart kit:** what charts the design system standardizes on (line, bar, KPI tile, etc.)
 - **Cross-filter / drill-down:** mechanism (URL state, store, context provider) and which charts participate
-- **Empty states:** zero-data, error, slow-query — each gets a designed treatment
+- **Data states:** design only the zero/error/slow states reachable in the approved flow
 
 ## §2.5 Filters and view state
 
@@ -47,8 +47,8 @@ For dashboards with operational actions:
 
 - **Action catalog:** list each mutating action — what it does, who can perform it, blast radius
 - **Confirmation pattern:** modal with re-typing for destructive actions, simple confirm for low-blast
-- **Audit log:** every action logs (actor, action, target, before/after, timestamp); queryable surface for admin review
-- **Rate limit / circuit breaker:** to prevent automated misuse
+- **Audit log:** add fields/surface only when authorization, destructive impact or a production contract requires traceability
+- **Rate limit / circuit breaker:** add only for a measured automated-misuse or cascade risk
 
 ## §2.7 Performance budget
 
@@ -59,11 +59,11 @@ For dashboards with operational actions:
 | Largest single query | < 5s |
 | Concurrent user ceiling (at MVP) | N |
 
-How this is measured: server-side query timing logs, client RUM, synthetic checks.
+Choose the smallest existing measurement that proves an approved performance target; do not add RUM or synthetic checks by default.
 
 ## §2.8 Export and sharing
 
-- **Export formats:** CSV (always), PNG (charts), PDF (full report), Excel (if requested)
+- **Export formats:** only formats required by the product contract
 - **Row limits:** prevent CSV-of-10M-rows scenarios; offer async export with email when above threshold
 - **Scheduled reports:** [out of MVP] / [daily/weekly digest with chosen filters]
 - **Shareable links:** [public read-only URL with token] / [auth-gated link only]

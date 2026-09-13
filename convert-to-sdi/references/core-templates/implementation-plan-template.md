@@ -29,6 +29,18 @@ The ceiling is in **bytes**, not lines: the limit configured in the project's do
 - [Previous phase N-1 completed]
 - [Required env vars / external accounts / setup steps]
 
+### Work-item operating profile
+
+- **PM:** main session
+- **Engineer / Fix / Merge:** Pendente — definir modelo, vendor e effort antes do primeiro dispatch
+- **Reviewers:** Pendente — definir modelos, vendors, efforts e quantidade antes do primeiro dispatch
+
+The PO defines each pending function once. Persist the answer here and reuse it
+for every round/resume. Never infer a missing selection. Invocation failure,
+rate limit or unusable output returns to the PO for pause or explicit replacement;
+persist the replacement unless the PO limits it to one occurrence. Independent
+cross-vendor reviewers are recommended, not a gate.
+
 ## 1. Scope
 
 [What this phase produces — 2-3 sentences max.]
@@ -77,17 +89,23 @@ Load only the context needed for this work item:
 
 [Which event/trigger, what the handler does, retry policy, idempotency.]
 
-## 8. Tests (required before shipping this phase)
+## 8. Tests and evidence (proportional)
 
-- Unit tests for: [list modules + edge cases]
-- Integration tests for: [E2E flows]
-- Manual smoke: [if relevant]
-- Eval suite (AI projects): [reference golden set or eval config]
+- Existing relevant checks: [commands and the contract/risk each proves]
+- New automated test only for material silent harm to data/access or an acceptance criterion explicitly approved by the PO: [if applicable]
+- Targeted smoke/eval: [only when a named acceptance criterion or reachable risk requires it]
+- Existing mandatory CI gates: [list; never waive through proportionality]
 
-## 9. Observability
+Do not create a test harness, census, mutation gate or coverage target merely to
+strengthen the instrument. A functional bug is still fixed when it does not meet
+the threshold for a permanent new test.
 
-- [What to log, where, with what PII scrubbing rules]
-- [Metrics or counters to surface, if applicable]
+## 9. Observability (only when required)
+
+- [Reachable silent failure or production constraint that requires a log/metric]
+- [PII/security rule already binding the changed path]
+
+Omit this section when the change creates no material observability need.
 
 ## 10. Acceptance Criteria
 
@@ -102,28 +120,28 @@ Phase N is done when:
 
 Standard gates per checkpoint are canonical in `sdi-mode/references/stop-and-review-patterns.md`; follow them there and do not mirror them here.
 
-Map §2–§9 work units to the checkpoints, dropping the ones that don't apply. **CP1 (Foundation) and CP5 (Housekeeping) are non-negotiable.**
+Map §2–§9 to independent risk, decision or reviewable-delivery boundaries. Audit-first and housekeeping responsibilities are required, but small items may combine their reports with implementation when no user gate is needed. Drop empty checkpoints. Independent review is selected by risk/contract, not by checkpoint number.
 
-### Checkpoint 1 — Foundation **(user-gated)**
+### Checkpoint 1 — Foundation / audit **(user-gated only if §0 or audit exposes a real gate)**
 **Covers:** §0, §1 (audit framing), §1.5, §2 schema/migrations/types — foundation only, no business logic.
 
 > **Gate format:** phase-specific gates are ONE LINE — `- [ ] Per §X.Y[, §Z.W], <testable clause in ≤15 words>`. Details live in the referenced section.
 
 - [ ] [optional, e.g. "Per §2.1, migration 0008_billing_tables applied to local DB"]
 
-### Checkpoint 2 — Core domain logic **(auto-review eligible)**
-**Covers:** §3, §4+ pure logic, §8 unit tests for those.
+### Checkpoint 2 — Core domain logic **(include/review only when independently justified)**
+**Covers:** §3, §4+ pure logic, and any §8 evidence justified for those paths.
 - [ ] [optional]
 
-### Checkpoint 3 — Wire up integrations **(auto-review eligible)**
-**Covers:** §2 endpoints/handlers, §5, §7, §9, §8 integration tests.
+### Checkpoint 3 — Wire up integrations **(include/review only when independently justified)**
+**Covers:** §2 endpoints/handlers, §5, §7, applicable §9, and justified §8 evidence.
 - [ ] [optional]
 
-### Checkpoint 4 — UI **(auto-review eligible; skip if no §6)**
+### Checkpoint 4 — UI **(skip if no §6; review only when independently justified)**
 **Covers:** §6.
 - [ ] [optional]
 
-### Checkpoint 5 — Housekeeping **(auto-review comprehensive → user-run smoke → PM opens PR)**
+### Checkpoint 5 — Housekeeping **(may share the final round; review/smoke only when justified)**
 **Covers:** §10 evidence mapping, §12, §13, known-issues lifecycle, doc updates, work-item close in `docs/WORK_LOG.md`.
 - [ ] [optional]
 
@@ -145,12 +163,12 @@ One line per divergence, no restatement of the docs it diverges from.
 
 > "Implement Phase N per `docs/IMPLEMENTATION_PLAN_PHASE_N.md` (rN). Follow `docs/PROJECT_STRUCTURE.md` for file locations and `AGENTS.md` / `CLAUDE.md` for stack/conventions. Read `docs/KNOWN_ISSUES.md` before audit. When the plan disagrees with the actual repo, the repo wins — note material divergences in `DECISIONS.md`; catalog pre-existing out-of-scope bugs/debt/security gaps in `KNOWN_ISSUES.md`.
 >
-> Implement in checkpoints per §11 of the plan; the standard gates are in `sdi-mode/references/stop-and-review-patterns.md`. Start by proposing:
+> Implement proportionally per §11 and `sdi-mode/references/stop-and-review-patterns.md`. Audit before writing. Stop only if the audit exposes a required user gate; otherwise proceed with the smallest approved change. Start with:
 > 1. [First deliverable — usually Checkpoint 1 Foundation: schema + deps + audit]
 > 2. [Second — Checkpoint 1 audit findings]
 > 3. [Third — narrow confirmation question about conventions]
 >
-> Stop there and wait for review. Do NOT start on Checkpoint 2 (Core domain logic) yet."
+> If one of these raises a product/architecture/scope decision, irreversible action, production action or material risk, stop for the PO before dependent work."
 ```
 
 ## Writing tips

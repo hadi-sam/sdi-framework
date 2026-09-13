@@ -22,11 +22,11 @@ Target length: 200–350 lines.
 │   ├── prompts/            # system prompt + reusable prompt fragments
 │   ├── memory/             # short-term + long-term memory layers
 │   ├── guardrails/         # input/output validators, refusal policy
-│   ├── providers/          # LLM client wrappers, fallback chains
-│   ├── eval/               # eval harness + golden sets
+│   ├── providers/          # only if a shared provider boundary is justified
+│   ├── eval/               # only for an approved scored quality criterion
 │   └── server/             # transport (MCP stdio/http, REST, websocket)
 ├── prompts/                # markdown prompts checked into version control
-├── evals/                  # golden datasets (jsonl/yaml)
+├── evals/                  # only when the approved eval contract needs datasets
 ├── tests/                  # unit + integration tests
 ├── docs/                   # PRD, ARCHITECTURE, DECISIONS, KNOWN_ISSUES, MEMORY, etc.
 └── [config files]
@@ -42,7 +42,7 @@ Target length: 200–350 lines.
 
 - One loop file owns the main agent iteration. No tool dispatch logic spread across files.
 - Max iterations is a config knob, not a magic number.
-- Every iteration logs: model used, tool calls made, tokens consumed, cost delta.
+- Log iteration/model/tool/cost fields when an approved budget, audit or recovery requirement needs them.
 - Early-stop conditions are explicit: success signal from agent, budget exhausted, error budget exceeded.
 
 ## src/tools/ — Tool implementations
@@ -57,7 +57,7 @@ Target length: 200–350 lines.
 - Each tool exports: name, description (used in tool list), input schema (Zod / Pydantic / JSON Schema), execute function.
 - Idempotent tools mark themselves as such in metadata.
 - High-blast-radius tools require an explicit approval flag in the call signature.
-- Tests live next to the tool file (`tool-name.test.ts`) and exercise both happy path and error cases.
+- Tests justified by material silent harm or an approved acceptance criterion may live next to the tool file (`tool-name.test.ts`).
 
 ## src/prompts/ — Prompts
 
@@ -68,9 +68,9 @@ Target length: 200–350 lines.
 ### Prompt conventions
 
 - System prompt is the only file allowed to be very large; everything else is composable.
-- Prompts are versioned: `system.v1.md`, `system.v2.md`, etc. Switch via env var or model registry.
+- Version prompts only when they have a release/review lifecycle independent from application code.
 - Variable interpolation is explicit (`{{user_name}}`, `{{tools_list}}`) — no hidden mutation.
-- Prompt diffs accompany eval results in the PR description.
+- Link prompt diffs to eval results only when an approved eval contract requires them.
 
 ## src/memory/ — Memory layers
 
@@ -84,7 +84,7 @@ Target length: 200–350 lines.
 - PII scrubbing happens at the write boundary, not on every read.
 - Decay/expiration is documented per layer.
 
-## src/eval/ — Eval harness
+## src/eval/ — Eval harness (if required by an approved quality criterion)
 
 \`\`\`
 [tree — runner, scorers, output formatters]
@@ -92,10 +92,7 @@ Target length: 200–350 lines.
 
 ### Eval conventions
 
-- Golden sets live in `evals/*.jsonl` (or yaml). One scenario per record.
-- Each eval run produces a report file with score, cost, latency.
-- LLM-as-judge prompts live in `evals/judges/`.
-- A baseline score is committed; PRs that regress need explicit reason in commit message.
+- Record only the dataset, report fields, judge prompts and baseline needed by the approved eval contract.
 
 ## src/server/ — Transport
 
@@ -110,19 +107,17 @@ Target length: 200–350 lines.
 - [Python: type hints required, Pydantic for I/O, ruff/black]
 
 ### LLM SDK usage
-- One wrapper module per provider. App code never calls SDK directly.
-- All API calls flow through the wrapper, which adds: retry, fallback, cost accounting, logging.
-- Streaming and non-streaming go through the same surface.
+- Add a provider wrapper only when shared call sites or auth/contract boundaries justify it.
+- All API calls flow through the wrapper; add retry, fallback, cost accounting or logging only for the path's real contract/risk.
+- Unify streaming and non-streaming only when both exist and share a contract.
 
 ### Logging & observability
-- Every LLM call logs: provider, model, latency, input tokens, output tokens, cost, request id.
-- Tool calls log: name, input (PII-scrubbed), output (PII-scrubbed), duration, success/failure.
-- Trace ID propagates from request → loop iteration → tool calls → LLM calls.
+- When a failure or cost overrun would be materially silent, log only the fields needed to detect/recover, with PII scrubbing.
+- Propagate a trace ID when the approved flow crosses boundaries that must be correlated.
 
 ### Testing
-- Unit tests for each tool, each prompt template renderer, each guardrail.
-- Integration tests: a fixed transcript replay confirms the agent loop converges as expected on canonical inputs.
-- Eval suite is separate from tests — slower, scored, run on a cadence.
+- Add a unit/integration test only for material silent harm or an explicitly approved acceptance criterion.
+- Use an eval suite only when product quality criteria define a scored behavior.
 
 ### Commits & Branches
 - [conventional commits, branch naming]
@@ -140,6 +135,6 @@ Target length: 200–350 lines.
 ## Writing tips
 
 - **Tool surface is what makes or breaks the agent.** Spend most of the structure doc on the tools/ conventions.
-- **Prompts are code.** Version them, diff them, eval them. Don't bury them in string literals.
-- **Memory and eval are systems, not afterthoughts.** Give each its own directory and conventions.
-- **Wrap the SDK.** App code calling Anthropic/OpenAI directly makes provider swaps painful and observability inconsistent.
+- **Prompt lifecycle follows risk.** Version or evaluate prompts only when the product contract needs that control.
+- **Memory and eval are optional systems.** Give them structure only when approved behavior requires them.
+- **Provider abstraction must earn its keep.** Do not wrap one call site solely for a hypothetical swap.

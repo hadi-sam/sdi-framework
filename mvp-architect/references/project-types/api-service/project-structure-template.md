@@ -22,7 +22,7 @@ Target length: 200–300 lines.
 │   ├── services/           # domain logic — business operations
 │   ├── repositories/       # data access — DB queries
 │   ├── schemas/            # request/response validation (Zod / Pydantic / etc.)
-│   ├── middleware/         # auth, rate limiting, logging, error handling
+│   ├── middleware/         # auth/error handling; rate limit/logging only when required
 │   ├── workers/            # background workers / queue consumers (if applicable)
 │   ├── lib/                # cross-cutting utilities (clients, hashing, signing)
 │   └── types/              # shared types
@@ -55,7 +55,7 @@ Target length: 200–300 lines.
 
 - Signature verification happens in middleware before the handler runs.
 - Dedup check (`webhook_events` table) before processing.
-- Heavy work always queued; handler returns 2xx fast.
+- Queue work only when the provider acknowledgement deadline or recovery contract requires it.
 - Replay-safe: re-running a handler with the same event yields the same DB state.
 
 ## src/services/ — Domain logic
@@ -68,7 +68,7 @@ Target length: 200–300 lines.
 
 - Services orchestrate; they don't reach into HTTP or DB drivers directly.
 - Services use repositories for data access and external clients (from `lib/`) for third-party calls.
-- Services are tested in isolation with mocked repositories.
+- Services may be tested in isolation when the proportional test threshold is met.
 
 ## src/repositories/ — Data access
 
@@ -94,13 +94,13 @@ Target length: 200–300 lines.
 ## src/middleware/
 
 \`\`\`
-[tree — auth.ts, rateLimit.ts, requestId.ts, errorHandler.ts]
+[tree — auth/error handling plus only the rate-limit/correlation middleware required]
 \`\`\`
 
 ### Middleware conventions
 
 - Auth middleware sets `req.context` (or equivalent) with `{ key, organizationId, scopes }`.
-- Rate limit reads tier from auth context, applies bucket from store.
+- When rate limiting is required, derive its bucket from the authenticated contract rather than untrusted input.
 - Error handler is the single place that maps exceptions → HTTP status + body.
 
 ## src/workers/ — Background workers
@@ -137,13 +137,11 @@ Target length: 200–300 lines.
 - Never leak stack traces in 5xx responses; log them, return generic message.
 
 ### Observability
-- Every request gets a `request_id` (header in, propagated through logs and downstream calls).
-- Logs are structured JSON. PII scrubbed at the boundary.
+- Add request correlation/logging when a reachable failure needs operational detection; scrub PII at the boundary.
 
 ### Testing
-- Unit tests for services with mocked repositories.
-- Integration tests against a real local DB; routes hit through real HTTP.
-- Webhook handlers tested with sample payloads + signature verification.
+- Add only tests required by an approved criterion or a material silent-harm path.
+- When that path crosses DB/HTTP/signature boundaries, use an integration test that exercises the real boundary.
 
 ### Commits & Branches
 - [conventional commits, branch naming]
@@ -151,7 +149,7 @@ Target length: 200–300 lines.
 ### Environment Variables
 - DB: `DATABASE_URL`.
 - External providers: `STRIPE_API_KEY`, `STRIPE_WEBHOOK_SECRET`, etc.
-- Feature flags: per-tier rate limits, beta endpoints.
+- Feature flags or per-tier limits only when the approved product/API contract defines them.
 
 ## Coding agent kickoff prompt template
 
@@ -162,5 +160,5 @@ Target length: 200–300 lines.
 
 - **Routes are thin.** Anything beyond validation + service call + response formatting is misplaced.
 - **Auth context is the only source of tenancy.** Anything else invites cross-tenant bugs.
-- **Webhook processing always queues.** Handlers ack fast; workers do the work.
+- **Webhook processing follows the provider contract.** Queue only when acknowledgement latency or recovery semantics require it.
 - **Migrations are immutable once applied.** Forward-only by default.

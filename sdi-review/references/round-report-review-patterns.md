@@ -1,6 +1,6 @@
 # Round report review patterns
 
-Patterns for `sdi-review` Modes 2, 3, 4 (round report review, fork decision, bug found). The **coordinator** drives these; for **Mode 2** it dispatches the ensemble (Opus + Sonnet + Codex; if Codex fails, ask the user before substituting) with the filled adversarial prompt — reviewers never load `sdi-review`. **Mode 2 does not auto-apply code fixes** — the implementer (`sdi-mode`) owns code: present obvious code fixes as recommendations, and decisions as options + a recommendation. **Modes 3 and 4 are advisory single passes**, not fix loops.
+Patterns for `sdi-review` Modes 2, 3, 4. The coordinator dispatches the persistent profile in parallel with the same filled prompt; reviewers never load the skill. A scheduled failure returns to the PO with no automatic replacement. Mode 2 does not apply code fixes; Modes 3 and 4 are advisory passes.
 
 > **For review of an implementation plan document, use `plan-review-protocol.md` — same agent, different framework (deeper artifact reading, plan-specific checks).**
 
@@ -12,16 +12,16 @@ Round report on your desk. Check:
 - **Are the decisions in the report defensible?** Go through each one. "Chose X because Y" — is Y accurate? Is X the right choice given Y?
 - **Did the agent catch risks that the implementation introduces?** If the round added a new external dependency, did it discuss security/failure modes? If it introduced a feature flag, did it say when to flip it?
 - **Did the agent update KNOWN_ISSUES when needed?** New out-of-scope bugs/debt/security gaps need `KI-NNN` entries; fixed KIs need `Resolved (commit, date)`.
-- **Test coverage — real or performative?** 20 tests green sounds good, but if they're all shallow, coverage is weak. Ask about specific edge cases that matter.
+- **Evidence — sufficient for material risk or performative?** Judge the checks against reachable behavior and approved criteria. Do not demand new coverage or counts without the canonical justification.
 - **Anything not said that should be?** Important patterns include: newly introduced side effects, breaking changes to contracts, perf regressions.
 
 Response shape:
 - Findings first. Do not summarize what works.
 - Specific issues, each carrying its mark, graded: blocker / non-blocker / nice-to-have. That grading is **presentation and decides nothing** — the verdict is read off the matrix below.
-- For non-blockers, recommend whether to fix now or defer to hardening.
+- For non-blockers, record a deferral only when it has a concrete consequence and trigger.
 - End with `BOTTOM LINE: SHIP | FIX-THEN-SHIP | RETHINK | BLOCK`.
 
-**Bottom-line rules (the reviewer's line, and only a proposal), off [`sdi-mode/references/auto-review-mode.md`](../../sdi-mode/references/auto-review-mode.md) §"Marks and the verdict matrix" and never re-derived here:** `SHIP` when no finding fails by that matrix; `FIX-THEN-SHIP` when one does and its fix is mechanical; `RETHINK` for a class-5 finding; `BLOCK` for a class-7 marked urgent. **The round is the coordinator's**, off the same matrix with the mark it assigned.
+**Bottom-line rules** come only from [`sdi-mode/references/auto-review-mode.md`](../../sdi-mode/references/auto-review-mode.md) §"Marks and the verdict matrix": documentary/instrumental findings block only under its binary predicate, never because the artifact is itself the deliverable.
 
 ## A or B fork
 

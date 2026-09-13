@@ -5,7 +5,7 @@ Spec-driven projects accumulate four distinct kinds of knowledge:
 1. **Atemporal decisions** — non-obvious choices that hold until something changes them: `docs/DECISIONS.md`, append-only, numbered. A decision stands until explicitly superseded; it does not age with time alone.
 2. **Known wrongness** — bugs, security gaps, debt and deferred fixes with evidence: `docs/KNOWN_ISSUES.md`, append-only with a lifecycle status (`known-issues-discipline.md`).
 3. **Datable session memory** — what was worked on, what is blocked, what is next: dated files under `docs/memory/`, indexed by `docs/MEMORY.md`.
-4. **Per-work-item narrative** — the story of each *completed* item: `docs/WORK_LOG.md`, one `## <work item>` section, written at close. Its index is the fact sheet's **Work tracker** where the project has one; where it doesn't, the index is the `docs/plans/` directory.
+4. **Per-work-item close** — factual result, evidence, consequence and links: `docs/WORK_LOG.md`, one `## <work item>` section written at close. Its index is the fact sheet's **Work tracker** where present, otherwise `docs/plans/`.
 
 Mixing them into one file is a common failure: rationale, bugs, daily status and per-item history blur together and none stay searchable. Splitting them keeps each useful — and keeps whatever is read every session from bloating into a wall of narrative.
 
@@ -31,9 +31,9 @@ A line is `- [YYYY-MM-DD](memory/YYYY-MM-DD.md) — one-line hook of what change
 
 Seed: `../../mvp-architect/references/core-templates/work-log-template.md`.
 
-The consolidated narrative of each **completed work item** — one `## <work item>` section, written at end-of-phase housekeeping (Step 8), chronological, newest at the end. Each holds the detail that has no business in a one-line index: what was built, the checkpoints and rounds, review outcomes, test-count deltas, smoke results, PR links, fix commit SHAs, and cross-references to `DECISIONS #N`, `KI-NNN` and revision notes — pointing into them, never pasting them.
+The factual close of each **completed work item** — one `## <work item>` section written at housekeeping, chronological, newest at the end. Record what changed, the evidence that proves it, the consequence/current status, and links to the plan, checks, PR, decisions and known issues. Do not require checkpoint narration or a test-count census.
 
-**Per-item and consolidated at close**, not per-day: memory is the daily breadcrumb ("today I closed omie-integration; see WORK_LOG"), and this section is the durable story.
+**Per-item and consolidated at close**, not per-day: memory is the daily breadcrumb ("today I closed omie-integration; see WORK_LOG"), and this section is the durable factual pointer.
 
 **Size.** Each section has a byte ceiling in the project's doc lint; the number lives there. What exceeds it does **not** go into another item's section and does not go back into the daily entry: it goes into a **new** `## <key> — adendo YYYY-MM-DD`, born under the normal ceiling. Overflow from a frozen target never lands on another frozen target.
 
@@ -43,7 +43,7 @@ The consolidated narrative of each **completed work item** — one `## <work ite
 
 Write a daily entry **at the end of each working session** — after a round report ships, after a blocker clears, after housekeeping closes a phase, or before handing off. A day with several events gets **appends to that day's file**, not a new one, and appending happens **within the day's ceiling**: when the day would overflow, the overflow goes into the closing item's `WORK_LOG.md` section, never into a second file for the same date — a ceiling a second file can dodge is not a ceiling. A day with nothing meaningful gets no file.
 
-Not here: **decisions** (`DECISIONS.md`), **known wrongness with evidence** (`KNOWN_ISSUES.md`), the **per-item narrative** (`WORK_LOG.md` — memory just points at it), **plan changes** (revision notes), code commentary, apologies, and **framework-level disciplines** like verify-before-claim, which live in the skill files. Memory captures project facts; disciplines are skill conventions. And memory **references, never duplicates**: "DECISIONS #28 written", "KI-004 marked Resolved" — a breadcrumb trail, not the canonical record.
+Not here: **decisions** (`DECISIONS.md`), **known wrongness with evidence** (`KNOWN_ISSUES.md`), the **per-item close** (`WORK_LOG.md` — memory just points at it), **plan changes** (revision notes), code commentary, apologies, and framework-level disciplines. Memory **references, never duplicates**: "DECISIONS #28 written", "KI-004 marked Resolved".
 
 ## Reading, and end-of-phase sweep
 

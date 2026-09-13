@@ -1,6 +1,6 @@
 # ARCHITECTURE Template (Core)
 
-The ARCHITECTURE doc operationalizes the PRD. Stack, flows, security, observability, trade-offs. It's the reference doc the coding agent returns to most often outside of the per-phase implementation plans.
+The ARCHITECTURE doc operationalizes the PRD. Stack, flows, security and trade-offs are core; operational sections appear only when a real contract or risk requires them.
 
 This template covers **universal sections** that apply to any project type. The `project-types/{type}/architecture-appendix.md` companion file fills in type-specific concerns: data model + persistence patterns for types with a database, multi-tenancy + RLS for SaaS, ingestion pipelines for data products, agent loop patterns for AI agents, etc.
 
@@ -17,7 +17,7 @@ Target length: 500–700 lines (longer for complex types). Dense is fine; repeti
 
 ## 1. Tech Stack
 
-[Table: Layer, Choice, Rationale. Layers vary by project type — see appendix for type-specific layers. Universal layers usually include: language/runtime, primary framework, validation, observability, deployment, testing. For each, one-line rationale tied to the specific project, not a generic "it's popular".]
+[Table: Layer, Choice, Rationale. Layers vary by project type — see appendix. Include language/runtime and the selected application/deployment layers; include validation, observability or testing only when the approved flow/contract uses them. Give each selected layer a project-specific rationale.]
 
 ## 2. Type-specific architecture
 
@@ -49,9 +49,9 @@ Target length: 500–700 lines (longer for complex types). Dense is fine; repeti
 
 [Stack-appropriate security concerns: webhook signature verification, secret handling, rate limiting, CSRF, PII scrubbing, query parameterization, prompt injection defenses (if AI), CSP for static sites, input validation at boundaries, etc. Reference appendix for type-specific isolation/access concerns.]
 
-## 5. Observability & Operations
+## 5. Observability & Operations (only when required)
 
-[Error tracking, product analytics, feature flags, job monitoring, alerting surfaces, log destinations. For AI projects also: eval pipeline, prompt version tracking, cost dashboards.]
+[Omit when no material detection/recovery, product-measurement or budget contract exists. Otherwise select the minimum relevant surface; do not add error tracking, analytics, flags, monitoring, evals or cost dashboards by default.]
 
 ## 6. [Integration-Specific Section]
 
