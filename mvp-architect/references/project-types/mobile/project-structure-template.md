@@ -24,7 +24,6 @@ Target length: 200–300 lines.
 │   ├── api/                # HTTP/GraphQL client + endpoint wrappers
 │   ├── stores/             # state management (Zustand/Redux/Riverpod)
 │   ├── persistence/        # AsyncStorage/MMKV/SQLite wrappers
-│   ├── notifications/      # push registration, handlers, preference UI
 │   ├── deep-links/         # link parsing → route mapping
 │   ├── analytics/          # event taxonomy + tracker
 │   ├── theme/              # tokens, typography, dark mode
@@ -36,6 +35,8 @@ Target length: 200–300 lines.
 ├── docs/
 └── [config files]
 \`\`\`
+
+When an approved notification flow or contract exists, add `src/notifications/` for only its required registration, handlers, or preference UI; otherwise omit that directory and the notification section below.
 
 ## src/screens/ — Screens
 
@@ -99,15 +100,17 @@ Target length: 200–300 lines.
 
 ## src/notifications/
 
+[Include this entire section only when an approved notification flow or contract exists; otherwise omit it from the generated PROJECT_STRUCTURE.md.]
+
 \`\`\`
 [tree — registration, handler, preference UI]
 \`\`\`
 
 ### Notification conventions
 
-- Permission request is gated by an in-app rationale screen, not auto-prompted on first launch.
+- **Permission UX:** [contextual OS prompt] / [soft-ask then OS prompt], at the point approved by the flow.
 - Add retries for transient token-registration failures and automatic re-registration of refreshed tokens only when the approved notification flow/contract requires those behaviors.
-- Foreground notification handling renders an in-app toast; background goes to OS surface.
+- **Foreground/background handling:** [in-app presentation] / [OS surface] / [suppressed] for each relevant app state.
 
 ## src/deep-links/
 
@@ -165,7 +168,7 @@ Target length: 200–300 lines.
 
 ### Environment Variables
 - API endpoints (dev/staging/prod).
-- Analytics keys, push provider keys.
+- Analytics keys; push provider keys only when an approved notification flow selects a provider.
 - Feature flags resolved at app start.
 
 ## Coding agent kickoff prompt template
@@ -177,5 +180,5 @@ Target length: 200–300 lines.
 
 - **Screens are folders, not single files.** Once a screen has hooks + sub-components, splitting is mandatory.
 - **API boundary follows shared contracts.** Use a client wrapper only when auth or repeated response behavior justifies it.
-- **Permissions need rationale UX.** Native prompts are unforgiving — soft-ask first.
+- **Permissions follow approved capabilities.** Document the chosen rationale flow when a used capability needs a native prompt; use a soft-ask only when the approved UX requires it.
 - **OTA policy must be explicit.** Without it, native breakage will eventually be shipped via OTA.

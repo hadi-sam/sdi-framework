@@ -30,21 +30,23 @@ State posture explicitly even if online-only:
 
 ## §2.4 Push notifications
 
+Include this section only when an approved flow or contract includes push notifications; otherwise omit it. Resolve only the options that flow needs:
+
 - **Provider:** [APNs + FCM direct] / [OneSignal] / [Expo Notifications] / [Firebase Cloud Messaging]
-- **Token registration:** when app first opens vs after permission grant; token refresh handling
-- **Server-side trigger:** which backend events fire push
-- **Permission UX:** when prompted (not on first launch), with what soft-ask before the OS prompt
-- **Foreground vs background handling:** how notifications render when app is in foreground
+- **Token registration:** [after permission grant] / [other approved trigger]; [refresh handling] / [none]
+- **Server-side trigger:** [approved backend events] / [schedule] / [none]
+- **Permission UX:** [contextual OS prompt] / [soft-ask then OS prompt]
+- **Foreground vs background handling:** [in-app presentation] / [OS surface] / [suppressed] for each relevant app state
 
 ## §2.5 Native capability usage
 
-For each capability:
+For each approved capability; omit unused example rows:
 
 | Capability | Used for | Permission strategy | iOS Info.plist key | Android manifest |
 |---|---|---|---|---|
 | Camera | [profile photo] | request when feature accessed | NSCameraUsageDescription | CAMERA |
 | Location | [nearby search] | request with rationale screen | NSLocationWhenInUseUsageDescription | ACCESS_FINE_LOCATION |
-| Notifications | [reminders] | soft-ask + OS prompt | n/a | POST_NOTIFICATIONS |
+| Notifications | [reminders] | [soft-ask + OS prompt] / [contextual OS prompt] | n/a | POST_NOTIFICATIONS |
 | ... | | | | |
 
 ## §2.6 Deep links and universal links
